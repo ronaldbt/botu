@@ -1,0 +1,5 @@
+yfinance
+numpy
+pandas
+matplotlib
+requests   # para enviar mensajes a Telegram
