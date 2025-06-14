@@ -1,19 +1,12 @@
-# src/main.py
+# src/main_smart.py
 
 import time
 import random
 import requests
-import os
-import sys
-
-# Importar para DB
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
-from app.db.database import SessionLocal
-from app.db import crud_tickers
-
+from datetime import date
 from scanner import scan_for_u, set_custom_session
 from utils import log
-from estado_u_utils import should_scan, update_estado_u
+from estado_u_utils import should_scan, update_estado_u, get_all_estados_u
 
 # === CONFIGURACION PRO ANTI-BAN ===
 
@@ -27,49 +20,30 @@ USER_AGENTS = [
 
 TICKER_SLEEP = 5  # Sleep entre tickers para evitar 429
 
-# === FUNCIONES ===
-
-def load_tickers_from_db(tipo_filter=None, sub_tipo_filter=None, activo_only=True):
-    log("Cargando tickers desde base de datos...")
-
-    session = SessionLocal()
-    try:
-        tickers_db = crud_tickers.get_all_tickers(session)
-
-        # Filtrar por activo
-        if activo_only:
-            tickers_db = [t for t in tickers_db if t.activo]
-
-        # Filtrar por tipo / sub_tipo si se pasa
-        if tipo_filter:
-            tickers_db = [t for t in tickers_db if t.tipo == tipo_filter]
-        if sub_tipo_filter:
-            tickers_db = [t for t in tickers_db if t.sub_tipo == sub_tipo_filter]
-
-        tickers = [t.ticker for t in tickers_db]
-        log(f"Se cargaron {len(tickers)} tickers desde la DB (activo={activo_only}).")
-        return tickers
-    finally:
-        session.close()
-
 # === MAIN PROGRAM ===
 
 start_time = time.time()
-log("🚀 Iniciando BOT de detección de U...")
+log("🚀 Iniciando BOT SMART de detección de U...")
 
-# tickers = load_tickers('tickers.txt')
-tickers = load_tickers_from_db()
+# 1️⃣ Cargar todos los estados desde la DB
+estados = get_all_estados_u()
+log(f"Se cargaron {len(estados)} tickers desde la tabla estados_u.")
 
-log(f"Comenzando escaneo de {len(tickers)} activos...")
+# 2️⃣ Filtrar solo los que toca escanear hoy
+hoy = date.today()
+tickers_a_scanear = [estado.ticker for estado in estados if estado.proxima_fecha_escaneo <= hoy]
+
+log(f"Hoy toca escanear {len(tickers_a_scanear)} tickers ({len(estados)} en total en la DB).")
 
 alert_count = 0
-total_tickers = len(tickers)
+total_tickers = len(tickers_a_scanear)
 processed_tickers = 0
 
-for ticker in tickers:
+for ticker in tickers_a_scanear:
     try:
-        # VERIFICAR SI SE DEBE ESCANEAR
+        # Verificamos por seguridad si corresponde escanear (doble validación con should_scan)
         if not should_scan(ticker):
+            log(f"[{ticker}] Saltado (should_scan=False).")
             continue
 
         processed_tickers += 1
@@ -99,7 +73,6 @@ for ticker in tickers:
             # send_telegram_message(message)  # Descomenta cuando lo configures
             alert_count += 1
         else:
-            # Puedes refinar esta lógica según lo que detecte el scanner
             nuevo_estado = result.get('estado_sugerido', 'BASE')
             log(f"[{ticker}] No se detectó U en este activo. Estado sugerido: {nuevo_estado}")
 
@@ -123,6 +96,6 @@ for ticker in tickers:
 # === FINAL ===
 
 elapsed_time = time.time() - start_time
-log(f"✅ Escaneo finalizado. Total alertas enviadas: {alert_count}.")
+log(f"✅ SMART escaneo finalizado. Total alertas enviadas: {alert_count}.")
 log(f"🕒 Tiempo total de ejecución: {elapsed_time:.2f} segundos.")
-log("🚀 BOT de detección de U terminado.")
+log("🚀 BOT SMART de detección de U terminado.")
