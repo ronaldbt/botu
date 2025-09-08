@@ -1,23 +1,38 @@
-# app/schemas/user_schema.py
+# backend/app/schemas/user_schema.py
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
 
-class UserLoginSchema(BaseModel):
-    id: int
-    user_id: int
-    login_time: datetime
-    ip_address: Optional[str] = None
-    user_agent: Optional[str] = None
-
-    class Config:
-        from_attributes = True  # compatible con Pydantic v2
-
-class UserSchema(BaseModel):
-    id: int
+class UserBase(BaseModel):
     username: str
-    is_admin: bool
+    is_admin: bool = False
+    is_active: bool = True
 
+class UserCreate(UserBase):
+    password: str
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    is_admin: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+class UserInDB(UserBase):
+    id: int
+    created_at: datetime
+    
     class Config:
         from_attributes = True
+
+class User(UserInDB):
+    pass
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: User

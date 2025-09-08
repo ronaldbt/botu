@@ -29,6 +29,8 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     is_admin = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=func.now())
 
     logins = relationship("UserLogin", back_populates="user")
 
@@ -76,3 +78,47 @@ class Ticker(Base):
     nombre = Column(String, nullable=True)
     activo = Column(Boolean, nullable=False, default=True)
     fecha_alta = Column(Date, nullable=False, server_default=func.current_date())
+
+# --------------------------
+# Tabla Orden
+# --------------------------
+
+class Orden(Base):
+    __tablename__ = "ordenes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticker = Column(String, nullable=False, index=True)
+    tipo_orden = Column(String, nullable=False)  # 'BUY', 'SELL'
+    cantidad = Column(Float, nullable=False)
+    precio = Column(Float, nullable=True)  # Para órdenes limit
+    precio_ejecutado = Column(Float, nullable=True)  # Precio real de ejecución
+    estado = Column(String, nullable=False, default='PENDING')  # PENDING, FILLED, CANCELLED, FAILED
+    binance_order_id = Column(String, nullable=True)  # ID de la orden en Binance
+    fecha_creacion = Column(DateTime, default=func.now())
+    fecha_ejecucion = Column(DateTime, nullable=True)
+    motivo = Column(String, nullable=True)  # Razón de la orden (ej: 'PATRON_U_DETECTADO')
+    nivel_ruptura = Column(Float, nullable=True)  # Nivel de ruptura que disparó la orden
+    usuario_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Relación con usuario
+    usuario = relationship("User")
+
+# --------------------------
+# Tabla Alerta
+# --------------------------
+
+class Alerta(Base):
+    __tablename__ = "alertas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticker = Column(String, nullable=False, index=True)
+    tipo_alerta = Column(String, nullable=False)  # 'PATRON_U', 'ORDEN_EJECUTADA', 'ERROR'
+    mensaje = Column(String, nullable=False)
+    nivel_ruptura = Column(Float, nullable=True)
+    precio_actual = Column(Float, nullable=True)
+    fecha_creacion = Column(DateTime, default=func.now())
+    leida = Column(Boolean, default=False)
+    usuario_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    
+    # Relación con usuario
+    usuario = relationship("User")

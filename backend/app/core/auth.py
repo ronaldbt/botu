@@ -2,7 +2,12 @@ from datetime import datetime, timedelta
 from typing import Optional
 from passlib.context import CryptContext
 import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 from app.core.config import settings
+from app.db.database import get_db
+from app.db import models
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -37,3 +42,35 @@ def decode_access_token(token: str):
         return payload
     except jwt.PyJWTError:
         return None
+
+# Security scheme
+security = HTTPBearer()
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """Obtiene el usuario actual basado en el token JWT"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = decode_access_token(credentials.credentials)
+        if payload is None:
+            raise credentials_exception
+        
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+            
+    except jwt.PyJWTError:
+        raise credentials_exception
+    
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if user is None:
+        raise credentials_exception
+    
+    return user

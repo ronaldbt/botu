@@ -22,3 +22,7 @@ def create_signal(db: Session, signal: u_schema.SignalCreate):
 # Obtener señales
 def get_signals(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Signal).order_by(desc(models.Signal.date)).offset(skip).limit(limit).all()
+
+# Obtener todas las señales
+def get_all_signals(db: Session):
+    return db.query(models.Signal).order_by(desc(models.Signal.date)).all()

@@ -7,10 +7,16 @@ from datetime import timedelta
 from utils import log
 
 # Importar acceso a DB
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
-from app.db.database import SessionLocal
-from app.db import crud_estados_u
-from app.schemas import estados_u_schema
+backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend'))
+sys.path.insert(0, backend_path)
+
+try:
+    from app.db.database import SessionLocal  # type: ignore
+    from app.db import crud_estados_u  # type: ignore
+    from app.schemas import estados_u_schema  # type: ignore
+except ImportError as e:
+    log(f"Error importing backend modules: {e}")
+    raise
 
 # Definir las frecuencias de escaneo por estado (en días)
 ESTADO_SCAN_FREQUENCY = {

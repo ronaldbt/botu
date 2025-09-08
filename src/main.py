@@ -7,9 +7,16 @@ import os
 import sys
 
 # Importar para DB
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend')))
-from app.db.database import SessionLocal
-from app.db import crud_tickers
+backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend'))
+sys.path.insert(0, backend_path)
+
+try:
+    from app.db.database import SessionLocal  # type: ignore
+    from app.db import crud_tickers  # type: ignore
+except ImportError:
+    # Fallback para el linter
+    SessionLocal = None
+    crud_tickers = None
 
 from scanner import scan_for_u, set_custom_session
 from utils import log
@@ -57,7 +64,23 @@ def load_tickers_from_db(tipo_filter=None, sub_tipo_filter=None, activo_only=Tru
 start_time = time.time()
 log("🚀 Iniciando BOT de detección de U...")
 
-# tickers = load_tickers('tickers.txt')
+# Verificar si se debe ejecutar modo crypto
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+crypto_mode = os.getenv("BINANCE_CRYPTO_MODE", "false").lower() == "true"
+
+if crypto_mode:
+    log("🪙 Modo CRYPTO activado - Usando Binance Scanner")
+    from binance_scanner import BinanceScanner
+    scanner = BinanceScanner()
+    scanner.run_crypto_scan()
+    log("✅ Escaneo de crypto completado")
+    exit(0)
+
+# Modo tradicional (acciones)
+log("📈 Modo TRADICIONAL activado - Escaneando acciones")
 tickers = load_tickers_from_db()
 
 log(f"Comenzando escaneo de {len(tickers)} activos...")

@@ -1,8 +1,8 @@
 <template>
-  <div class="flex min-h-screen">
+  <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
     <Sidebar v-if="authStore.isAuthenticated" />
 
-    <div class="flex-1 ml-64 relative z-10">
+    <div :class="authStore.isAuthenticated ? 'md:ml-64 pb-16 md:pb-0' : ''" class="relative z-10">
       <router-view />
     </div>
   </div>

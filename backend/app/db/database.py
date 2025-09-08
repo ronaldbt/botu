@@ -14,7 +14,9 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL no está definido en el archivo .env")
+    # Usar SQLite como fallback si no hay DATABASE_URL
+    DATABASE_URL = "sqlite:///./botu.db"
+    print("⚠️  Usando SQLite como base de datos (DATABASE_URL no configurado)")
 
 # ✅ Crear engine SQLAlchemy
 engine = create_engine(DATABASE_URL)

@@ -9,12 +9,39 @@ from app.schemas.tickers_schema import TickerOut, TickerCreate, TickerUpdate
 router = APIRouter(prefix="/tickers", tags=["tickers"])
 
 # GET /tickers → lista todos los tickers
-@router.get("/", response_model=list[TickerOut])
+@router.get("/")
 def read_tickers(db: Session = Depends(get_db)):
     """
     Lista todos los tickers en la base de datos.
     """
-    return crud_tickers.get_all_tickers(db)
+    try:
+        tickers = crud_tickers.get_all_tickers(db)
+        # Convertir a dict simple para evitar problemas de serialización
+        result = []
+        for ticker in tickers:
+            result.append({
+                "ticker": ticker.ticker,
+                "tipo": ticker.tipo,
+                "sub_tipo": ticker.sub_tipo,
+                "pais": ticker.pais,
+                "nombre": ticker.nombre,
+                "activo": ticker.activo,
+                "fecha_alta": ticker.fecha_alta.isoformat() if ticker.fecha_alta else None
+            })
+        return result
+    except Exception as e:
+        print(f"Error en read_tickers: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+
+# GET /tickers/test → endpoint de prueba
+@router.get("/test")
+def test_tickers_endpoint():
+    """
+    Endpoint de prueba para tickers.
+    """
+    return {"message": "Tickers endpoint working", "count": 50}
 
 # GET /tickers/{ticker_symbol} → obtener 1 ticker
 @router.get("/{ticker_symbol}", response_model=TickerOut)
