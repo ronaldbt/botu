@@ -9,6 +9,7 @@ import EstadosTickersView from '../views/EstadosTickersView.vue';
 import OrdenesView from '../views/OrdenesView.vue';
 import AlertasView from '../views/AlertasView.vue';
 import UsuariosView from '../views/UsuariosView.vue';
+import TestToolsView from '../views/TestToolsView.vue';
 
 const routes = [
   {
@@ -55,6 +56,12 @@ const routes = [
     name: 'Usuarios',
     component: UsuariosView,
     meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/test-tools',
+    name: 'TestTools',
+    component: TestToolsView,
+    meta: { requiresAuth: true },
   },
 ];
 

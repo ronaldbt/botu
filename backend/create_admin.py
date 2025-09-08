@@ -24,8 +24,8 @@ def create_admin_user():
         
         # Crear usuario administrador
         admin_user = models.User(
-            username="admin",
-            password_hash=get_password_hash("admin123"),
+            username="vlad",
+            password_hash=get_password_hash("parol777"),
             is_admin=True,
             is_active=True
         )
@@ -35,8 +35,8 @@ def create_admin_user():
         db.refresh(admin_user)
         
         print("✅ Usuario administrador creado exitosamente!")
-        print("📧 Username: admin")
-        print("🔑 Password: admin123")
+        print("📧 Username: vlad")
+        print("🔑 Password: parol777")
         print("👑 Rol: Administrador")
         print("")
         print("🌐 Puedes acceder a:")
