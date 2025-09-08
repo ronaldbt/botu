@@ -56,6 +56,7 @@
             >
               <option value="">Todos los estados</option>
               <option value="RUPTURA">RUPTURA</option>
+              <option value="U_DETECTADO">U_DETECTADO</option>
               <option value="PALO_BAJANDO">PALO_BAJANDO</option>
               <option value="BASE">BASE</option>
               <option value="POST_RUPTURA">POST_RUPTURA</option>
@@ -89,8 +90,10 @@
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Último Escaneo</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Próximo Escaneo</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Nivel Ruptura</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">💰 Precio Compra</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">🎯 Precio Venta</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Slope Left</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Precio Cierre</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Precio Actual</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200">
@@ -117,13 +120,19 @@
                   {{ estado.proxima_fecha_escaneo || '-' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
-                  {{ estado.nivel_ruptura ? `$${estado.nivel_ruptura.toFixed(2)}` : '-' }}
+                  {{ estado.nivel_ruptura ? `$${estado.nivel_ruptura.toFixed(4)}` : '-' }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold" :class="getBuyPriceClass(estado.estado_actual)">
+                  {{ getPrecioCompra(estado) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
+                  {{ getPrecioVenta(estado) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                  {{ estado.slope_left ? estado.slope_left.toFixed(2) : '-' }}
+                  {{ estado.slope_left ? estado.slope_left.toFixed(3) : '-' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
-                  {{ estado.precio_cierre ? `$${estado.precio_cierre.toFixed(2)}` : '-' }}
+                  {{ estado.precio_cierre ? `$${estado.precio_cierre.toFixed(4)}` : '-' }}
                 </td>
               </tr>
             </tbody>
@@ -187,10 +196,11 @@ const fetchEstados = async () => {
 const getEstadoBadgeClass = (estado) => {
   switch (estado) {
     case 'RUPTURA': return 'bg-green-100 text-green-800'
+    case 'U_DETECTADO': return 'bg-blue-100 text-blue-800'
     case 'PALO_BAJANDO': return 'bg-yellow-100 text-yellow-800'
-    case 'BASE': return 'bg-blue-100 text-blue-800'
-    case 'POST_RUPTURA': return 'bg-gray-100 text-gray-800'
-    case 'NO_U': return 'bg-slate-100 text-slate-800'
+    case 'BASE': return 'bg-slate-100 text-slate-600'
+    case 'POST_RUPTURA': return 'bg-purple-100 text-purple-800'
+    case 'NO_U': return 'bg-gray-100 text-gray-800'
     default: return 'bg-slate-100 text-slate-800'
   }
 }
@@ -198,12 +208,33 @@ const getEstadoBadgeClass = (estado) => {
 const getEstadoDotClass = (estado) => {
   switch (estado) {
     case 'RUPTURA': return 'bg-green-400'
+    case 'U_DETECTADO': return 'bg-blue-400'
     case 'PALO_BAJANDO': return 'bg-yellow-400'
-    case 'BASE': return 'bg-blue-400'
-    case 'POST_RUPTURA': return 'bg-gray-400'
-    case 'NO_U': return 'bg-slate-400'
+    case 'BASE': return 'bg-slate-400'
+    case 'POST_RUPTURA': return 'bg-purple-400'
+    case 'NO_U': return 'bg-gray-400'
     default: return 'bg-slate-400'
   }
+}
+
+const getPrecioCompra = (estado) => {
+  // Precio de compra = nivel de ruptura (confirmación del patrón U)
+  if (!estado.nivel_ruptura) return '-'
+  return `$${estado.nivel_ruptura.toFixed(4)}`
+}
+
+const getPrecioVenta = (estado) => {
+  // Precio de venta = nivel de ruptura + 10% (profit target)
+  if (!estado.nivel_ruptura) return '-'
+  const precioVenta = estado.nivel_ruptura * 1.10
+  return `$${precioVenta.toFixed(4)}`
+}
+
+const getBuyPriceClass = (estado) => {
+  // Destacar en verde si está en RUPTURA (listo para comprar)
+  if (estado === 'RUPTURA') return 'text-green-600'
+  if (estado === 'U_DETECTADO') return 'text-blue-600'
+  return 'text-slate-700'
 }
 
 onMounted(() => {

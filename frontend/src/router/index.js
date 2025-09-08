@@ -10,6 +10,7 @@ import OrdenesView from '../views/OrdenesView.vue';
 import AlertasView from '../views/AlertasView.vue';
 import UsuariosView from '../views/UsuariosView.vue';
 import TestToolsView from '../views/TestToolsView.vue';
+import BitcoinBotView from '../views/BitcoinBotView.vue';
 
 const routes = [
   {
@@ -61,6 +62,12 @@ const routes = [
     path: '/test-tools',
     name: 'TestTools',
     component: TestToolsView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/bitcoin-bot',
+    name: 'BitcoinBot',
+    component: BitcoinBotView,
     meta: { requiresAuth: true },
   },
 ];

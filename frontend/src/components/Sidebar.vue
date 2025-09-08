@@ -5,7 +5,7 @@
       <div class="flex items-center justify-center h-16 border-b border-slate-700 bg-slate-800">
         <div class="text-center">
           <div class="text-2xl font-bold text-white">
-            🚀 BotU
+             BotU
           </div>
         </div>
       </div>

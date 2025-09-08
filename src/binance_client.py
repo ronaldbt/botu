@@ -1,44 +1,31 @@
 # src/binance_client.py
 
-import os
-from dotenv import load_dotenv
-from binance.spot import Spot as SpotClient
-from binance.error import ClientError
+import requests
 import logging
-
-# Cargar variables de entorno
-load_dotenv()
+import hmac
+import hashlib
+import time
+from datetime import datetime, timedelta
+from urllib.parse import urlencode
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# URL de la API pública de Binance
+BINANCE_API_BASE = "https://api.binance.com/api/v3"
+BINANCE_TESTNET_BASE = "https://testnet.binance.vision/api/v3"
+
 def get_spot_client():
     """
-    Crea cliente de Binance Spot con soporte para testnet
+    Cliente público de Binance (sin API keys) - Solo para datos históricos
     """
-    api_key = os.getenv("BINANCE_API_KEY")
-    api_secret = os.getenv("BINANCE_API_SECRET")
-    use_testnet = os.getenv("BINANCE_TESTNET", "true").lower() == "true"
-    
-    if not api_key or not api_secret:
-        raise ValueError("BINANCE_API_KEY y BINANCE_API_SECRET deben estar configurados en .env")
-    
-    # URL base para testnet
-    base_url = "https://testnet.binance.vision" if use_testnet else None
-    
-    client = SpotClient(
-        api_key=api_key,
-        api_secret=api_secret,
-        base_url=base_url
-    )
-    
-    logger.info(f"Cliente Binance creado - Testnet: {use_testnet}")
-    return client
+    logger.info("Cliente Binance público creado - Solo datos históricos")
+    return None  # No necesitamos cliente, usaremos requests directo
 
 def fetch_klines(symbol: str, interval: str = "1h", limit: int = 200):
     """
-    Obtiene velas (klines) de Binance
+    Obtiene velas (klines) de Binance usando la API pública
     
     Args:
         symbol: Símbolo del par (ej: "BTCUSDT")
@@ -49,8 +36,18 @@ def fetch_klines(symbol: str, interval: str = "1h", limit: int = 200):
         Lista de velas con formato [timestamp, open, high, low, close, volume, ...]
     """
     try:
-        client = get_spot_client()
-        klines = client.klines(symbol, interval, limit=limit)
+        url = f"{BINANCE_API_BASE}/klines"
+        params = {
+            'symbol': symbol.upper(),
+            'interval': interval,
+            'limit': limit
+        }
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        
+        klines = response.json()
+        logger.info(f"📊 Binance API devolvió {len(klines)} velas para {symbol} (intervalo: {interval})")
         
         # Convertir a formato más limpio
         formatted_klines = []
@@ -69,10 +66,10 @@ def fetch_klines(symbol: str, interval: str = "1h", limit: int = 200):
                 'taker_buy_quote': float(kline[10])
             })
         
-        logger.info(f"Obtenidas {len(formatted_klines)} velas para {symbol}")
+        logger.info(f"✅ Procesadas {len(formatted_klines)} velas para {symbol} - Rango: {datetime.fromtimestamp(formatted_klines[0]['timestamp']/1000).strftime('%Y-%m-%d')} a {datetime.fromtimestamp(formatted_klines[-1]['timestamp']/1000).strftime('%Y-%m-%d')}")
         return formatted_klines
         
-    except ClientError as e:
+    except requests.RequestException as e:
         logger.error(f"Error obteniendo klines para {symbol}: {e}")
         raise
     except Exception as e:
@@ -81,14 +78,22 @@ def fetch_klines(symbol: str, interval: str = "1h", limit: int = 200):
 
 def get_symbol_info(symbol: str):
     """
-    Obtiene información del símbolo (filtros, precisiones, etc.)
+    Obtiene información del símbolo (filtros, precisiones, etc.) usando la API pública
     """
     try:
-        client = get_spot_client()
-        exchange_info = client.exchange_info(symbol=symbol)
+        url = f"{BINANCE_API_BASE}/exchangeInfo"
+        params = {'symbol': symbol.upper()}
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        
+        exchange_info = response.json()
         return exchange_info["symbols"][0]
-    except ClientError as e:
+    except requests.RequestException as e:
         logger.error(f"Error obteniendo info del símbolo {symbol}: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error inesperado obteniendo info del símbolo {symbol}: {e}")
         raise
 
 def get_filters(symbol_info: dict):
@@ -102,41 +107,138 @@ def get_filters(symbol_info: dict):
 
 def get_account_info():
     """
-    Obtiene información de la cuenta
+    Obtiene información de la cuenta - NO DISPONIBLE en API pública
     """
-    try:
-        client = get_spot_client()
-        account = client.account()
-        return account
-    except ClientError as e:
-        logger.error(f"Error obteniendo info de cuenta: {e}")
-        raise
+    logger.warning("get_account_info no está disponible en la API pública de Binance")
+    raise NotImplementedError("Información de cuenta requiere API keys privadas")
 
 def get_ticker_price(symbol: str):
     """
-    Obtiene precio actual del símbolo
+    Obtiene precio actual del símbolo usando la API pública
     """
     try:
-        client = get_spot_client()
-        ticker = client.ticker_price(symbol)
+        url = f"{BINANCE_API_BASE}/ticker/price"
+        params = {'symbol': symbol.upper()}
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        
+        ticker = response.json()
         return float(ticker["price"])
-    except ClientError as e:
+    except requests.RequestException as e:
         logger.error(f"Error obteniendo precio de {symbol}: {e}")
         raise
+    except Exception as e:
+        logger.error(f"Error inesperado obteniendo precio de {symbol}: {e}")
+        raise
+
+def fetch_current_price(symbol: str):
+    """
+    Alias para get_ticker_price para compatibilidad
+    """
+    return get_ticker_price(symbol)
 
 def test_connection():
     """
-    Prueba la conexión con Binance
+    Prueba la conexión con Binance usando la API pública
     """
     try:
-        client = get_spot_client()
-        # Probar con un endpoint simple
-        server_time = client.time()
+        url = f"{BINANCE_API_BASE}/time"
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        server_time = response.json()
         logger.info(f"Conexión exitosa - Tiempo del servidor: {server_time}")
         return True
     except Exception as e:
         logger.error(f"Error de conexión: {e}")
         return False
+
+class BinanceClient:
+    """
+    Cliente autenticado de Binance para operaciones que requieren API keys
+    """
+    
+    def __init__(self, api_key: str, secret_key: str, testnet: bool = True):
+        self.api_key = api_key
+        self.secret_key = secret_key
+        self.testnet = testnet
+        self.base_url = BINANCE_TESTNET_BASE if testnet else BINANCE_API_BASE
+        
+    def _generate_signature(self, params: str) -> str:
+        """Genera firma HMAC SHA256 para autenticación"""
+        return hmac.new(
+            self.secret_key.encode('utf-8'),
+            params.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+    
+    def _make_request(self, method: str, endpoint: str, params: dict = None, signed: bool = False):
+        """Realiza petición HTTP a la API de Binance"""
+        url = f"{self.base_url}/{endpoint}"
+        headers = {'X-MBX-APIKEY': self.api_key}
+        
+        if params is None:
+            params = {}
+            
+        if signed:
+            params['timestamp'] = int(time.time() * 1000)
+            query_string = urlencode(params)
+            params['signature'] = self._generate_signature(query_string)
+        
+        try:
+            if method.upper() == 'GET':
+                response = requests.get(url, headers=headers, params=params)
+            elif method.upper() == 'POST':
+                response = requests.post(url, headers=headers, data=params)
+            else:
+                raise ValueError(f"Método HTTP no soportado: {method}")
+                
+            response.raise_for_status()
+            return response.json()
+            
+        except requests.RequestException as e:
+            logger.error(f"Error en petición a Binance: {e}")
+            if hasattr(e.response, 'json'):
+                try:
+                    error_detail = e.response.json()
+                    logger.error(f"Detalles del error: {error_detail}")
+                except:
+                    pass
+            raise
+    
+    def get_account_info(self):
+        """Obtiene información de la cuenta"""
+        try:
+            return self._make_request('GET', 'account', signed=True)
+        except Exception as e:
+            logger.error(f"Error obteniendo información de cuenta: {e}")
+            raise
+    
+    def test_connection(self):
+        """Prueba la conexión autenticada"""
+        try:
+            # Probar primero conexión básica
+            ping_url = f"{self.base_url}/ping"
+            response = requests.get(ping_url)
+            response.raise_for_status()
+            
+            # Probar autenticación
+            account_info = self.get_account_info()
+            return True, account_info
+            
+        except Exception as e:
+            logger.error(f"Error en prueba de conexión autenticada: {e}")
+            return False, str(e)
+    
+    def get_balances(self):
+        """Obtiene balances de la cuenta"""
+        try:
+            account_info = self.get_account_info()
+            return account_info.get('balances', [])
+        except Exception as e:
+            logger.error(f"Error obteniendo balances: {e}")
+            raise
 
 if __name__ == "__main__":
     # Prueba básica

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import models
 from app.db.database import engine
-from app.api.v1 import u_routes, auth_routes, estados_u_routes, tickers_routes, ordenes_routes, alertas_routes, users_routes, test_tools_simple
+from app.api.v1 import u_routes, auth_routes, estados_u_routes, tickers_routes, ordenes_routes, alertas_routes, users_routes, test_tools_simple, bitcoin_bot_routes
 
 # Crear tablas en la base de datos
 models.Base.metadata.create_all(bind=engine)
@@ -56,3 +56,4 @@ app.include_router(ordenes_routes.router)       # Ya tiene prefix="/ordenes"
 app.include_router(alertas_routes.router)       # Ya tiene prefix="/alertas"
 app.include_router(users_routes.router)         # Ya tiene prefix="/users"
 app.include_router(test_tools_simple.router)    # Ya tiene prefix="/test-tools"
+app.include_router(bitcoin_bot_routes.router, tags=["bitcoin-bot"])  # Bitcoin Bot endpoints

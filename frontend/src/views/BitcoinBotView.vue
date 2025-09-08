@@ -1,0 +1,733 @@
+<template>
+  <div class="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-100 p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+          <div>
+            <h1 class="text-3xl md:text-4xl font-bold text-orange-900 mb-2 flex items-center">
+              <span class="text-4xl mr-3">₿</span>
+              Bitcoin Bot U-Pattern
+            </h1>
+            <p class="text-orange-700 text-base">Sistema avanzado de detección de patrones U para Bitcoin con backtesting probado</p>
+            <div class="mt-2 flex items-center space-x-4 text-sm">
+              <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">2022: +28% vs BTC -65%</span>
+              <span class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-semibold">2024: +6,530% vs BTC +123%</span>
+            </div>
+          </div>
+          
+          <!-- Status Indicator -->
+          <div class="bg-white rounded-lg shadow-sm border border-orange-200 p-4">
+            <div class="text-center">
+              <div class="flex items-center justify-center mb-2">
+                <div :class="botStatus.isRunning ? 'bg-green-400' : 'bg-gray-400'" class="w-3 h-3 rounded-full mr-2"></div>
+                <span class="font-semibold text-gray-700">{{ botStatus.isRunning ? 'ACTIVO' : 'INACTIVO' }}</span>
+              </div>
+              <div class="text-xs text-gray-500">{{ botStatus.lastCheck || 'Nunca' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode Selector -->
+      <div class="bg-white rounded-lg shadow-sm border border-orange-200 p-6 mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Seleccionar Modo de Operación</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Manual Mode -->
+          <div class="relative">
+            <input type="radio" id="manual" v-model="selectedMode" value="manual" class="sr-only">
+            <label for="manual" :class="[
+              'block p-6 border-2 rounded-lg cursor-pointer transition-all duration-200',
+              selectedMode === 'manual' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            ]">
+              <div class="flex items-center mb-3">
+                <div class="text-2xl mr-3">👁️</div>
+                <div>
+                  <div class="font-semibold text-gray-900">Modo Manual</div>
+                  <div class="text-sm text-gray-600">Solo alertas - Trading manual</div>
+                </div>
+              </div>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>• API pública de Binance</li>
+                <li>• Solo notificaciones de compra/venta</li>
+                <li>• Tú ejecutas las órdenes manualmente</li>
+                <li>• Sin riesgo - Solo análisis</li>
+              </ul>
+            </label>
+          </div>
+
+          <!-- Automatic Mode -->
+          <div class="relative">
+            <input type="radio" id="automatic" v-model="selectedMode" value="automatic" class="sr-only">
+            <label for="automatic" :class="[
+              'block p-6 border-2 rounded-lg cursor-pointer transition-all duration-200',
+              selectedMode === 'automatic' 
+                ? 'border-orange-500 bg-orange-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            ]">
+              <div class="flex items-center mb-3">
+                <div class="text-2xl mr-3">🤖</div>
+                <div>
+                  <div class="font-semibold text-gray-900">Modo Automático</div>
+                  <div class="text-sm text-gray-600">Trading automático - Testnet</div>
+                </div>
+              </div>
+              <ul class="text-sm text-gray-600 space-y-1">
+                <li>• Binance Testnet (dinero virtual)</li>
+                <li>• Ejecuta trades automáticamente</li>
+                <li>• Stop loss y take profit</li>
+                <li>• Aprendizaje sin riesgo real</li>
+              </ul>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuration Panel -->
+      <div v-if="selectedMode" class="bg-white rounded-lg shadow-sm border border-orange-200 p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Configuración - Modo {{ selectedMode === 'manual' ? 'Manual' : 'Automático' }}
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Timeframe -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Timeframe</label>
+            <select 
+              v-model="config.timeframe" 
+              class="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+              <option value="1h">1 Hora</option>
+              <option value="4h" selected>4 Horas</option>
+              <option value="1d">1 Día</option>
+            </select>
+          </div>
+
+          <!-- Take Profit -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Take Profit (%)</label>
+            <input 
+              type="number" 
+              v-model="config.takeProfit" 
+              min="5" 
+              max="20" 
+              step="0.5"
+              class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+          </div>
+
+          <!-- Stop Loss -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Stop Loss (%)</label>
+            <input 
+              type="number" 
+              v-model="config.stopLoss" 
+              min="2" 
+              max="10" 
+              step="0.5"
+              class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            >
+          </div>
+        </div>
+
+        <!-- Additional config for automatic mode -->
+        <div v-if="selectedMode === 'automatic'" class="mt-6 pt-6 border-t border-gray-200">
+          <!-- Trading Configuration -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Cantidad por Trade (USDT)</label>
+              <input 
+                type="number" 
+                v-model="config.tradeAmount" 
+                min="10" 
+                max="1000" 
+                step="10"
+                class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Max Trades Concurrentes</label>
+              <select 
+                v-model="config.maxConcurrentTrades" 
+                class="w-full appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="1">1 Trade</option>
+                <option value="2">2 Trades</option>
+                <option value="3">3 Trades</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Binance API Configuration -->
+          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <div class="flex items-center mb-4">
+              <div class="text-2xl mr-3">🔐</div>
+              <div>
+                <h4 class="font-semibold text-gray-900">Configuración de Binance API</h4>
+                <p class="text-sm text-gray-600">Configura tus credenciales para trading automático</p>
+              </div>
+            </div>
+
+            <!-- Environment Selection -->
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-700 mb-3">Entorno de Trading</label>
+              <div class="flex space-x-4">
+                <label class="flex items-center">
+                  <input type="radio" v-model="config.environment" value="testnet" class="mr-2">
+                  <span class="text-sm">
+                    <span class="font-semibold text-green-700">Testnet</span> 
+                    <span class="text-gray-600">(Dinero virtual - Recomendado para aprender)</span>
+                  </span>
+                </label>
+                <label class="flex items-center">
+                  <input type="radio" v-model="config.environment" value="mainnet" class="mr-2">
+                  <span class="text-sm">
+                    <span class="font-semibold text-red-700">Mainnet</span> 
+                    <span class="text-gray-600">(Dinero real - Solo expertos)</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- API Keys Configuration -->
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  API Key {{ config.environment === 'testnet' ? '(Testnet)' : '(Mainnet)' }}
+                </label>
+                <input 
+                  type="password" 
+                  v-model="config.apiKey" 
+                  placeholder="Ingresa tu API Key de Binance"
+                  class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Secret Key {{ config.environment === 'testnet' ? '(Testnet)' : '(Mainnet)' }}
+                </label>
+                <input 
+                  type="password" 
+                  v-model="config.secretKey" 
+                  placeholder="Ingresa tu Secret Key de Binance"
+                  class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+              </div>
+            </div>
+
+            <!-- API Status -->
+            <div v-if="apiStatus" class="mt-4 p-3 rounded-lg" :class="apiStatus.connected ? 'bg-green-100' : 'bg-red-100'">
+              <div class="flex items-center">
+                <div class="text-lg mr-2">{{ apiStatus.connected ? '✅' : '❌' }}</div>
+                <div>
+                  <div class="font-semibold" :class="apiStatus.connected ? 'text-green-800' : 'text-red-800'">
+                    {{ apiStatus.connected ? 'Conexión exitosa' : 'Error de conexión' }}
+                  </div>
+                  <div class="text-sm text-gray-600">{{ apiStatus.message }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Test Connection Button -->
+            <div class="mt-4">
+              <button
+                @click="testApiConnection"
+                :disabled="!config.apiKey || !config.secretKey || testingConnection"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-gray-400"
+              >
+                <span v-if="!testingConnection">Probar Conexión</span>
+                <span v-else class="flex items-center">
+                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Probando...
+                </span>
+              </button>
+            </div>
+
+            <!-- Help Links -->
+            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h5 class="font-semibold text-blue-900 mb-2">¿Cómo obtener las API Keys?</h5>
+              <div class="text-sm text-blue-800 space-y-1">
+                <div><strong>Para Testnet (Recomendado):</strong></div>
+                <div>• Ve a <a href="https://testnet.binance.vision/" target="_blank" class="text-blue-600 hover:underline">testnet.binance.vision</a></div>
+                <div>• Crea una cuenta de testnet gratuita</div>
+                <div>• Ve a API Management y crea nuevas API Keys</div>
+                <div>• Habilita "Enable Spot & Margin Trading"</div>
+                <br>
+                <div><strong>Para Mainnet (Solo expertos):</strong></div>
+                <div>• Ve a <a href="https://www.binance.com/en/my/settings/api-management" target="_blank" class="text-red-600 hover:underline">Binance API Management</a></div>
+                <div>• Crea API Keys con permisos de Spot Trading</div>
+                <div class="text-red-700 font-semibold">⚠️ NUNCA compartas tus API Keys reales</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="mt-6 flex items-center space-x-4">
+          <button
+            @click="startBot"
+            :disabled="loading || botStatus.isRunning"
+            :class="[
+              'px-6 py-3 rounded-lg font-medium transition-colors duration-200',
+              selectedMode === 'manual' 
+                ? 'bg-blue-600 hover:bg-blue-700 text-white disabled:bg-gray-400' 
+                : 'bg-orange-600 hover:bg-orange-700 text-white disabled:bg-gray-400'
+            ]"
+          >
+            <span v-if="!loading">{{ botStatus.isRunning ? 'Bot Activo' : 'Iniciar Bot' }}</span>
+            <span v-else class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Iniciando...
+            </span>
+          </button>
+
+          <button
+            @click="stopBot"
+            :disabled="loading || !botStatus.isRunning"
+            class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:bg-gray-400"
+          >
+            Detener Bot
+          </button>
+
+          <button
+            @click="refreshStatus"
+            :disabled="loading"
+            class="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:bg-gray-400"
+          >
+            Actualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Current Analysis -->
+      <div v-if="currentAnalysis" class="bg-white rounded-lg shadow-sm border border-orange-200 p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <span class="text-2xl mr-2">📊</span>
+          Análisis Actual de Bitcoin
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="bg-gray-50 rounded-lg p-4">
+            <div class="text-sm text-gray-600 mb-1">Precio Actual</div>
+            <div class="text-2xl font-bold text-gray-900">${{ currentAnalysis.currentPrice?.toLocaleString() }}</div>
+          </div>
+          
+          <div class="bg-blue-50 rounded-lg p-4">
+            <div class="text-sm text-blue-600 mb-1">Nivel de Ruptura</div>
+            <div class="text-2xl font-bold text-blue-900">
+              {{ currentAnalysis.ruptureLevel ? `$${currentAnalysis.ruptureLevel.toLocaleString()}` : '-' }}
+            </div>
+          </div>
+          
+          <div class="bg-orange-50 rounded-lg p-4">
+            <div class="text-sm text-orange-600 mb-1">Estado Patrón</div>
+            <div class="text-lg font-bold" :class="getPatternStateClass(currentAnalysis.state)">
+              {{ currentAnalysis.state || 'ANALIZANDO' }}
+            </div>
+          </div>
+          
+          <div class="bg-green-50 rounded-lg p-4">
+            <div class="text-sm text-green-600 mb-1">Confianza</div>
+            <div class="text-2xl font-bold text-green-900">
+              {{ currentAnalysis.confidence ? `${currentAnalysis.confidence}%` : '-' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Pattern Details -->
+        <div v-if="currentAnalysis.details" class="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h4 class="font-semibold text-gray-900 mb-2">Detalles del Análisis</h4>
+          <div class="text-sm text-gray-700 space-y-1">
+            <div><strong>Timeframe:</strong> {{ config.timeframe }}</div>
+            <div><strong>Slope Left:</strong> {{ currentAnalysis.details.slopeLeft?.toFixed(3) || '-' }}</div>
+            <div><strong>Pattern Width:</strong> {{ currentAnalysis.details.patternWidth || '-' }} períodos</div>
+            <div><strong>Última actualización:</strong> {{ new Date(currentAnalysis.lastUpdate).toLocaleString() }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts/Signals -->
+      <div class="bg-white rounded-lg shadow-sm border border-orange-200 p-6 mb-8">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <span class="text-2xl mr-2">🚨</span>
+            {{ selectedMode === 'manual' ? 'Alertas Recientes' : 'Trades Automáticos' }}
+          </h3>
+          <button
+            @click="clearAlerts"
+            class="text-gray-500 hover:text-gray-700 text-sm"
+          >
+            Limpiar
+          </button>
+        </div>
+
+        <div v-if="alerts.length > 0" class="space-y-4">
+          <div 
+            v-for="alert in alerts.slice(0, 10)" 
+            :key="alert.id"
+            :class="[
+              'p-4 rounded-lg border-l-4',
+              getAlertClass(alert.type)
+            ]"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-semibold" :class="getAlertTextClass(alert.type)">
+                  {{ alert.title }}
+                </div>
+                <div class="text-sm text-gray-600 mt-1">{{ alert.message }}</div>
+                <div class="text-sm text-gray-600 mt-2">
+                  <span class="font-medium">Precio:</span> ${{ alert.price?.toLocaleString() }}
+                  <span v-if="selectedMode === 'automatic' && alert.quantity" class="ml-4">
+                    <span class="font-medium">Cantidad:</span> {{ alert.quantity }} BTC
+                  </span>
+                </div>
+              </div>
+              <div class="text-xs text-gray-500">
+                {{ new Date(alert.timestamp).toLocaleTimeString() }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="text-center py-12">
+          <div class="text-6xl mb-4">📭</div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Sin alertas</h3>
+          <p class="text-gray-600">
+            {{ selectedMode === 'manual' 
+              ? 'Las alertas de compra/venta aparecerán aquí' 
+              : 'Los trades automáticos se mostrarán aquí' 
+            }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      <div v-if="statistics" class="bg-white rounded-lg shadow-sm border border-orange-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+          <span class="text-2xl mr-2">📈</span>
+          Estadísticas de Sesión
+        </h3>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div class="text-center">
+            <div class="text-3xl font-bold text-blue-600">{{ statistics.totalAlerts || 0 }}</div>
+            <div class="text-sm text-gray-600">Total Alertas</div>
+          </div>
+          
+          <div class="text-center">
+            <div class="text-3xl font-bold text-green-600">{{ statistics.buySignals || 0 }}</div>
+            <div class="text-sm text-gray-600">Señales Compra</div>
+          </div>
+          
+          <div class="text-center">
+            <div class="text-3xl font-bold text-red-600">{{ statistics.sellSignals || 0 }}</div>
+            <div class="text-sm text-gray-600">Señales Venta</div>
+          </div>
+          
+          <div class="text-center">
+            <div class="text-3xl font-bold text-orange-600">{{ statistics.accuracy || 0 }}%</div>
+            <div class="text-sm text-gray-600">Precisión</div>
+          </div>
+        </div>
+
+        <div v-if="selectedMode === 'automatic' && statistics.portfolio" class="mt-6 pt-6 border-t border-gray-200">
+          <h4 class="font-semibold text-gray-900 mb-4">Portfolio Testnet</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-gray-900">${{ statistics.portfolio.balance?.toLocaleString() || 0 }}</div>
+              <div class="text-sm text-gray-600">Balance USDT</div>
+            </div>
+            
+            <div class="bg-orange-50 rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-orange-900">{{ statistics.portfolio.btc?.toFixed(6) || 0 }}</div>
+              <div class="text-sm text-orange-600">Bitcoin</div>
+            </div>
+            
+            <div class="bg-green-50 rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold" :class="(statistics.portfolio.pnl || 0) >= 0 ? 'text-green-900' : 'text-red-900'">
+                {{ (statistics.portfolio.pnl || 0) >= 0 ? '+' : '' }}${{ (statistics.portfolio.pnl || 0).toLocaleString() }}
+              </div>
+              <div class="text-sm text-gray-600">P&L Total</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
+import { useAuthStore } from '../stores/authStore'
+
+const authStore = useAuthStore()
+
+// Reactive data
+const selectedMode = ref('manual')
+const loading = ref(false)
+const currentAnalysis = ref(null)
+const alerts = ref([])
+const statistics = ref(null)
+
+const botStatus = reactive({
+  isRunning: false,
+  lastCheck: null,
+  mode: null
+})
+
+const config = reactive({
+  timeframe: '4h',
+  takeProfit: 12.0,
+  stopLoss: 5.0,
+  tradeAmount: 50,
+  maxConcurrentTrades: 1,
+  environment: 'testnet',
+  apiKey: '',
+  secretKey: ''
+})
+
+const apiStatus = ref(null)
+const testingConnection = ref(false)
+
+// Polling interval
+let statusInterval = null
+
+// Methods
+const startBot = async () => {
+  loading.value = true
+  try {
+    const response = await axios.post('http://localhost:8000/bitcoin-bot/start', {
+      mode: selectedMode.value,
+      config: config
+    }, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    botStatus.isRunning = true
+    botStatus.mode = selectedMode.value
+    botStatus.lastCheck = new Date().toLocaleString()
+    
+    startPolling()
+    
+    console.log('Bitcoin Bot iniciado:', response.data)
+  } catch (error) {
+    console.error('Error iniciando Bitcoin Bot:', error)
+    // Show error notification
+  } finally {
+    loading.value = false
+  }
+}
+
+const stopBot = async () => {
+  loading.value = true
+  try {
+    await axios.post('http://localhost:8000/bitcoin-bot/stop', {}, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    botStatus.isRunning = false
+    botStatus.mode = null
+    stopPolling()
+    
+  } catch (error) {
+    console.error('Error deteniendo Bitcoin Bot:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const refreshStatus = async () => {
+  loading.value = true
+  try {
+    await Promise.all([
+      fetchStatus(),
+      fetchCurrentAnalysis(),
+      fetchAlerts(),
+      fetchStatistics()
+    ])
+  } catch (error) {
+    console.error('Error actualizando estado:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const fetchStatus = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/bitcoin-bot/status', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    Object.assign(botStatus, response.data)
+  } catch (error) {
+    console.error('Error obteniendo estado:', error)
+  }
+}
+
+const fetchCurrentAnalysis = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/bitcoin-bot/analysis', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    currentAnalysis.value = response.data
+  } catch (error) {
+    console.error('Error obteniendo análisis:', error)
+  }
+}
+
+const fetchAlerts = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/bitcoin-bot/alerts', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    alerts.value = response.data
+  } catch (error) {
+    console.error('Error obteniendo alertas:', error)
+  }
+}
+
+const fetchStatistics = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/bitcoin-bot/statistics', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    statistics.value = response.data
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error)
+  }
+}
+
+const clearAlerts = () => {
+  alerts.value = []
+}
+
+const startPolling = () => {
+  if (statusInterval) clearInterval(statusInterval)
+  
+  statusInterval = setInterval(async () => {
+    if (botStatus.isRunning) {
+      await Promise.all([
+        fetchCurrentAnalysis(),
+        fetchAlerts(),
+        fetchStatistics()
+      ])
+    }
+  }, 30000) // Cada 30 segundos
+}
+
+const stopPolling = () => {
+  if (statusInterval) {
+    clearInterval(statusInterval)
+    statusInterval = null
+  }
+}
+
+const testApiConnection = async () => {
+  testingConnection.value = true
+  apiStatus.value = null
+  
+  try {
+    const response = await axios.post('http://localhost:8000/bitcoin-bot/test-api', {
+      apiKey: config.apiKey,
+      secretKey: config.secretKey,
+      environment: config.environment
+    }, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    if (response.data.success) {
+      apiStatus.value = {
+        connected: true,
+        message: `Conectado exitosamente al ${config.environment === 'testnet' ? 'Testnet' : 'Mainnet'} de Binance. ${response.data.accountInfo || ''}`
+      }
+    } else {
+      apiStatus.value = {
+        connected: false,
+        message: response.data.error || 'Error de conexión desconocido'
+      }
+    }
+  } catch (error) {
+    console.error('Error probando API:', error)
+    apiStatus.value = {
+      connected: false,
+      message: `Error: ${error.response?.data?.detail || error.message || 'No se pudo conectar al servidor'}`
+    }
+  } finally {
+    testingConnection.value = false
+  }
+}
+
+// Helper methods
+const getPatternStateClass = (state) => {
+  switch (state) {
+    case 'RUPTURA': return 'text-green-900'
+    case 'U_DETECTADO': return 'text-blue-900'
+    case 'PALO_BAJANDO': return 'text-yellow-900'
+    case 'POST_RUPTURA': return 'text-purple-900'
+    default: return 'text-gray-900'
+  }
+}
+
+const getAlertClass = (type) => {
+  switch (type) {
+    case 'BUY': return 'bg-green-50 border-green-400'
+    case 'SELL': return 'bg-red-50 border-red-400'
+    case 'INFO': return 'bg-blue-50 border-blue-400'
+    case 'WARNING': return 'bg-yellow-50 border-yellow-400'
+    default: return 'bg-gray-50 border-gray-400'
+  }
+}
+
+const getAlertTextClass = (type) => {
+  switch (type) {
+    case 'BUY': return 'text-green-800'
+    case 'SELL': return 'text-red-800'
+    case 'INFO': return 'text-blue-800'
+    case 'WARNING': return 'text-yellow-800'
+    default: return 'text-gray-800'
+  }
+}
+
+// Lifecycle
+onMounted(() => {
+  refreshStatus()
+})
+
+onUnmounted(() => {
+  stopPolling()
+})
+</script>
+
+<style scoped>
+/* Estilos adicionales si es necesario */
+</style>

@@ -2,6 +2,7 @@
 
 export const menuAdmin = [
     { path: '/dashboard', label: 'Dashboard' },
+    { path: '/bitcoin-bot', label: '₿ Bitcoin Bot' },
     { path: '/tickers', label: 'Tickers Monitoreados' },
     { path: '/estados-tickers', label: 'Estados Tickers' },
     { path: '/ordenes', label: 'Órdenes de Trading' },
@@ -14,6 +15,7 @@ export const menuAdmin = [
   
   export const menuCliente = [
     { path: '/dashboard', label: 'Dashboard' },
+    { path: '/bitcoin-bot', label: '₿ Bitcoin Bot' },
     { path: '/mis-tickers', label: 'Mis Tickers' },
     { path: '/estados-tickers', label: 'Estados Tickers' },
     { path: '/ordenes', label: 'Mis Órdenes' },

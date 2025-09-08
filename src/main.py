@@ -18,7 +18,9 @@ except ImportError:
     SessionLocal = None
     crud_tickers = None
 
-from scanner import scan_for_u, set_custom_session
+# Importar scanners separados
+from scanner_crypto import scan_crypto_for_u
+from scanner_stocks import scan_stocks_for_u, set_custom_session
 from utils import log
 from estado_u_utils import should_scan, update_estado_u
 
@@ -53,11 +55,28 @@ def load_tickers_from_db(tipo_filter=None, sub_tipo_filter=None, activo_only=Tru
         if sub_tipo_filter:
             tickers_db = [t for t in tickers_db if t.sub_tipo == sub_tipo_filter]
 
-        tickers = [t.ticker for t in tickers_db]
-        log(f"Se cargaron {len(tickers)} tickers desde la DB (activo={activo_only}).")
-        return tickers
+        # Devolver tickers con su tipo para routing
+        tickers_data = [(t.ticker, t.tipo) for t in tickers_db]
+        log(f"Se cargaron {len(tickers_data)} tickers desde la DB (activo={activo_only}).")
+        return tickers_data
     finally:
         session.close()
+
+def scan_ticker_by_type(ticker, tipo, verbose=False):
+    """
+    Enruta el ticker al scanner apropiado según su tipo
+    """
+    if tipo == 'crypto':
+        return scan_crypto_for_u(ticker, verbose=verbose)
+    else:
+        # Crear sesión para acciones (anti-ban)
+        user_agent = random.choice(USER_AGENTS)
+        session = requests.Session()
+        session.headers.update({'User-Agent': user_agent})
+        set_custom_session(session)
+        log(f"🌐 [STOCKS] Usando User-Agent: {user_agent}")
+        
+        return scan_stocks_for_u(ticker, verbose=verbose)
 
 # === MAIN PROGRAM ===
 
@@ -79,35 +98,27 @@ if crypto_mode:
     log("✅ Escaneo de crypto completado")
     exit(0)
 
-# Modo tradicional (acciones)
-log("📈 Modo TRADICIONAL activado - Escaneando acciones")
-tickers = load_tickers_from_db()
+# Modo mixto (todos los activos con scanners específicos)
+log("🔄 Modo MIXTO activado - Escaneando todos los activos con scanners específicos")
+tickers_data = load_tickers_from_db()
 
-log(f"Comenzando escaneo de {len(tickers)} activos...")
+log(f"Comenzando escaneo de {len(tickers_data)} activos...")
 
 alert_count = 0
-total_tickers = len(tickers)
+total_tickers = len(tickers_data)
 processed_tickers = 0
 
-for ticker in tickers:
+for ticker, tipo in tickers_data:
     try:
         # VERIFICAR SI SE DEBE ESCANEAR
         if not should_scan(ticker):
             continue
 
         processed_tickers += 1
-        log(f"({processed_tickers}/{total_tickers}) Escaneando {ticker}...")
+        log(f"({processed_tickers}/{total_tickers}) Escaneando {ticker} [{tipo.upper()}]...")
 
-        # Crear User-Agent aleatorio y nueva sesión en cada ticker
-        user_agent = random.choice(USER_AGENTS)
-        session = requests.Session()
-        session.headers.update({'User-Agent': user_agent})
-        set_custom_session(session)
-
-        log(f"🌐 Usando User-Agent: {user_agent}")
-
-        # Escaneo con la session personalizada
-        result = scan_for_u(ticker, verbose=True)
+        # Usar scanner específico según tipo
+        result = scan_ticker_by_type(ticker, tipo, verbose=True)
 
         # === DETERMINAR nuevo_estado ===
         nuevo_estado = 'NO_U'
@@ -132,11 +143,11 @@ for ticker in tickers:
             nuevo_estado=nuevo_estado,
             nivel_ruptura=result['nivel_ruptura'] or 0.0,
             slope_left=result.get('slope_left', 0.0),
-            precio_cierre=result.get('precio_confirmacion', 0.0)
+            precio_cierre=result.get('current_price', result.get('precio_confirmacion', 0.0))
         )
 
     except Exception as e:
-        log(f"❌ Error escaneando {ticker}: {e}")
+        log(f"❌ Error escaneando {ticker} [{tipo.upper()}]: {e}")
 
     # Sleep entre tickers (con jitter aleatorio)
     sleep_time = TICKER_SLEEP + random.uniform(0, 2)
