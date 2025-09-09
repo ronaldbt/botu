@@ -70,6 +70,7 @@ import { ref } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from 'vue-router';
+import apiConfig from '@/config/api.js';
 
 const username = ref('');
 const password = ref('');
@@ -88,7 +89,7 @@ const login = async () => {
   });
 
   try {
-    const response = await axios.post('http://localhost:8000/auth/login', {
+    const response = await axios.post(`${apiConfig.baseURL}/auth/login`, {
       username: username.value,
       password: password.value,
     });
