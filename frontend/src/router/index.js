@@ -11,6 +11,10 @@ import AlertasView from '../views/AlertasView.vue';
 import UsuariosView from '../views/UsuariosView.vue';
 import TestToolsView from '../views/TestToolsView.vue';
 import BitcoinBotView from '../views/BitcoinBotView.vue';
+import EthBotView from '../views/EthBotView.vue';
+import BnbBotView from '../views/BnbBotView.vue';
+import ProfileView from '../views/ProfileView.vue';
+import SubscriptionView from '../views/SubscriptionView.vue';
 
 const routes = [
   {
@@ -68,6 +72,30 @@ const routes = [
     path: '/bitcoin-bot',
     name: 'BitcoinBot',
     component: BitcoinBotView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/eth-bot',
+    name: 'EthBot',
+    component: EthBotView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/bnb-bot',
+    name: 'BnbBot',
+    component: BnbBotView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfileView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/subscription',
+    name: 'Subscription',
+    component: SubscriptionView,
     meta: { requiresAuth: true },
   },
 ];
