@@ -32,6 +32,26 @@ class BroadcastResponse(BaseModel):
     total_targets: int
     message: str
 
+class BuyAlertCreate(BaseModel):
+    ticker: str
+    crypto_symbol: str  # 'BTC', 'ETH', 'BNB'
+    precio_entrada: float
+    cantidad: float
+    nivel_ruptura: Optional[float] = None
+    bot_mode: str = "manual"  # 'manual', 'automatic'
+
+class SellAlertCreate(BaseModel):
+    buy_alert_id: int
+    precio_salida: float
+    bot_mode: str = "manual"
+
+class TradingSummaryResponse(BaseModel):
+    total_profit: float
+    total_operations: int
+    winning_operations: int
+    losing_operations: int
+    win_rate: float
+
 @router.post("/", response_model=AlertaResponse)
 def create_alerta(
     alerta: AlertaCreate,
@@ -297,4 +317,105 @@ def test_telegram_broadcast(
             status_code=500,
             detail="Error interno del servidor"
         )
+
+# Trading endpoints with profit tracking
+@router.post("/trading/buy", response_model=AlertaResponse)
+def create_buy_alert(
+    buy_data: BuyAlertCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Crear alerta de compra para tracking de profit"""
+    # Validate allowed tickers
+    allowed_tickers = ["BTCUSDT", "ETHUSDT", "BNBUSDT"]
+    if buy_data.ticker not in allowed_tickers:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Ticker no permitido. Solo se permiten: {', '.join(allowed_tickers)}"
+        )
+    
+    return crud_alertas.create_buy_alert(
+        db=db,
+        ticker=buy_data.ticker,
+        crypto_symbol=buy_data.crypto_symbol,
+        precio_entrada=buy_data.precio_entrada,
+        cantidad=buy_data.cantidad,
+        nivel_ruptura=buy_data.nivel_ruptura,
+        usuario_id=current_user.id,
+        bot_mode=buy_data.bot_mode
+    )
+
+@router.post("/trading/sell", response_model=AlertaResponse)
+def create_sell_alert(
+    sell_data: SellAlertCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Crear alerta de venta y calcular profit automáticamente"""
+    sell_alert = crud_alertas.create_sell_alert(
+        db=db,
+        buy_alert_id=sell_data.buy_alert_id,
+        precio_salida=sell_data.precio_salida,
+        usuario_id=current_user.id,
+        bot_mode=sell_data.bot_mode
+    )
+    
+    if not sell_alert:
+        raise HTTPException(
+            status_code=404,
+            detail="Alerta de compra no encontrada o inválida"
+        )
+    
+    return sell_alert
+
+@router.get("/trading/summary", response_model=TradingSummaryResponse)
+def get_trading_summary(
+    crypto_symbol: Optional[str] = Query(None, description="Filter by crypto symbol (BTC, ETH, BNB)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Obtener resumen de trading con ganancias y estadísticas"""
+    summary = crud_alertas.get_trading_summary(
+        db=db,
+        usuario_id=current_user.id if not current_user.is_admin else None,
+        crypto_symbol=crypto_symbol
+    )
+    
+    return TradingSummaryResponse(
+        total_profit=summary["total_profit"],
+        total_operations=summary["total_operations"],
+        winning_operations=summary["winning_operations"],
+        losing_operations=summary["losing_operations"],
+        win_rate=summary["win_rate"]
+    )
+
+@router.get("/trading/operations", response_model=List[AlertaResponse])
+def get_trading_operations(
+    crypto_symbol: Optional[str] = Query(None, description="Filter by crypto symbol"),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Obtener historial de operaciones de trading (solo ventas con profit)"""
+    summary = crud_alertas.get_trading_summary(
+        db=db,
+        usuario_id=current_user.id if not current_user.is_admin else None,
+        crypto_symbol=crypto_symbol
+    )
+    
+    # Return only the most recent operations up to the limit
+    return summary["operations"][:limit]
+
+@router.get("/trading/open-positions", response_model=List[AlertaResponse])
+def get_open_positions(
+    crypto_symbol: Optional[str] = Query(None, description="Filter by crypto symbol"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Obtener posiciones abiertas (compras sin venta correspondiente)"""
+    return crud_alertas.get_open_positions(
+        db=db,
+        usuario_id=current_user.id if not current_user.is_admin else None,
+        crypto_symbol=crypto_symbol
+    )
 

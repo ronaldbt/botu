@@ -1,5 +1,5 @@
-# src/bitcoin_2022_backtest.py
-# Backtesting completo de Bitcoin para el año 2022 usando datos históricos reales
+# src/eth_2022_backtest.py
+# Backtesting completo de Ethereum para el año 2022 usando datos históricos reales
 
 import pandas as pd
 import numpy as np
@@ -8,7 +8,7 @@ import requests
 import time
 from utils import log
 
-class Bitcoin2022Backtest:
+class Ethereum2022Backtest:
     def __init__(self, initial_capital=1000):
         self.initial_capital = initial_capital
         self.current_capital = initial_capital
@@ -17,9 +17,9 @@ class Bitcoin2022Backtest:
         
     def get_historical_data_2022(self):
         """
-        Obtiene datos históricos de Bitcoin para todo 2022 usando Binance API
+        Obtiene datos históricos de Ethereum para todo 2022 usando Binance API
         """
-        print("📊 Obteniendo datos históricos de Bitcoin para 2022...")
+        print("📊 Obteniendo datos históricos de Ethereum para 2022...")
         
         # Fechas para 2022 completo
         start_time = int(datetime(2022, 1, 1).timestamp() * 1000)
@@ -37,7 +37,7 @@ class Bitcoin2022Backtest:
             try:
                 url = "https://api.binance.com/api/v3/klines"
                 params = {
-                    'symbol': 'BTCUSDT',
+                    'symbol': 'ETHUSDT',
                     'interval': interval,
                     'startTime': current_start,
                     'endTime': end_time,
@@ -79,7 +79,7 @@ class Bitcoin2022Backtest:
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         df.set_index('timestamp', inplace=True)
         
-        print(f"🎯 DATOS 2022 COMPLETOS:")
+        print(f"🎯 DATOS ETHEREUM 2022 COMPLETOS:")
         print(f"   📅 Período: {df.index[0]} a {df.index[-1]}")
         print(f"   📊 Total velas: {len(df)}")
         print(f"   💰 Precio inicial: ${df['open'].iloc[0]:,.2f}")
@@ -93,13 +93,13 @@ class Bitcoin2022Backtest:
     
     def backtest_2022_complete(self):
         """
-        Backtesting completo del año 2022
+        Backtesting completo del año 2022 para Ethereum
         """
-        print("🚀 BACKTESTING BITCOIN - AÑO 2022 COMPLETO")
+        print("🚀 BACKTESTING ETHEREUM - AÑO 2022 COMPLETO")
         print("="*80)
         print("💀 NOTA: 2022 fue el año del 'Crypto Winter' - Mercado bajista brutal")
-        print("📉 Bitcoin cayó de ~$47K a ~$15K (-68%)")
-        print("🧪 Esta será la PRUEBA DEFINITIVA del sistema de patrones U")
+        print("📉 Ethereum cayó de ~$3700 a ~$1200 (-68%)")
+        print("🧪 Esta será la PRUEBA DEFINITIVA del sistema de patrones U en ETH")
         print("="*80)
         
         df = self.get_historical_data_2022()
@@ -107,18 +107,18 @@ class Bitcoin2022Backtest:
             print("❌ No se pudieron obtener datos históricos de 2022")
             return
             
-        # Configuración del sistema
-        profit_target = 0.08  # 8% objetivo (ajustado para BTC menos volátil)
+        # Configuración del sistema optimizada para ETH
+        profit_target = 0.08  # 8% objetivo (ajustado para ETH menos volátil)
         stop_loss = 0.03      # 3% stop loss (más ajustado)
         max_hold_periods = 80   # Máximo 80 períodos (320h = ~13 días)
         
-        # Ventanas de análisis optimizadas para BTC
-        window_size = 120  # Ventana más pequeña para BTC
+        # Ventanas de análisis optimizadas para ETH
+        window_size = 120  # Ventana más pequeña para ETH
         step_size = 8      # Avance más frecuente para capturar más oportunidades
         
         total_windows = (len(df) - window_size) // step_size
         print(f"🔄 Analizando {total_windows} ventanas de trading en 2022...")
-        print("⚡ Configuración BTC optimizada: 8% profit target | 3% stop loss | Max 13 días holding")
+        print("⚡ Configuración ETH optimizada: 8% profit target | 3% stop loss | Max 13 días holding")
         print()
         
         # Trackear performance mensual
@@ -166,12 +166,12 @@ class Bitcoin2022Backtest:
         
     def _detect_u_patterns_2022(self, df):
         """
-        Detecta patrones U optimizado para mercado bajista de 2022
+        Detecta patrones U optimizado para mercado bajista de 2022 en ETH
         """
         signals = []
         
-        # Detectar mínimos significativos optimizados para BTC
-        significant_lows = self._detect_lows_2022(df, window=6, min_depth_pct=0.025)  # 2.5% mínimo (BTC menos volátil)
+        # Detectar mínimos significativos optimizados para ETH
+        significant_lows = self._detect_lows_2022(df, window=6, min_depth_pct=0.025)  # 2.5% mínimo (ETH menos volátil)
         
         if not significant_lows:
             return signals
@@ -188,14 +188,14 @@ class Bitcoin2022Backtest:
             dynamic_factor = self._calculate_rupture_factor_bear(atr, current_price)
             nivel_ruptura = low['high'] * dynamic_factor
             
-            # Condiciones optimizadas para BTC en bear market
+            # Condiciones optimizadas para ETH en bear market
             if len(df) - min_idx > 4 and len(df) - min_idx < 45:
                 recent_slope = self._calculate_slope(df.iloc[-6:]['close'].values)
                 pre_slope = self._calculate_slope(df.iloc[max(0, min_idx-6):min_idx]['close'].values)
                 
-                # Condiciones más estrictas para BTC (menos volátil)
+                # Condiciones más estrictas para ETH (menos volátil)
                 conditions = [
-                    pre_slope < -0.12,  # Más restrictivo para BTC
+                    pre_slope < -0.12,  # Más restrictivo para ETH
                     current_price > nivel_ruptura * 0.97,  # Más conservador (97% vs 95%)
                     recent_slope > -0.03,  # Momentum más positivo requerido
                     low['depth'] >= 0.025,  # Al menos 2.5% de profundidad
@@ -219,7 +219,7 @@ class Bitcoin2022Backtest:
         return signals
     
     def _detect_lows_2022(self, df, window=6, min_depth_pct=0.025):
-        """Detecta mínimos optimizados para BTC en bear market de 2022"""
+        """Detecta mínimos optimizados para ETH en bear market de 2022"""
         lows = []
         
         for i in range(window, len(df) - window):
@@ -251,16 +251,16 @@ class Bitcoin2022Backtest:
         return lows
     
     def _calculate_rupture_factor_bear(self, atr, price, base_factor=1.015):
-        """Factor de ruptura optimizado para BTC (más conservador)"""
+        """Factor de ruptura optimizado para ETH (más conservador)"""
         atr_pct = atr / price
         
-        # Más conservador para BTC (menos volátil)
+        # Más conservador para ETH (menos volátil)
         if atr_pct < 0.015:
             factor = base_factor
         elif atr_pct < 0.03:
             factor = base_factor + (atr_pct * 0.3)  # Menos agresivo
         else:
-            factor = min(base_factor + (atr_pct * 0.5), 1.05)  # Máximo 5% para BTC
+            factor = min(base_factor + (atr_pct * 0.5), 1.05)  # Máximo 5% para ETH
         
         return max(factor, 1.015)  # Mínimo 1.5%
     
@@ -301,7 +301,7 @@ class Bitcoin2022Backtest:
         return np.polyfit(x, values, 1)[0]
     
     def _simulate_trade_2022(self, df, signal, start_idx, profit_target, stop_loss, max_hold):
-        """Simula trade en 2022"""
+        """Simula trade en 2022 para ETH"""
         entry_price = signal['entry_price']
         entry_time = signal['timestamp']
         
@@ -368,10 +368,10 @@ class Bitcoin2022Backtest:
     
     def _generate_2022_report(self, monthly_performance, monthly_trades, df):
         """
-        Genera reporte completo del año 2022
+        Genera reporte completo del año 2022 para Ethereum
         """
         print()
-        print("📊 REPORTE COMPLETO - BITCOIN 2022 (CRYPTO WINTER)")
+        print("📊 REPORTE COMPLETO - ETHEREUM 2022 (CRYPTO WINTER)")
         print("="*80)
         
         if not self.trades:
@@ -388,19 +388,19 @@ class Bitcoin2022Backtest:
         total_return = (self.current_capital / self.initial_capital - 1) * 100
         
         # Comparar con Buy & Hold
-        btc_start_price = df['open'].iloc[0]
-        btc_end_price = df['close'].iloc[-1]
-        buy_hold_return = (btc_end_price / btc_start_price - 1) * 100
+        eth_start_price = df['open'].iloc[0]
+        eth_end_price = df['close'].iloc[-1]
+        buy_hold_return = (eth_end_price / eth_start_price - 1) * 100
         
-        print(f"🏆 RESUMEN EJECUTIVO 2022:")
+        print(f"🏆 RESUMEN EJECUTIVO ETHEREUM 2022:")
         print(f"   💵 Capital inicial: ${self.initial_capital:,.2f}")
         print(f"   💰 Capital final: ${self.current_capital:,.2f}")
-        print(f"   📈 Sistema U: {total_return:+.2f}%")
-        print(f"   📉 Buy & Hold BTC: {buy_hold_return:+.2f}%")
+        print(f"   📈 Sistema U ETH: {total_return:+.2f}%")
+        print(f"   📉 Buy & Hold ETH: {buy_hold_return:+.2f}%")
         print(f"   🎯 Outperformance: {total_return - buy_hold_return:+.2f} puntos porcentuales")
         print()
         
-        print(f"📊 ESTADÍSTICAS DE TRADING:")
+        print(f"📊 ESTADÍSTICAS DE TRADING ETHEREUM:")
         print(f"   🔢 Total trades: {total_trades}")
         print(f"   ✅ Ganadores: {len(winning_trades)} ({win_rate:.1f}%)")
         print(f"   ❌ Perdedores: {len(losing_trades)} ({100-win_rate:.1f}%)")
@@ -410,7 +410,7 @@ class Bitcoin2022Backtest:
         print()
         
         # Performance mensual
-        print("📅 PERFORMANCE MENSUAL 2022:")
+        print("📅 PERFORMANCE MENSUAL ETHEREUM 2022:")
         print("-" * 50)
         for month in sorted(monthly_performance.keys()):
             if month in monthly_performance:
@@ -425,7 +425,7 @@ class Bitcoin2022Backtest:
         print()
         
         # Trades detallados (solo primeros 10 para no saturar)
-        print("💰 PRIMEROS 10 TRADES DETALLADOS:")
+        print("💰 PRIMEROS 10 TRADES ETHEREUM DETALLADOS:")
         print("-" * 80)
         
         for i, trade in enumerate(self.trades[:10]):
@@ -439,7 +439,7 @@ class Bitcoin2022Backtest:
         print()
         
         # Evaluación final
-        print("🎯 EVALUACIÓN FINAL 2022:")
+        print("🎯 EVALUACIÓN FINAL ETHEREUM 2022:")
         if total_return > buy_hold_return and total_return > -20:
             print("🟢 EXCELENTE: Sistema superó a Buy & Hold en año bajista extremo")
         elif total_return > buy_hold_return:
@@ -452,7 +452,7 @@ class Bitcoin2022Backtest:
 
 def main():
     """Función principal"""
-    backtest = Bitcoin2022Backtest(initial_capital=1000)
+    backtest = Ethereum2022Backtest(initial_capital=1000)
     backtest.backtest_2022_complete()
 
 if __name__ == "__main__":

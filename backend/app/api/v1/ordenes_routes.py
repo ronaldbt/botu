@@ -11,13 +11,21 @@ from app.db.models import User
 
 router = APIRouter(prefix="/ordenes", tags=["ordenes"])
 
+# Cryptocurrencies allowed in the system
+ALLOWED_TICKERS = ["BTCUSDT", "ETHUSDT", "BNBUSDT"]
+
 @router.post("/", response_model=OrdenResponse)
 def create_orden(
     orden: OrdenCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Crear una nueva orden"""
+    """Crear una nueva orden - solo BTC, ETH, BNB permitidos"""
+    if orden.ticker not in ALLOWED_TICKERS:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Ticker no permitido. Solo se permiten: {', '.join(ALLOWED_TICKERS)}"
+        )
     return crud_ordenes.create_orden(db=db, orden=orden, usuario_id=current_user.id)
 
 @router.get("/", response_model=List[OrdenResponse])
@@ -93,4 +101,14 @@ def get_mis_ordenes(
 ):
     """Obtener todas las órdenes del usuario actual"""
     return crud_ordenes.get_ordenes_por_usuario(db=db, usuario_id=current_user.id)
+
+@router.get("/tickers-permitidos")
+def get_tickers_permitidos(
+    current_user: User = Depends(get_current_user)
+):
+    """Obtener la lista de tickers permitidos en el sistema"""
+    return {
+        "tickers": ALLOWED_TICKERS,
+        "descripcion": "Solo se permiten órdenes para estos tickers"
+    }
 

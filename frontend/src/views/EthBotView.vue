@@ -91,48 +91,31 @@
       <!-- Configuration Panel -->
       <div v-if="selectedMode" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-8">
         <h3 class="text-lg font-semibold text-slate-900 mb-4">
-          Configuración - Modo {{ selectedMode === 'manual' ? 'Manual' : 'Automático' }}
+          💎 Estrategia ETH Optimizada - Modo {{ selectedMode === 'manual' ? 'Manual' : 'Automático' }}
         </h3>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Timeframe -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">Timeframe</label>
-            <select 
-              v-model="config.timeframe" 
-              class="w-full appearance-none bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="1h">1 Hora</option>
-              <option value="4h" selected>4 Horas</option>
-              <option value="1d">1 Día</option>
-            </select>
+        <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4 mb-4">
+          <div class="flex items-center mb-2">
+            <span class="text-lg mr-2">⚙️</span>
+            <h4 class="font-semibold text-slate-800">Parámetros Optimizados por Backtest 2023</h4>
           </div>
-
-          <!-- Take Profit -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">Take Profit (%)</label>
-            <input 
-              type="number" 
-              v-model="config.takeProfit" 
-              min="5" 
-              max="20" 
-              step="0.5"
-              class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-            >
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+            <div class="flex items-center">
+              <span class="text-purple-600 font-medium mr-2">Timeframe:</span>
+              <span>4 Horas (Optimizado)</span>
+            </div>
+            <div class="flex items-center">
+              <span class="text-green-600 font-medium mr-2">Take Profit:</span>
+              <span>8% (Conservador)</span>
+            </div>
+            <div class="flex items-center">
+              <span class="text-red-600 font-medium mr-2">Stop Loss:</span>
+              <span>3% (Seguro)</span>
+            </div>
           </div>
-
-          <!-- Stop Loss -->
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-2">Stop Loss (%)</label>
-            <input 
-              type="number" 
-              v-model="config.stopLoss" 
-              min="2" 
-              max="10" 
-              step="0.5"
-              class="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            >
-          </div>
+          <p class="text-xs text-slate-500 mt-2">
+            ✨ Los parámetros están preconfigurados según backtests históricos exitosos. No requieren ajuste manual.
+          </p>
         </div>
 
         <!-- Telegram Integration (Manual Mode Only) -->

@@ -26,6 +26,9 @@ from binance_trader import place_market_buy, place_market_sell, get_account_bala
 # Importar scanner existente
 from scanner import scan_for_u
 from binance_scanner_u import scan_for_u_binance
+from binance_scanner_bnb import scan_for_u_bnb
+from binance_scanner_eth import scan_for_u_eth
+from binance_scanner_btc import scan_for_u_btc
 from utils import log
 from estado_u_utils import should_scan, update_estado_u
 
@@ -43,6 +46,18 @@ class BinanceScanner:
         self.max_trade_amount = float(os.getenv("BINANCE_MAX_TRADE_AMOUNT", "50.0"))  # Máximo 50 USDT por trade
         self.stop_loss_percent = float(os.getenv("BINANCE_STOP_LOSS", "5.0"))  # 5% stop loss
         self.take_profit_percent = float(os.getenv("BINANCE_TAKE_PROFIT", "10.0"))  # 10% take profit
+        
+        # Parámetros específicos para BNB (basados en bnb_2023_backtest.py)
+        self.bnb_stop_loss_percent = 3.0  # 3% stop loss para BNB (más conservador)
+        self.bnb_take_profit_percent = 8.0  # 8% take profit para BNB (más realista)
+        
+        # Parámetros específicos para ETH (basados en eth_2023_backtest.py)
+        self.eth_stop_loss_percent = 3.0  # 3% stop loss para ETH (más conservador)
+        self.eth_take_profit_percent = 8.0  # 8% take profit para ETH (más realista)
+        
+        # Parámetros específicos para BTC (basados en bitcoin_2023_backtest.py actualizado)
+        self.btc_stop_loss_percent = 3.0  # 3% stop loss para BTC (ahora conservador)
+        self.btc_take_profit_percent = 8.0  # 8% take profit para BTC (ahora conservador)
         
     def __del__(self):
         if hasattr(self, 'session'):
@@ -86,8 +101,21 @@ class BinanceScanner:
             # Convertir al formato esperado por el scanner
             ohlc_data = self.convert_klines_to_ohlc(klines)
             
-            # Usar el scanner de Binance con los datos obtenidos
-            result = scan_for_u_binance(ticker, klines, verbose=True)
+            # Usar el scanner específico según el ticker
+            if ticker == "BNBUSDT":
+                result = scan_for_u_bnb(ticker, klines, verbose=True)
+                if verbose:
+                    print(f"🪙 Usando estrategia BNB optimizada para {ticker}")
+            elif ticker == "ETHUSDT":
+                result = scan_for_u_eth(ticker, klines, verbose=True)
+                if verbose:
+                    print(f"💎 Usando estrategia ETH optimizada para {ticker}")
+            elif ticker == "BTCUSDT":
+                result = scan_for_u_btc(ticker, klines, verbose=True)
+                if verbose:
+                    print(f"₿ Usando estrategia BTC optimizada para {ticker}")
+            else:
+                result = scan_for_u_binance(ticker, klines, verbose=True)
             
             return result
             
@@ -136,12 +164,20 @@ class BinanceScanner:
     
     def execute_buy_order(self, ticker, nivel_ruptura, precio_actual):
         """Ejecuta una orden de compra cuando se detecta patrón U"""
+        # Determinar estrategia específica para usar parámetros apropiados
+        is_bnb = ticker == "BNBUSDT"
+        is_eth = ticker == "ETHUSDT"
+        is_btc = ticker == "BTCUSDT"
+        strategy_info = (" (BNB Optimized)" if is_bnb else 
+                        " (ETH Optimized)" if is_eth else 
+                        " (BTC Optimized)" if is_btc else "")
+        
         if not self.trading_enabled:
-            log(f"🤖 Trading deshabilitado. Simulando compra de {ticker}")
+            log(f"🤖 Trading deshabilitado. Simulando compra de {ticker}{strategy_info}")
             self.create_alert(
                 ticker, 
                 'PATRON_U', 
-                f"🚀 Patrón U detectado en {ticker} - Compra simulada (Trading deshabilitado)",
+                f"🚀 Patrón U detectado en {ticker}{strategy_info} - Compra simulada (Trading deshabilitado)",
                 nivel_ruptura, 
                 precio_actual
             )
@@ -161,12 +197,20 @@ class BinanceScanner:
                 )
                 return None
             
-            # Crear orden en DB
+            # Crear orden en DB con motivo específico
+            if is_bnb:
+                motivo = 'PATRON_U_BNB_DETECTADO'
+            elif is_eth:
+                motivo = 'PATRON_U_ETH_DETECTADO'
+            elif is_btc:
+                motivo = 'PATRON_U_BTC_DETECTADO'
+            else:
+                motivo = 'PATRON_U_DETECTADO'
             orden = self.create_order(
                 ticker=ticker,
                 tipo_orden='BUY',
                 cantidad=self.max_trade_amount,
-                motivo='PATRON_U_DETECTADO',
+                motivo=motivo,
                 nivel_ruptura=nivel_ruptura
             )
             
@@ -174,7 +218,7 @@ class BinanceScanner:
                 return None
             
             # Ejecutar orden en Binance
-            log(f"💰 Ejecutando compra de {self.max_trade_amount} USDT de {ticker}")
+            log(f"💰 Ejecutando compra de {self.max_trade_amount} USDT de {ticker}{strategy_info}")
             binance_order = place_market_buy(ticker, self.max_trade_amount)
             
             # Actualizar orden con resultado
@@ -185,10 +229,18 @@ class BinanceScanner:
             self.session.commit()
             
             # Crear alerta de éxito
+            if is_bnb:
+                tipo_alerta = 'ORDEN_BNB_EJECUTADA'
+            elif is_eth:
+                tipo_alerta = 'ORDEN_ETH_EJECUTADA'
+            elif is_btc:
+                tipo_alerta = 'ORDEN_BTC_EJECUTADA'
+            else:
+                tipo_alerta = 'ORDEN_EJECUTADA'
             self.create_alert(
                 ticker, 
-                'ORDEN_EJECUTADA', 
-                f"✅ Compra ejecutada: {self.max_trade_amount} USDT de {ticker} a {orden.precio_ejecutado}",
+                tipo_alerta, 
+                f"✅ Compra ejecutada{strategy_info}: {self.max_trade_amount} USDT de {ticker} a {orden.precio_ejecutado}",
                 nivel_ruptura, 
                 orden.precio_ejecutado
             )
@@ -226,14 +278,38 @@ class BinanceScanner:
             
             # Determinar nuevo estado
             nuevo_estado = 'NO_U'
+            is_bnb = ticker == "BNBUSDT"
+            is_eth = ticker == "ETHUSDT"
+            is_btc = ticker == "BTCUSDT"
+            
             if result['alert']:
                 nuevo_estado = 'RUPTURA'
+                
+                # Crear mensaje específico según la estrategia
+                if is_bnb and result.get('strategy') == 'BNB_OPTIMIZED':
+                    mensaje = (f"🚀 ¡Patrón U BNB detectado en {ticker}! "
+                              f"Nivel: {result['precio_confirmacion']:.2f} "
+                              f"(Estrategia BNB optimizada - Depth: {result.get('depth', 0)*100:.2f}%)")
+                    tipo_alerta = 'PATRON_U_BNB'
+                elif is_eth and result.get('strategy') == 'ETH_OPTIMIZED':
+                    mensaje = (f"🚀 ¡Patrón U ETH detectado en {ticker}! "
+                              f"Nivel: {result['precio_confirmacion']:.2f} "
+                              f"(Estrategia ETH optimizada - Depth: {result.get('depth', 0)*100:.2f}%)")
+                    tipo_alerta = 'PATRON_U_ETH'
+                elif is_btc and result.get('strategy') == 'BTC_OPTIMIZED':
+                    mensaje = (f"🚀 ¡Patrón U BTC detectado en {ticker}! "
+                              f"Nivel: {result['precio_confirmacion']:.2f} "
+                              f"(Estrategia BTC optimizada - Depth: {result.get('depth', 0)*100:.2f}%)")
+                    tipo_alerta = 'PATRON_U_BTC'
+                else:
+                    mensaje = f"🚀 ¡Patrón U detectado en {ticker}! Nivel de ruptura: {result['precio_confirmacion']:.2f}"
+                    tipo_alerta = 'PATRON_U'
                 
                 # Crear alerta de patrón U detectado
                 self.create_alert(
                     ticker, 
-                    'PATRON_U', 
-                    f"🚀 ¡Patrón U detectado en {ticker}! Nivel de ruptura: {result['precio_confirmacion']:.2f}",
+                    tipo_alerta, 
+                    mensaje,
                     result['nivel_ruptura'], 
                     precio_actual
                 )

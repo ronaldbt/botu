@@ -148,14 +148,21 @@ class Alerta(Base):
     id = Column(Integer, primary_key=True, index=True)
     ticker = Column(String, nullable=False, index=True)
     crypto_symbol = Column(String, nullable=False, index=True)  # 'BTC', 'ETH', 'BNB'
-    tipo_alerta = Column(String, nullable=False)  # 'PATRON_U', 'ORDEN_EJECUTADA', 'ERROR'
+    tipo_alerta = Column(String, nullable=False)  # 'BUY', 'SELL', 'ERROR', 'INFO'
     mensaje = Column(String, nullable=False)
     nivel_ruptura = Column(Float, nullable=True)
-    precio_actual = Column(Float, nullable=True)
+    precio_entrada = Column(Float, nullable=True)  # Precio de entrada (para BUY)
+    precio_salida = Column(Float, nullable=True)   # Precio de salida (para SELL)
+    cantidad = Column(Float, nullable=True)        # Cantidad operada
+    profit_usd = Column(Float, nullable=True)      # Ganancia/pérdida en USD
+    profit_percentage = Column(Float, nullable=True)  # Ganancia/pérdida en porcentaje
     fecha_creacion = Column(DateTime, default=func.now())
+    fecha_cierre = Column(DateTime, nullable=True)  # Fecha de cierre de la operación (para SELL)
     leida = Column(Boolean, default=False)
     usuario_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     telegram_sent = Column(Boolean, default=False)
+    alerta_buy_id = Column(Integer, nullable=True)  # ID de la alerta de compra relacionada (para SELL)
+    bot_mode = Column(String, nullable=True)        # 'manual', 'automatic'
     
     # Relación con usuario
     usuario = relationship("User")

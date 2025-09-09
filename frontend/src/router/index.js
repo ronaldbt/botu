@@ -15,6 +15,7 @@ import EthBotView from '../views/EthBotView.vue';
 import BnbBotView from '../views/BnbBotView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import SubscriptionView from '../views/SubscriptionView.vue';
+import BacktestView from '../views/BacktestView.vue';
 
 const routes = [
   {
@@ -96,6 +97,12 @@ const routes = [
     path: '/subscription',
     name: 'Subscription',
     component: SubscriptionView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/backtest',
+    name: 'Backtest',
+    component: BacktestView,
     meta: { requiresAuth: true },
   },
 ];

@@ -1,5 +1,5 @@
-# src/bitcoin_2022_backtest.py
-# Backtesting completo de Bitcoin para el año 2022 usando datos históricos reales
+# src/bitcoin_2023_backtest.py
+# Backtesting completo de Bitcoin para el año 2023 usando datos históricos reales
 
 import pandas as pd
 import numpy as np
@@ -8,22 +8,22 @@ import requests
 import time
 from utils import log
 
-class Bitcoin2022Backtest:
+class Bitcoin2023Backtest:
     def __init__(self, initial_capital=1000):
         self.initial_capital = initial_capital
         self.current_capital = initial_capital
         self.trades = []
         self.equity_curve = [initial_capital]
         
-    def get_historical_data_2022(self):
+    def get_historical_data_2023(self):
         """
-        Obtiene datos históricos de Bitcoin para todo 2022 usando Binance API
+        Obtiene datos históricos de Bitcoin para todo 2023 usando Binance API
         """
-        print("📊 Obteniendo datos históricos de Bitcoin para 2022...")
+        print("📊 Obteniendo datos históricos de Bitcoin para 2023...")
         
-        # Fechas para 2022 completo
-        start_time = int(datetime(2022, 1, 1).timestamp() * 1000)
-        end_time = int(datetime(2022, 12, 31, 23, 59, 59).timestamp() * 1000)
+        # Fechas para 2023 completo
+        start_time = int(datetime(2023, 1, 1).timestamp() * 1000)
+        end_time = int(datetime(2023, 12, 31, 23, 59, 59).timestamp() * 1000)
         
         all_klines = []
         current_start = start_time
@@ -79,35 +79,35 @@ class Bitcoin2022Backtest:
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         df.set_index('timestamp', inplace=True)
         
-        print(f"🎯 DATOS 2022 COMPLETOS:")
+        print(f"🎯 DATOS BITCOIN 2023 COMPLETOS:")
         print(f"   📅 Período: {df.index[0]} a {df.index[-1]}")
         print(f"   📊 Total velas: {len(df)}")
         print(f"   💰 Precio inicial: ${df['open'].iloc[0]:,.2f}")
         print(f"   💰 Precio final: ${df['close'].iloc[-1]:,.2f}")
-        print(f"   📉 Cambio anual: {((df['close'].iloc[-1] / df['open'].iloc[0]) - 1) * 100:.2f}%")
+        print(f"   📈 Cambio anual: {((df['close'].iloc[-1] / df['open'].iloc[0]) - 1) * 100:.2f}%")
         print(f"   🔝 Máximo: ${df['high'].max():,.2f}")
         print(f"   📉 Mínimo: ${df['low'].min():,.2f}")
         print()
         
         return df
     
-    def backtest_2022_complete(self):
+    def backtest_2023_complete(self):
         """
-        Backtesting completo del año 2022
+        Backtesting completo del año 2023
         """
-        print("🚀 BACKTESTING BITCOIN - AÑO 2022 COMPLETO")
+        print("🚀 BACKTESTING BITCOIN - AÑO 2023 COMPLETO")
         print("="*80)
-        print("💀 NOTA: 2022 fue el año del 'Crypto Winter' - Mercado bajista brutal")
-        print("📉 Bitcoin cayó de ~$47K a ~$15K (-68%)")
-        print("🧪 Esta será la PRUEBA DEFINITIVA del sistema de patrones U")
+        print("🎢 NOTA: 2023 fue el año de la RECUPERACIÓN - Bull market regresa!")
+        print("📈 Bitcoin subió de ~$16K a ~$42K (+162%)")
+        print("🏆 Este será el año donde el sistema debería brillar más")
         print("="*80)
         
-        df = self.get_historical_data_2022()
+        df = self.get_historical_data_2023()
         if df.empty:
-            print("❌ No se pudieron obtener datos históricos de 2022")
+            print("❌ No se pudieron obtener datos históricos de 2023")
             return
             
-        # Configuración del sistema
+        # Configuración del sistema optimizada para BTC
         profit_target = 0.08  # 8% objetivo (ajustado para BTC menos volátil)
         stop_loss = 0.03      # 3% stop loss (más ajustado)
         max_hold_periods = 80   # Máximo 80 períodos (320h = ~13 días)
@@ -117,7 +117,7 @@ class Bitcoin2022Backtest:
         step_size = 8      # Avance más frecuente para capturar más oportunidades
         
         total_windows = (len(df) - window_size) // step_size
-        print(f"🔄 Analizando {total_windows} ventanas de trading en 2022...")
+        print(f"🔄 Analizando {total_windows} ventanas de trading en 2023...")
         print("⚡ Configuración BTC optimizada: 8% profit target | 3% stop loss | Max 13 días holding")
         print()
         
@@ -135,12 +135,12 @@ class Bitcoin2022Backtest:
             # Datos para análisis
             analysis_df = df.iloc[start_idx:end_idx].copy()
             
-            # Detectar señales usando nuestro algoritmo
-            signals = self._detect_u_patterns_2022(analysis_df)
+            # Detectar señales usando algoritmo optimizado para bull market
+            signals = self._detect_u_patterns_2023(analysis_df)
             
             for signal in signals:
                 # Simular trade en datos futuros
-                trade_result = self._simulate_trade_2022(
+                trade_result = self._simulate_trade_2023(
                     df, signal, end_idx, profit_target, stop_loss, max_hold_periods
                 )
                 
@@ -159,36 +159,36 @@ class Bitcoin2022Backtest:
                     monthly_performance[month_key].append(trade_result['return_pct'] * 100)
                     monthly_trades[month_key] += 1
                     
-                    print(f"💫 Trade #{len(self.trades)} - {trade_result['entry_time'].strftime('%Y-%m-%d')}")
-                    print(f"   🟡 ${old_capital:,.0f} → ${self.current_capital:,.0f} ({trade_result['return_pct']*100:+.2f}%)")
+                    print(f"🚀 Trade #{len(self.trades)} - {trade_result['entry_time'].strftime('%Y-%m-%d')}")
+                    print(f"   💰 ${old_capital:,.0f} → ${self.current_capital:,.0f} ({trade_result['return_pct']*100:+.2f}%)")
         
-        self._generate_2022_report(monthly_performance, monthly_trades, df)
+        self._generate_2023_report(monthly_performance, monthly_trades, df)
         
-    def _detect_u_patterns_2022(self, df):
+    def _detect_u_patterns_2023(self, df):
         """
-        Detecta patrones U optimizado para mercado bajista de 2022
+        Detecta patrones U optimizado para bull market de 2023
         """
         signals = []
         
-        # Detectar mínimos significativos optimizados para BTC
-        significant_lows = self._detect_lows_2022(df, window=6, min_depth_pct=0.025)  # 2.5% mínimo (BTC menos volátil)
+        # Detectar mínimos significativos con parámetros más agresivos para bull market
+        significant_lows = self._detect_lows_2023(df, window=6, min_depth_pct=0.025)  # 2.5% mínimo (BTC menos volátil)
         
         if not significant_lows:
             return signals
             
-        # Analizar múltiples mínimos (no solo el último)
-        for low in significant_lows[-3:]:  # Últimos 3 mínimos
+        # Analizar múltiples mínimos para bull market
+        for low in significant_lows[-4:]:  # Últimos 4 mínimos (más oportunidades)
             min_idx = low['index']
             
             # ATR y factor dinámico
             atr = self._calculate_atr_simple(df)
             current_price = df.iloc[-1]['close']
             
-            # Factor más agresivo para bear market (menos conservador)
-            dynamic_factor = self._calculate_rupture_factor_bear(atr, current_price)
+            # Factor más agresivo para bull market
+            dynamic_factor = self._calculate_rupture_factor_bull(atr, current_price)
             nivel_ruptura = low['high'] * dynamic_factor
             
-            # Condiciones optimizadas para BTC en bear market
+            # Condiciones optimizadas para BTC en bull market
             if len(df) - min_idx > 4 and len(df) - min_idx < 45:
                 recent_slope = self._calculate_slope(df.iloc[-6:]['close'].values)
                 pre_slope = self._calculate_slope(df.iloc[max(0, min_idx-6):min_idx]['close'].values)
@@ -218,8 +218,8 @@ class Bitcoin2022Backtest:
                     
         return signals
     
-    def _detect_lows_2022(self, df, window=6, min_depth_pct=0.025):
-        """Detecta mínimos optimizados para BTC en bear market de 2022"""
+    def _detect_lows_2023(self, df, window=6, min_depth_pct=0.025):
+        """Detecta mínimos optimizados para BTC en bull market de 2023"""
         lows = []
         
         for i in range(window, len(df) - window):
@@ -250,7 +250,7 @@ class Bitcoin2022Backtest:
         
         return lows
     
-    def _calculate_rupture_factor_bear(self, atr, price, base_factor=1.015):
+    def _calculate_rupture_factor_bull(self, atr, price, base_factor=1.015):
         """Factor de ruptura optimizado para BTC (más conservador)"""
         atr_pct = atr / price
         
@@ -300,8 +300,8 @@ class Bitcoin2022Backtest:
         x = np.arange(len(values))
         return np.polyfit(x, values, 1)[0]
     
-    def _simulate_trade_2022(self, df, signal, start_idx, profit_target, stop_loss, max_hold):
-        """Simula trade en 2022"""
+    def _simulate_trade_2023(self, df, signal, start_idx, profit_target, stop_loss, max_hold):
+        """Simula trade en 2023 (bull market)"""
         entry_price = signal['entry_price']
         entry_time = signal['timestamp']
         
@@ -366,17 +366,17 @@ class Bitcoin2022Backtest:
             'depth': signal['depth']
         }
     
-    def _generate_2022_report(self, monthly_performance, monthly_trades, df):
+    def _generate_2023_report(self, monthly_performance, monthly_trades, df):
         """
-        Genera reporte completo del año 2022
+        Genera reporte completo del año 2023
         """
         print()
-        print("📊 REPORTE COMPLETO - BITCOIN 2022 (CRYPTO WINTER)")
+        print("📊 REPORTE COMPLETO - BITCOIN 2023 (BULL MARKET RECOVERY)")
         print("="*80)
         
         if not self.trades:
-            print("⚠️ No se generaron trades durante 2022")
-            print("🔍 En un mercado bajista extremo, las oportunidades U son muy raras")
+            print("⚠️ No se generaron trades durante 2023")
+            print("🤔 Esto sería extraño en un bull market...")
             return
             
         # Estadísticas generales
@@ -392,11 +392,11 @@ class Bitcoin2022Backtest:
         btc_end_price = df['close'].iloc[-1]
         buy_hold_return = (btc_end_price / btc_start_price - 1) * 100
         
-        print(f"🏆 RESUMEN EJECUTIVO 2022:")
+        print(f"🏆 RESUMEN EJECUTIVO BITCOIN 2023:")
         print(f"   💵 Capital inicial: ${self.initial_capital:,.2f}")
         print(f"   💰 Capital final: ${self.current_capital:,.2f}")
         print(f"   📈 Sistema U: {total_return:+.2f}%")
-        print(f"   📉 Buy & Hold BTC: {buy_hold_return:+.2f}%")
+        print(f"   📈 Buy & Hold BTC: {buy_hold_return:+.2f}%")
         print(f"   🎯 Outperformance: {total_return - buy_hold_return:+.2f} puntos porcentuales")
         print()
         
@@ -410,7 +410,7 @@ class Bitcoin2022Backtest:
         print()
         
         # Performance mensual
-        print("📅 PERFORMANCE MENSUAL 2022:")
+        print("📅 PERFORMANCE MENSUAL 2023:")
         print("-" * 50)
         for month in sorted(monthly_performance.keys()):
             if month in monthly_performance:
@@ -424,36 +424,38 @@ class Bitcoin2022Backtest:
                 print(f"   {status} {month}: {trade_count} trades | Avg: {avg_return:+.2f}% | Total: {total_monthly:+.2f}%")
         print()
         
-        # Trades detallados (solo primeros 10 para no saturar)
-        print("💰 PRIMEROS 10 TRADES DETALLADOS:")
+        # Trades detallados (solo primeros 15 para bull market)
+        print("💰 PRIMEROS 15 TRADES DETALLADOS:")
         print("-" * 80)
         
-        for i, trade in enumerate(self.trades[:10]):
+        for i, trade in enumerate(self.trades[:15]):
             status = "✅" if trade['return_pct'] > 0 else "❌"
             print(f"{status} #{trade['trade_number']} | {trade['entry_time'].strftime('%Y-%m-%d')} | ")
             print(f"   ${trade['entry_price']:,.0f} → ${trade['exit_price']:,.0f} | ")
             print(f"   {trade['return_pct']*100:+.2f}% | {trade['hold_hours']}h | {trade['exit_reason']}")
         
-        if len(self.trades) > 10:
-            print(f"   ... y {len(self.trades) - 10} trades más")
+        if len(self.trades) > 15:
+            print(f"   ... y {len(self.trades) - 15} trades más")
         print()
         
         # Evaluación final
-        print("🎯 EVALUACIÓN FINAL 2022:")
-        if total_return > buy_hold_return and total_return > -20:
-            print("🟢 EXCELENTE: Sistema superó a Buy & Hold en año bajista extremo")
-        elif total_return > buy_hold_return:
-            print("🟡 BUENO: Sistema limitó pérdidas vs Buy & Hold")
-        elif total_return > -50:
-            print("🟡 ACEPTABLE: Sistema resistió el crypto winter")
+        print("🎯 EVALUACIÓN FINAL 2023:")
+        if total_return > buy_hold_return and total_return > 100:
+            print("🟢 EXCEPCIONAL: Sistema superó a Buy & Hold en bull market!")
+        elif total_return > 50:
+            print("🟢 EXCELENTE: Sistema aprovechó muy bien el bull market")
+        elif total_return > 20:
+            print("🟡 BUENO: Sistema tuvo performance sólida")
+        elif total_return > 0:
+            print("🟡 ACEPTABLE: Sistema fue rentable")
         else:
-            print("🔴 MEJORABLE: Sistema necesita optimización para bear markets")
+            print("🔴 MEJORABLE: Sistema perdió dinero en bull market (necesita revisión)")
         print()
 
 def main():
     """Función principal"""
-    backtest = Bitcoin2022Backtest(initial_capital=1000)
-    backtest.backtest_2022_complete()
+    backtest = Bitcoin2023Backtest(initial_capital=1000)
+    backtest.backtest_2023_complete()
 
 if __name__ == "__main__":
     main()
