@@ -509,6 +509,36 @@ class TelegramBot:
                         
         except Exception as e:
             logger.error(f"Error en polling manual: {e}")
+    
+    def broadcast_alert_crypto(self, alert_data: dict, crypto: str) -> dict:
+        """
+        Envía alerta al bot específico de una criptomoneda
+        
+        Args:
+            alert_data: Datos de la alerta
+            crypto: Tipo de crypto ('bitcoin', 'ethereum', 'bnb')
+        
+        Returns:
+            dict: Resultado del envío
+        """
+        try:
+            # Importar aquí para evitar import circular
+            from app.telegram.crypto_bots import crypto_bots
+            
+            # Usar el bot específico de la crypto
+            result = crypto_bots.broadcast_alert(crypto, alert_data)
+            
+            # Si el bot específico no está configurado, usar el bot principal como fallback
+            if result.get('sent', 0) == 0 and result.get('errors'):
+                logger.warning(f"⚠️ Bot {crypto} no disponible, usando bot principal como fallback")
+                return self.broadcast_alert(alert_data)
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error en broadcast_alert_crypto para {crypto}: {e}")
+            # Fallback al bot principal
+            return self.broadcast_alert(alert_data)
 
 # Instancia global del bot
 telegram_bot = TelegramBot()
