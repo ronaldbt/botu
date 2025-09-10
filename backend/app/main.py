@@ -2,18 +2,54 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import asyncio
+import logging
 from app.db import models
 from app.db.database import engine
-from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes
+from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes
+from app.services.health_monitor_service import health_monitor
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Crear tablas en la base de datos
 models.Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Gestión del ciclo de vida de la aplicación"""
+    # Startup
+    try:
+        logger.info("🚀 BOTU SERVER STARTING UP...")
+        
+        # Iniciar Health Monitor automáticamente
+        success = await health_monitor.start_monitoring()
+        if success:
+            logger.info("✅ Health Monitor iniciado automáticamente")
+        else:
+            logger.error("❌ Error iniciando Health Monitor automáticamente")
+            
+    except Exception as e:
+        logger.error(f"❌ Error en startup automático: {e}")
+    
+    yield
+    
+    # Shutdown
+    try:
+        logger.info("🛑 BOTU SERVER SHUTTING DOWN...")
+        await health_monitor.stop_monitoring()
+        logger.info("✅ Health Monitor detenido correctamente")
+    except Exception as e:
+        logger.error(f"❌ Error en shutdown: {e}")
 
 # Inicializar FastAPI
 app = FastAPI(
     title="BotU API",
     description="API para BotU - Monitoreo de patrones U",
     version="1.0.0",
+    lifespan=lifespan
 )
 
 # Configurar CORS
@@ -48,3 +84,5 @@ app.include_router(eth_bot_routes.router, tags=["eth-bot"])      # Ethereum Bot 
 app.include_router(bnb_bot_routes.router, tags=["bnb-bot"])      # BNB Bot endpoints
 app.include_router(profile_routes.router, tags=["profile"])      # Profile and subscription endpoints
 app.include_router(telegram_routes.router)      # Ya tiene prefix="/telegram"
+app.include_router(health_routes.router, tags=["health"])        # Health Monitor endpoints
+app.include_router(health_telegram_routes.router, tags=["health-telegram"])  # Health Telegram Bot endpoints

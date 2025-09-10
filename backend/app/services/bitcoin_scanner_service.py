@@ -15,7 +15,8 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src'))
 
 from app.db.database import SessionLocal
-from app.db import crud_users
+from app.db import crud_users, crud_alertas
+from app.schemas.alerta_schema import AlertaCreate
 from app.telegram.telegram_bot import telegram_bot
 
 # Configurar logging
@@ -410,24 +411,194 @@ class BitcoinScannerService:
                 'message': alert_message
             }
             
-            # Obtener usuarios activos de Telegram
+            # Obtener usuarios activos de Telegram y guardar en DB
             db = SessionLocal()
             try:
+                # 1. Guardar alerta en base de datos PRIMERO
+                alerta_create = AlertaCreate(
+                    ticker=signal['symbol'],
+                    crypto_symbol='BTC',
+                    tipo_alerta='BUY',
+                    mensaje=alert_message,
+                    nivel_ruptura=rupture_level,
+                    precio_entrada=current_price,
+                    bot_mode='automatic'
+                )
+                
+                alerta_db = crud_alertas.create_alerta(db=db, alerta=alerta_create, usuario_id=None)
+                logger.info(f"💾 BTC Alerta guardada en DB con ID: {alerta_db.id}")
+                
+                # 2. Luego enviar por Telegram
                 active_users = crud_users.get_active_telegram_users(db)
                 if not active_users:
                     logger.info("ℹ️ No hay usuarios conectados a Telegram para enviar alertas")
-                    return
+                else:
+                    # Enviar broadcast a todos los usuarios activos
+                    result = telegram_bot.broadcast_alert(alert_data)
+                    logger.info(f"📢 BTC Alerta enviada: {result['sent']}/{result['total_targets']} usuarios")
                 
-                # Enviar broadcast a todos los usuarios activos
-                result = telegram_bot.broadcast_alert(alert_data)
-                
-                logger.info(f"📢 Alerta enviada: {result['sent']}/{result['total_targets']} usuarios")
+                # 3. Actualizar contador de alertas
+                self.alerts_count += 1
+                self.last_alert_sent = datetime.now()
                 
             finally:
                 db.close()
                 
         except Exception as e:
             logger.error(f"❌ Error procesando señal: {e}")
+    
+    async def _monitor_open_positions(self, current_price: float):
+        """Monitorea posiciones abiertas BTC y crea alertas SELL cuando se alcanzan TP/SL/MaxHold"""
+        try:
+            db = SessionLocal()
+            
+            # Obtener posiciones abiertas (alertas BUY sin SELL correspondiente)
+            open_positions = crud_alertas.get_open_positions(db, crypto_symbol='BTC')
+            
+            if not open_positions:
+                return
+                
+            logger.info(f"📊 Monitoreando {len(open_positions)} posiciones BTC abiertas")
+            
+            for position in open_positions:
+                entry_price = position.precio_entrada
+                entry_time = position.fecha_creacion
+                
+                # Calcular precios objetivo usando la lógica del backtest Bitcoin 2023
+                target_price = entry_price * (1 + self.config['profit_target'])  # 8% TP
+                stop_price = entry_price * (1 - self.config['stop_loss'])        # 3% SL
+                
+                # Verificar tiempo máximo de holding (80 períodos de 4h = 13 días)
+                max_hold_hours = self.config['max_hold_periods'] * 4  # 80 * 4h = 320h = 13.3 días
+                hours_held = (datetime.now() - entry_time).total_seconds() / 3600
+                
+                # Condiciones de salida (misma lógica que backtest Bitcoin 2023)
+                exit_reason = None
+                exit_price = current_price
+                
+                if current_price >= target_price:
+                    exit_reason = "TAKE_PROFIT"
+                    exit_price = target_price
+                elif current_price <= stop_price:
+                    exit_reason = "STOP_LOSS" 
+                    exit_price = stop_price
+                elif hours_held >= max_hold_hours:
+                    exit_reason = "MAX_HOLD"
+                    exit_price = current_price
+                
+                if exit_reason:
+                    # Crear alerta de venta usando la función existente
+                    sell_alert = crud_alertas.create_sell_alert(
+                        db=db,
+                        buy_alert_id=position.id,
+                        precio_salida=exit_price,
+                        bot_mode='automatic'
+                    )
+                    
+                    logger.info(f"🚨 BTC SELL creada - ID: {sell_alert.id} | Razón: {exit_reason} | "
+                              f"Precio: ${exit_price:.2f} | Profit: ${sell_alert.profit_usd:.2f}")
+                    
+                    # Enviar por Telegram
+                    await self._send_sell_alert_telegram(sell_alert, exit_reason)
+            
+            db.close()
+                
+        except Exception as e:
+            logger.error(f"❌ Error monitoreando posiciones BTC: {e}")
+    
+    async def _send_sell_alert_telegram(self, sell_alert, exit_reason: str):
+        """Envía alerta de venta BTC por Telegram"""
+        try:
+            # Crear mensaje de venta
+            profit_emoji = "🟢" if sell_alert.profit_usd > 0 else "🔴" if sell_alert.profit_usd < 0 else "⚪"
+            reason_emoji = {"TAKE_PROFIT": "🎯", "STOP_LOSS": "🛑", "MAX_HOLD": "⏰"}.get(exit_reason, "📤")
+            
+            alert_message = (
+                f"{reason_emoji} VENTA BITCOIN - {exit_reason}\n\n"
+                f"📊 Resultado:\n"
+                f"   • Precio venta: ${sell_alert.precio_salida:.2f}\n"
+                f"   • Precio entrada: ${sell_alert.precio_entrada:.2f}\n"
+                f"   • Ganancia: ${sell_alert.profit_usd:.2f} ({sell_alert.profit_percentage:.2f}%)\n"
+                f"   • Cantidad: {sell_alert.cantidad:.8f} BTC\n\n"
+                f"⏰ Ejecutado: {sell_alert.fecha_creacion.strftime('%d/%m/%Y %H:%M')} UTC"
+            )
+            
+            # Preparar datos para Telegram
+            alert_data = {
+                'type': 'SELL',
+                'symbol': sell_alert.ticker,
+                'price': sell_alert.precio_salida,
+                'message': alert_message
+            }
+            
+            # Obtener usuarios activos de Telegram para Bitcoin
+            db = SessionLocal()
+            try:
+                active_users = crud_users.get_active_telegram_users_by_crypto(db, 'btc')
+                if active_users:
+                    result = telegram_bot.broadcast_alert(alert_data)
+                    logger.info(f"📢 BTC SELL Telegram enviada: {result['sent']}/{result['total_targets']} usuarios")
+                else:
+                    logger.info("ℹ️ No hay usuarios conectados a Telegram BTC para alertas SELL")
+            finally:
+                db.close()
+                
+        except Exception as e:
+            logger.error(f"❌ Error enviando alerta SELL BTC por Telegram: {e}")
+    
+    async def scan_continuous(self):
+        """Escaneo continuo en segundo plano - Bitcoin nunca se detiene"""
+        self.add_log("info", "🚀 Iniciando escaneo continuo BITCOIN 24/7")
+        
+        while self.is_running:
+            try:
+                current_time = datetime.now()
+                self.add_log("info", f"📊 Escaneando Bitcoin... {current_time.strftime('%H:%M:%S')}")
+                
+                # Obtener datos de Binance con retry robusto
+                df = await self._get_binance_data()
+                if df is None:
+                    self.add_log("error", "❌ Error obteniendo datos de Binance - reintentando en 30s")
+                    await asyncio.sleep(30)  # Esperar 30s antes del siguiente intento
+                    continue
+                
+                current_price = df['close'].iloc[-1]
+                
+                # 1. MONITOREAR POSICIONES ABIERTAS PRIMERO
+                await self._monitor_open_positions(current_price)
+                
+                # 2. DETECTAR NUEVOS PATRONES U usando estrategia Bitcoin 2023
+                signals = self._detect_u_patterns_2023(df)
+                
+                if signals:
+                    self.add_log("success", f"🎯 {len(signals)} patrón(es) U detectado(s) en Bitcoin")
+                    
+                    # Procesar solo la primera señal para evitar spam
+                    signal = signals[0]
+                    
+                    # Verificar cooldown (solo una alerta por hora)
+                    if self._should_send_alert():
+                        await self._process_signal(signal, df)
+                        self.last_scan_time = current_time
+                    else:
+                        self.add_log("info", f"⏳ Cooldown activo Bitcoin - Última alerta: {self.last_alert_sent}")
+                else:
+                    self.add_log("info", "👀 Sin patrones U detectados en Bitcoin")
+                
+                self.last_scan_time = current_time
+                
+                # Esperar el intervalo configurado antes del próximo escaneo
+                await asyncio.sleep(self.config['scan_interval'])
+                
+            except asyncio.CancelledError:
+                self.add_log("info", "🛑 Escaneo Bitcoin cancelado")
+                break
+            except Exception as e:
+                self.add_log("error", f"❌ Error crítico en escaneo Bitcoin: {e}")
+                # En caso de error crítico, esperar más tiempo antes de reintentar
+                await asyncio.sleep(120)  # 2 minutos
+        
+        self.add_log("info", "🏁 Escaneo continuo Bitcoin terminado")
     
     def get_status(self) -> Dict[str, Any]:
         """Obtiene el estado actual del scanner"""

@@ -144,3 +144,12 @@ def update_user_activity(db: Session, user_id: int):
         db.commit()
         db.refresh(db_user)
     return db_user
+
+def get_admin_telegram_users(db: Session):
+    """Obtiene administradores con Telegram configurado para alertas de salud"""
+    return db.query(models.User).filter(
+        models.User.is_admin == True,
+        models.User.is_active == True,
+        models.User.telegram_chat_id.isnot(None),
+        models.User.telegram_subscribed == True
+    ).all()

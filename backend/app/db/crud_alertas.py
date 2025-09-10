@@ -199,3 +199,7 @@ def get_open_positions(db: Session, usuario_id: int = None, crypto_symbol: str =
     
     return open_positions
 
+def get_alertas_count(db: Session):
+    """Obtiene el número total de alertas en el sistema"""
+    return db.query(models.Alerta).count()
+
