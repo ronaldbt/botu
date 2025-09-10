@@ -1,0 +1,37 @@
+version: "3.8"
+
+networks:
+  botu_net:
+    external: true
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://botu:T4L04KrFSayO7YyVQBDP85eh@app-postgres-1:5432/botu
+      - SECRET_KEY=__SECRET_KEY__
+    networks:
+      - botu_net
+    external_links:
+      - app-postgres-1:app-postgres-1
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=Host(`api.botut.net`)
+      - traefik.http.routers.api.entrypoints=websecure
+      - traefik.http.routers.api.tls.certresolver=letsencrypt
+      - traefik.http.services.api.loadbalancer.server.port=8000
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/frontend.Dockerfile
+    networks:
+      - botu_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.web.rule=Host(`botut.net`) || Host(`www.botut.net`)
+      - traefik.http.routers.web.entrypoints=websecure
+      - traefik.http.routers.web.tls.certresolver=letsencrypt
+      - traefik.http.services.web.loadbalancer.server.port=80

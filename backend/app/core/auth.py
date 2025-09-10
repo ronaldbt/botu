@@ -40,7 +40,7 @@ def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except jwt.PyJWTError:
+    except JWTError:
         return None
 
 # Security scheme
@@ -66,7 +66,7 @@ def get_current_user(
         if username is None:
             raise credentials_exception
             
-    except jwt.PyJWTError:
+    except JWTError:
         raise credentials_exception
     
     user = db.query(models.User).filter(models.User.username == username).first()

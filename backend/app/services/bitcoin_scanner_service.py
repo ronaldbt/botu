@@ -32,11 +32,14 @@ class BitcoinScannerService:
         self.scan_task = None
         self.config = {
             "timeframe": "4h",
-            "profit_target": 0.08,     # 8% take profit
-            "stop_loss": 0.05,         # 5% stop loss  
-            "min_pattern_depth": 0.04, # 4% profundidad mínima
-            "scan_interval": 5 * 60,  # 5 minutos para testing (cambiar a 4h + 5min en producción)
-            "symbol": "BTCUSDT"
+            "profit_target": 0.08,     # 8% take profit (igual que backtest 2023)
+            "stop_loss": 0.03,         # 3% stop loss (igual que backtest 2023)
+            "min_pattern_depth": 0.025, # 2.5% profundidad mínima (igual que backtest 2023)
+            "max_hold_periods": 80,    # 80 períodos = 13 días (igual que backtest 2023)
+            "window_size": 120,        # 120 velas ventana análisis (igual que backtest 2023)
+            "scan_interval": 5 * 60,   # 5 minutos para testing
+            "symbol": "BTCUSDT",
+            "data_limit": 1000         # 1000 velas como backtest 2023
         }
         self.last_scan_time = None
         self.alerts_count = 0
@@ -147,8 +150,8 @@ class BitcoinScannerService:
                 self._add_log("WARNING", "No se pudieron obtener datos suficientes de Binance")
                 return
             
-            # 2. Detectar patrones U usando lógica del backtest exitoso
-            signals = self._detect_u_pattern_2022(df)
+            # 2. Detectar patrones U usando lógica exacta del backtest 2023
+            signals = self._detect_u_patterns_2023(df)
             
             # 3. Procesar señales detectadas
             current_price = df['close'].iloc[-1]
@@ -188,12 +191,12 @@ class BitcoinScannerService:
     async def _get_binance_data(self) -> Optional[pd.DataFrame]:
         """Obtiene datos históricos de Binance"""
         try:
-            # Obtener últimas 200 velas de 4h (suficiente para análisis)
+            # Obtener últimas 1000 velas de 4h (igual que backtest 2023)
             url = "https://api.binance.com/api/v3/klines"
             params = {
                 'symbol': self.config['symbol'],
                 'interval': self.config['timeframe'], 
-                'limit': 200
+                'limit': self.config['data_limit']  # 1000 velas
             }
             
             response = requests.get(url, params=params, timeout=10)
@@ -223,136 +226,135 @@ class BitcoinScannerService:
             logger.error(f"❌ Error obteniendo datos de Binance: {e}")
             return None
     
-    def _detect_u_pattern_2022(self, df: pd.DataFrame) -> List[Dict]:
+    def _detect_u_patterns_2023(self, df: pd.DataFrame) -> List[Dict]:
         """
-        Detecta patrones U usando la lógica exitosa del backtest 2022
+        Detecta patrones U usando la lógica EXACTA del backtest 2023
         """
         signals = []
-        window_size = min(48, len(df))  # Ventana de análisis (48 velas = 8 días en 4h)
         
-        if window_size < 20:
+        # Usar ventana de análisis igual al backtest 2023 
+        window_size = self.config['window_size']  # 120 velas
+        
+        if len(df) < window_size:
             return signals
             
-        # Usar ventana deslizante para detectar patrones
-        for end_idx in range(window_size, len(df)):
-            start_idx = end_idx - window_size
-            window_df = df.iloc[start_idx:end_idx]
+        # Usar los últimos datos para análisis (simulando ventana final del backtest)
+        analysis_df = df.iloc[-window_size:].copy()
+        
+        # Detectar mínimos significativos con parámetros del backtest 2023
+        significant_lows = self._detect_lows_2023(analysis_df, window=6, min_depth_pct=self.config['min_pattern_depth'])
+        
+        if not significant_lows:
+            return signals
             
-            # Detectar mínimos locales
-            lows = self._detect_lows_2022(window_df)
-            if not lows:
-                continue
+        # Analizar múltiples mínimos (igual que backtest 2023)
+        for low in significant_lows[-4:]:  # Últimos 4 mínimos
+            min_idx = low['index']
             
-            # Analizar cada mínimo como posible base de U
-            for low in lows[-3:]:  # Solo últimos 3 mínimos
-                min_idx = low['index']
+            # ATR y factor dinámico (igual que backtest 2023)
+            atr = self._calculate_atr_simple(analysis_df)
+            current_price = analysis_df.iloc[-1]['close']
+            
+            # Factor para bull market (igual que backtest 2023)
+            dynamic_factor = self._calculate_rupture_factor_bull(atr, current_price)
+            nivel_ruptura = low['high'] * dynamic_factor
+            
+            # Condiciones EXACTAS del backtest 2023
+            if len(analysis_df) - min_idx > 4 and len(analysis_df) - min_idx < 45:
+                recent_slope = self._calculate_slope(analysis_df.iloc[-6:]['close'].values)
+                pre_slope = self._calculate_slope(analysis_df.iloc[max(0, min_idx-6):min_idx]['close'].values)
                 
-                # Verificar condiciones del patrón U
-                pre_crash = window_df.iloc[:min_idx]
-                post_recovery = window_df.iloc[min_idx:]
-                
-                if len(pre_crash) < 5 or len(post_recovery) < 5:
-                    continue
-                
-                # Calcular pendientes
-                pre_slope = self._calculate_slope(pre_crash['close'].values)
-                post_slope = self._calculate_slope(post_recovery['close'].values)
-                
-                # ATR para nivel de ruptura dinámico
-                atr = self._calculate_atr_simple(window_df)
-                current_price = window_df.iloc[-1]['close']
-                dynamic_factor = self._calculate_rupture_factor_bear(atr, current_price)
-                nivel_ruptura = current_price * dynamic_factor
-                
-                # Filtros MÁS ESTRICTOS del patrón U para evitar falsos positivos
-                recent_closes = post_recovery['close'].iloc[-3:].values
-                recent_slope = self._calculate_slope(recent_closes) if len(recent_closes) >= 2 else 0
-                
-                # Verificar momentum mínimo y recuperación significativa
-                recovery_pct = (current_price - low['low']) / low['low']
-                volume_recent = post_recovery['volume'].iloc[-5:].mean() if len(post_recovery) >= 5 else 0
-                volume_avg = window_df['volume'].mean()
-                volume_ratio = volume_recent / volume_avg if volume_avg > 0 else 0
-                
+                # Condiciones EXACTAS del backtest 2023
                 conditions = [
-                    pre_slope < -0.02,           # Caída previa MÁS significativa
-                    post_slope > 0.01,           # Recuperación MÁS fuerte
-                    recent_slope > 0.005,        # Momentum reciente POSITIVO
-                    low['depth'] >= self.config['min_pattern_depth'] * 1.5,  # Profundidad 50% más estricta
-                    recovery_pct >= 0.03,        # Al menos 3% de recuperación desde el mínimo
-                    volume_ratio >= 1.2,         # Volumen reciente 20% mayor que promedio
-                    len(post_recovery) >= 8,     # Al menos 8 períodos de recuperación
+                    pre_slope < -0.12,  # Más restrictivo para BTC
+                    current_price > nivel_ruptura * 0.97,  # Más conservador (97% vs 95%)
+                    recent_slope > -0.03,  # Momentum más positivo requerido
+                    low['depth'] >= self.config['min_pattern_depth'],  # Al menos 2.5% de profundidad
+                    # Filtro adicional: evitar trades en tendencias bajistas prolongadas
+                    self._check_momentum_filter(analysis_df, min_idx)
                 ]
                 
                 if all(conditions):
-                    signal_strength = min(abs(pre_slope) * 100, 10.0)  # Fuerza entre 0-10
-                    
                     signals.append({
-                        'timestamp': window_df.index[-1],
-                        'symbol': self.config['symbol'],
-                        'entry_price': current_price,
-                        'rupture_level': nivel_ruptura,
-                        'signal_strength': signal_strength,
+                        'timestamp': analysis_df.index[-1],
+                        'entry_price': nivel_ruptura,
+                        'signal_strength': abs(pre_slope),
                         'min_price': low['low'],
-                        'pattern_width': len(post_recovery),
+                        'pattern_width': len(analysis_df) - min_idx,
+                        'atr': atr,
+                        'dynamic_factor': dynamic_factor,
                         'depth': low['depth'],
-                        'pre_slope': pre_slope,
-                        'post_slope': post_slope,
-                        'atr': atr
+                        'rupture_level': nivel_ruptura
                     })
                     
-                    logger.info(f"🎯 PATRÓN U DETECTADO - FILTROS ESTRICTOS PASADOS:")
+                    logger.info(f"🎯 PATRÓN U DETECTADO - ALGORITMO BACKTEST 2023:")
                     logger.info(f"   💰 Precio actual: ${current_price:,.2f}")
                     logger.info(f"   🚀 Nivel ruptura: ${nivel_ruptura:,.2f} (+{((nivel_ruptura/current_price-1)*100):.2f}%)")
-                    logger.info(f"   📊 Fuerza señal: {signal_strength:.1f}/10")
-                    logger.info(f"   📉 Profundidad: {low['depth']*100:.1f}% (mín: {self.config['min_pattern_depth']*1.5*100:.1f}%)")
-                    logger.info(f"   📈 Recuperación: {recovery_pct*100:.1f}% desde mínimo")
-                    logger.info(f"   📊 Volumen ratio: {volume_ratio:.1f}x (>1.2x requerido)")
+                    logger.info(f"   📊 Fuerza señal: {abs(pre_slope):.3f}")
+                    logger.info(f"   📉 Profundidad: {low['depth']*100:.1f}%")
+                    logger.info(f"   📏 Ancho patrón: {len(analysis_df) - min_idx} períodos")
                     
                     break  # Solo una señal por ventana
-        
+                    
         return signals
     
-    def _detect_lows_2022(self, df: pd.DataFrame, window=8, min_depth_pct=None) -> List[Dict]:
-        """Detecta mínimos locales usando lógica del backtest 2022"""
-        if min_depth_pct is None:
-            min_depth_pct = self.config['min_pattern_depth']
-            
+    def _detect_lows_2023(self, df: pd.DataFrame, window=6, min_depth_pct=0.025) -> List[Dict]:
+        """Detecta mínimos EXACTOS del backtest 2023"""
         lows = []
         
         for i in range(window, len(df) - window):
             current_low = df.iloc[i]['low']
             
-            # Ventana alrededor del punto
             window_slice = df.iloc[i-window:i+window+1]
             if current_low == window_slice['low'].min():
                 local_high = window_slice['high'].max()
                 depth = (local_high - current_low) / local_high
                 
-                if depth >= min_depth_pct:
-                    lows.append({
-                        'index': i,
-                        'timestamp': df.index[i],
-                        'low': current_low,
-                        'high': df.iloc[i]['high'],
-                        'close': df.iloc[i]['close'],
-                        'depth': depth
-                    })
+                # Filtro adicional: verificar que no sea un mínimo muy reciente
+                if depth >= min_depth_pct and i < len(df) - 5:
+                    # Verificar volumen para confirmar el mínimo
+                    volume_avg = df.iloc[i-window:i+window+1]['volume'].mean()
+                    current_volume = df.iloc[i]['volume']
+                    
+                    # Solo incluir si hay volumen suficiente o es un mínimo significativo
+                    if current_volume > volume_avg * 0.8 or depth >= 0.04:
+                        lows.append({
+                            'index': i,
+                            'timestamp': df.index[i],
+                            'low': current_low,
+                            'high': df.iloc[i]['high'],
+                            'close': df.iloc[i]['close'],
+                            'volume': df.iloc[i]['volume'],
+                            'depth': depth
+                        })
         
         return lows
     
-    def _calculate_rupture_factor_bear(self, atr: float, price: float, base_factor=1.025) -> float:
-        """Factor de ruptura dinámico para bear market"""
+    def _calculate_rupture_factor_bull(self, atr: float, price: float, base_factor=1.015) -> float:
+        """Factor de ruptura EXACTO del backtest 2023"""
         atr_pct = atr / price
         
-        if atr_pct < 0.02:
+        # Parámetros exactos del backtest 2023
+        if atr_pct < 0.015:
             factor = base_factor
-        elif atr_pct < 0.05:
-            factor = base_factor + (atr_pct * 0.3)
+        elif atr_pct < 0.03:
+            factor = base_factor + (atr_pct * 0.3)  
         else:
-            factor = min(base_factor + (atr_pct * 0.5), 1.06)  # Máximo 6%
+            factor = min(base_factor + (atr_pct * 0.5), 1.05)  # Máximo 5%
         
-        return max(factor, 1.025)  # Mínimo 2.5%
+        return max(factor, 1.015)  # Mínimo 1.5%
+    
+    def _check_momentum_filter(self, df, min_idx):
+        """Filtro de momentum EXACTO del backtest 2023"""
+        if min_idx < 20:
+            return True  
+        
+        # Verificar tendencia de los últimos 20 períodos
+        recent_20 = df.iloc[-20:]['close'].values
+        trend_slope = self._calculate_slope(recent_20)
+        
+        # Solo permitir trades si pendiente > -0.1 (igual que backtest 2023)
+        return trend_slope > -0.1
     
     def _calculate_atr_simple(self, df: pd.DataFrame, period=14) -> float:
         """Calcula ATR simplificado"""
