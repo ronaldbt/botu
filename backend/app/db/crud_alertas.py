@@ -33,7 +33,7 @@ def get_alerta(db: Session, alerta_id: int):
     """Obtener una alerta por ID"""
     return db.query(models.Alerta).filter(models.Alerta.id == alerta_id).first()
 
-def get_alertas(db: Session, skip: int = 0, limit: int = 100, ticker: Optional[str] = None, tipo_alerta: Optional[str] = None, leida: Optional[bool] = None):
+def get_alertas(db: Session, skip: int = 0, limit: int = 100, ticker: Optional[str] = None, tipo_alerta: Optional[str] = None, crypto_symbol: Optional[str] = None, leida: Optional[bool] = None):
     """Obtener lista de alertas con filtros opcionales"""
     query = db.query(models.Alerta)
     
@@ -41,6 +41,8 @@ def get_alertas(db: Session, skip: int = 0, limit: int = 100, ticker: Optional[s
         query = query.filter(models.Alerta.ticker == ticker)
     if tipo_alerta:
         query = query.filter(models.Alerta.tipo_alerta == tipo_alerta)
+    if crypto_symbol:
+        query = query.filter(models.Alerta.crypto_symbol == crypto_symbol)
     if leida is not None:
         query = query.filter(models.Alerta.leida == leida)
     
@@ -202,4 +204,13 @@ def get_open_positions(db: Session, usuario_id: int = None, crypto_symbol: str =
 def get_alertas_count(db: Session):
     """Obtiene el número total de alertas en el sistema"""
     return db.query(models.Alerta).count()
+
+def get_alertas_by_crypto_since(db: Session, crypto_symbol: str, since_date: datetime, limit: int = 50):
+    """Obtener alertas de una crypto específica desde una fecha"""
+    return (db.query(models.Alerta)
+            .filter(models.Alerta.crypto_symbol == crypto_symbol)
+            .filter(models.Alerta.fecha_creacion >= since_date)
+            .order_by(models.Alerta.fecha_creacion.desc())
+            .limit(limit)
+            .all())
 

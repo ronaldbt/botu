@@ -702,6 +702,9 @@ import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
 
+// Template refs
+const logsContainer = ref(null)
+
 // Reactive data
 const selectedMode = ref('manual')
 const loading = ref(false)
@@ -1067,8 +1070,8 @@ const refreshLogs = async () => {
       
       // Auto-scroll to bottom
       setTimeout(() => {
-        if (this.$refs.logsContainer) {
-          this.$refs.logsContainer.scrollTop = this.$refs.logsContainer.scrollHeight
+        if (logsContainer.value) {
+          logsContainer.value.scrollTop = logsContainer.value.scrollHeight
         }
       }, 100)
     }

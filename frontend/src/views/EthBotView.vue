@@ -181,6 +181,86 @@
               </button>
             </div>
           </div>
+
+          <!-- QR Code Modal -->
+          <div v-if="showQRModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg w-full max-w-md max-h-screen overflow-y-auto">
+              <!-- Header fijo -->
+              <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 rounded-t-lg">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-slate-900">Conectar con Telegram ETH</h3>
+                  <button
+                    @click="closeQRModal"
+                    class="text-slate-400 hover:text-slate-600 transition-colors duration-200"
+                  >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Contenido scrolleable -->
+              <div class="px-6 py-4 space-y-4">
+                <div v-if="qrConnection" class="text-center">
+                  <!-- QR Code -->
+                  <div class="bg-white p-4 rounded-lg border-2 border-slate-200 mb-4">
+                    <img 
+                      :src="`data:image/png;base64,${qrConnection.qr_code_base64}`" 
+                      alt="QR Code Telegram ETH"
+                      class="mx-auto max-w-full h-auto"
+                    />
+                  </div>
+                  
+                  <!-- Token Manual -->
+                  <div class="bg-slate-50 p-4 rounded-lg mb-4">
+                    <p class="text-sm text-slate-600 mb-2">O copia este link:</p>
+                    <div class="text-xs break-all font-mono text-slate-700 bg-white p-2 rounded border">
+                      {{ qrConnection.telegram_link }}
+                    </div>
+                  </div>
+
+                  <!-- Instrucciones -->
+                  <div class="text-left space-y-2 text-sm text-slate-600 mb-4">
+                    <p><strong>Instrucciones:</strong></p>
+                    <p>1. Abre Telegram en tu teléfono</p>
+                    <p>2. Escanea el código QR o haz clic en "Abrir en Telegram"</p>
+                    <p>3. El bot te conectará automáticamente</p>
+                    <p>4. ¡Listo! Recibirás las alertas de Ethereum</p>
+                  </div>
+
+                  <!-- Enlace directo -->
+                  <div class="mb-4">
+                    <a 
+                      :href="qrConnection.telegram_link" 
+                      target="_blank"
+                      class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                    >
+                      <span class="mr-2">📱</span>
+                      Abrir en Telegram
+                    </a>
+                  </div>
+
+                  <!-- Tiempo de expiración -->
+                  <div class="text-xs text-slate-500 mb-4">
+                    Este código expira en {{ qrConnection.expires_in_minutes }} minutos
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer fijo -->
+              <div class="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 rounded-b-lg">
+                <div class="text-center">
+                  <button
+                    @click="closeQRModal"
+                    class="px-6 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors duration-200"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Control Buttons - Solo Admin -->
@@ -420,6 +500,8 @@ const recentAlerts = ref([])
 
 // Telegram state
 const telegramStatus = ref(null)
+const showQRModal = ref(false)
+const qrConnection = ref(null)
 const generatingQR = ref(false)
 
 const botStatus = reactive({
@@ -598,11 +680,14 @@ const formatDate = (dateString) => {
 const generateTelegramConnection = async () => {
   generatingQR.value = true
   try {
-    const response = await axios.post('http://localhost:8000/telegram/connect/eth', {}, {
+    const response = await axios.post('http://localhost:8000/telegram/connect?crypto=eth', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
     })
+    
+    qrConnection.value = response.data
+    showQRModal.value = true
     
     console.log('Telegram ETH connection generated:', response.data)
   } catch (error) {
@@ -614,7 +699,7 @@ const generateTelegramConnection = async () => {
 
 const disconnectTelegram = async () => {
   try {
-    await axios.post('http://localhost:8000/telegram/disconnect/eth', {}, {
+    await axios.post('http://localhost:8000/telegram/disconnect?crypto=eth', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -639,6 +724,11 @@ const sendTestAlert = async () => {
   } catch (error) {
     console.error('Error enviando alerta de prueba ETH:', error)
   }
+}
+
+const closeQRModal = () => {
+  showQRModal.value = false
+  qrConnection.value = null
 }
 
 // Scanner logs functions

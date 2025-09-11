@@ -294,28 +294,54 @@ async def get_trading_status(
 ):
     """Obtiene el estado actual del trading automático del usuario"""
     try:
-        # Obtener API key activa
-        active_api_key = crud_trading.get_active_trading_api_key(db, current_user.id)
+        # Obtener todas las API keys del usuario y usar la primera activa
+        api_keys = crud_trading.get_user_trading_api_keys(db, current_user.id)
+        active_api_key = None
         
-        if not active_api_key:
-            return TradingStatusResponse(
-                auto_trading_enabled=False,
-                active_positions=0,
-                total_orders_today=0,
-                pnl_today_usdt=0.0,
-                available_balance_usdt=0.0
-            )
+        # Buscar API key activa, si no hay ninguna, usar la primera disponible
+        for key in api_keys:
+            if key.is_active and key.auto_trading_enabled:
+                active_api_key = key
+                break
         
+        if not active_api_key and api_keys:
+            active_api_key = api_keys[0]  # Usar la primera disponible
+
+        # Valores por defecto
+        available_balance = 0.0
+        auto_enabled = False
+
+        if active_api_key:
+            auto_enabled = bool(active_api_key.auto_trading_enabled and active_api_key.is_active)
+
+            # Obtener credenciales desencriptadas y consultar balance USDT
+            try:
+                credentials = crud_trading.get_decrypted_api_credentials(db, active_api_key.id)
+                if credentials:
+                    api_key, secret_key = credentials
+                    client = BinanceClient(api_key, secret_key, testnet=active_api_key.is_testnet)
+                    success, account_info = client.test_connection()
+                    if success and isinstance(account_info, dict):
+                        for balance in account_info.get('balances', []):
+                            if balance.get('asset') == 'USDT':
+                                available_balance = float(balance.get('free', 0.0))
+                                break
+                        logger.info(f"✅ Balance USDT obtenido para usuario {current_user.id}: ${available_balance:.2f}")
+            except Exception as e:
+                logger.warning(f"⚠️ No se pudo obtener balance USDT para usuario {current_user.id}: {e}")
+
         # Obtener estadísticas
         stats = crud_trading.get_trading_statistics(db, current_user.id, days=1)
-        
+
+        logger.info(f"📊 Status trading para usuario {current_user.id}: Auto={auto_enabled}, Balance=${available_balance:.2f}")
+
         return TradingStatusResponse(
-            auto_trading_enabled=active_api_key.auto_trading_enabled,
+            auto_trading_enabled=auto_enabled,
             active_positions=stats['active_positions'],
             total_orders_today=stats['total_orders'],
             pnl_today_usdt=stats['total_pnl_usdt'],
-            available_balance_usdt=0.0,  # TODO: Obtener balance real
-            last_trade=None  # TODO: Obtener último trade
+            available_balance_usdt=available_balance,
+            last_trade=None
         )
         
     except Exception as e:
@@ -357,6 +383,63 @@ async def get_trading_statistics(
     except Exception as e:
         logger.error(f"❌ Error obteniendo estadísticas: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo estadísticas: {str(e)}")
+
+@router.get("/balances/{api_key_id}")
+async def get_account_balances(
+    api_key_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Obtiene todos los balances de la cuenta de Binance"""
+    try:
+        # Obtener API key
+        api_key_config = crud_trading.get_trading_api_key(db, api_key_id, current_user.id)
+        if not api_key_config:
+            raise HTTPException(status_code=404, detail="API key no encontrada")
+        
+        # Obtener credenciales
+        credentials = crud_trading.get_decrypted_api_credentials(db, api_key_id)
+        if not credentials:
+            raise HTTPException(status_code=400, detail="No se pudieron obtener las credenciales")
+        
+        api_key, secret_key = credentials
+        
+        # Crear cliente y obtener balances
+        client = BinanceClient(api_key, secret_key, testnet=api_key_config.is_testnet)
+        success, result = client.test_connection()
+        
+        if success:
+            # Extraer balances del result
+            balances = result.get('balances', [])
+            
+            # Filtrar solo balances con cantidad > 0
+            active_balances = [
+                balance for balance in balances 
+                if float(balance.get('free', 0)) > 0 or float(balance.get('locked', 0)) > 0
+            ]
+            
+            logger.info(f"✅ Balances obtenidos para usuario {current_user.id}: {len(active_balances)} activos")
+            
+            return {
+                "success": True,
+                "balances": active_balances,
+                "total_assets": len(active_balances),
+                "testnet": api_key_config.is_testnet,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            logger.error(f"❌ Error obteniendo balances: {result}")
+            return {
+                "success": False,
+                "message": f"Error de conexión: {result}",
+                "testnet": api_key_config.is_testnet
+            }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error consultando balances: {e}")
+        raise HTTPException(status_code=500, detail=f"Error consultando balances: {str(e)}")
 
 @router.get("/health")
 async def trading_health_check():

@@ -613,17 +613,17 @@ class EthScannerService:
     
     async def scan_continuous(self):
         """Escaneo continuo en segundo plano - ETH nunca se detiene"""
-        self.add_log("info", "🚀 Iniciando escaneo continuo ETH 24/7")
+        self._add_log("INFO", "🚀 Iniciando escaneo continuo ETH 24/7")
         
         while self.is_running:
             try:
                 current_time = datetime.now()
-                self.add_log("info", f"📊 Escaneando ETH... {current_time.strftime('%H:%M:%S')}")
+                self._add_log("INFO", f"📊 Escaneando ETH... {current_time.strftime('%H:%M:%S')}")
                 
                 # Obtener datos de Binance con retry robusto
                 df = await self._get_binance_data()
                 if df is None:
-                    self.add_log("error", "❌ Error obteniendo datos de Binance - reintentando en 30s")
+                    self._add_log("ERROR", "❌ Error obteniendo datos de Binance - reintentando en 30s")
                     await asyncio.sleep(30)  # Esperar 30s antes del siguiente intento
                     continue
                 
@@ -636,7 +636,7 @@ class EthScannerService:
                 signals = self._detect_u_patterns_2023(df)
                 
                 if signals:
-                    self.add_log("success", f"🎯 {len(signals)} patrón(es) U detectado(s) en ETH")
+                    self._add_log("SUCCESS", f"🎯 {len(signals)} patrón(es) U detectado(s) en ETH")
                     
                     # Procesar solo la primera señal para evitar spam
                     signal = signals[0]
@@ -646,9 +646,9 @@ class EthScannerService:
                         await self._process_signal(signal, df)
                         self.last_scan_time = current_time
                     else:
-                        self.add_log("info", f"⏳ Cooldown activo ETH - Última alerta: {self.last_alert_sent}")
+                        self._add_log("WARNING", f"⏳ Cooldown activo ETH - Última alerta: {self.last_alert_sent}")
                 else:
-                    self.add_log("info", "👀 Sin patrones U detectados en ETH")
+                    self._add_log("INFO", "👀 Sin patrones U detectados en ETH")
                 
                 self.last_scan_time = current_time
                 
@@ -656,14 +656,14 @@ class EthScannerService:
                 await asyncio.sleep(self.config['scan_interval'])
                 
             except asyncio.CancelledError:
-                self.add_log("info", "🛑 Escaneo ETH cancelado")
+                self._add_log("WARNING", "🛑 Escaneo ETH cancelado")
                 break
             except Exception as e:
-                self.add_log("error", f"❌ Error crítico en escaneo ETH: {e}")
+                self._add_log("ERROR", f"❌ Error crítico en escaneo ETH: {e}")
                 # En caso de error crítico, esperar más tiempo antes de reintentar
                 await asyncio.sleep(120)  # 2 minutos
         
-        self.add_log("info", "🏁 Escaneo continuo ETH terminado")
+        self._add_log("INFO", "🏁 Escaneo continuo ETH terminado")
     
     def get_current_analysis(self) -> Dict[str, Any]:
         """Obtiene análisis actual de ETH usando scanner optimizado 2023"""
@@ -732,45 +732,6 @@ class EthScannerService:
             "cooldown_remaining": None if not self.last_alert_sent else max(0, self.cooldown_period - (datetime.now() - self.last_alert_sent).total_seconds())
         }
     
-    async def start_scanning(self):
-        """Inicia el escaneo continuo en background"""
-        try:
-            if self.is_running:
-                return False
-                
-            self.is_running = True
-            # Crear task de escaneo continuo
-            self.scan_task = asyncio.create_task(self.scan_continuous())
-            logger.info("🚀 ETH Scanner iniciado en modo continuo 24/7")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Error iniciando ETH scanner: {e}")
-            self.is_running = False
-            return False
-    
-    async def stop_scanning(self):
-        """Detiene el escaneo continuo"""
-        try:
-            if not self.is_running:
-                return False
-                
-            self.is_running = False
-            
-            # Cancelar task si existe
-            if self.scan_task and not self.scan_task.done():
-                self.scan_task.cancel()
-                try:
-                    await self.scan_task
-                except asyncio.CancelledError:
-                    pass
-                    
-            logger.info("🛑 ETH Scanner detenido")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Error deteniendo ETH scanner: {e}")
-            return False
 
 # Instancia global del scanner
 eth_scanner = EthScannerService()

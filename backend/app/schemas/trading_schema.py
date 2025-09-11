@@ -73,7 +73,7 @@ class TradingApiKeyUpdate(BaseModel):
 class TradingApiKeyResponse(TradingApiKeyBase):
     id: int
     user_id: int
-    api_key_masked: str  # Solo mostrar primeros 8 caracteres
+    api_key_masked: Optional[str] = None  # Solo mostrar primeros 8 caracteres
     created_at: datetime
     last_used: Optional[datetime] = None
     connection_status: str

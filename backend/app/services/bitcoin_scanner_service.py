@@ -294,7 +294,8 @@ class BitcoinScannerService:
                         'atr': atr,
                         'dynamic_factor': dynamic_factor,
                         'depth': low['depth'],
-                        'rupture_level': nivel_ruptura
+                        'rupture_level': nivel_ruptura,
+                        'symbol': 'BTCUSDT'  # Add missing symbol
                     })
                     
                     logger.info(f"🎯 PATRÓN U DETECTADO - ALGORITMO BACKTEST 2023:")

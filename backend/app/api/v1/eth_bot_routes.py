@@ -253,3 +253,51 @@ async def get_eth_scanner_logs(current_user: User = Depends(get_current_user)):
             "is_running": False,
             "error": str(e)
         }
+
+@router.get("/eth-bot/alerts")
+async def get_eth_alerts(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Obtiene las alertas recientes del bot de Ethereum desde la base de datos"""
+    try:
+        # Obtener alertas de Ethereum de los últimos 7 días
+        from datetime import datetime, timedelta
+        from app.db import crud_alertas
+        
+        one_week_ago = datetime.now() - timedelta(days=7)
+        alertas_eth = crud_alertas.get_alertas_by_crypto_since(
+            db=db, 
+            crypto_symbol='ETH', 
+            since_date=one_week_ago,
+            limit=50
+        )
+        
+        # Convertir a formato que espera el frontend
+        alerts = []
+        for alerta in alertas_eth:
+            # Formatear fecha y hora en UTC para usuarios internacionales
+            fecha_utc = alerta.fecha_creacion.replace(tzinfo=None)
+            fecha_formateada = fecha_utc.strftime('%d/%m/%Y %H:%M UTC')
+            
+            alerts.append({
+                'id': alerta.id,
+                'timestamp': alerta.fecha_creacion.isoformat(),
+                'formatted_date': fecha_formateada,
+                'date_day': fecha_utc.strftime('%d/%m/%Y'),
+                'date_time': fecha_utc.strftime('%H:%M UTC'),
+                'type': alerta.tipo_alerta,
+                'symbol': alerta.ticker,
+                'crypto_symbol': alerta.crypto_symbol,
+                'message': alerta.mensaje,
+                'rupture_level': alerta.nivel_ruptura,
+                'entry_price': alerta.precio_entrada,
+                'exit_price': alerta.precio_salida,
+                'profit_usd': alerta.profit_usd,
+                'profit_percentage': alerta.profit_percentage,
+                'bot_mode': alerta.bot_mode,
+                'read': alerta.leida
+            })
+        
+        return alerts
+        
+    except Exception as e:
+        logging.error(f"Error getting Ethereum alerts from database: {str(e)}")
+        return []

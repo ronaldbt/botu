@@ -67,12 +67,13 @@ def get_alertas(
     limit: int = Query(100, ge=1, le=1000),
     ticker: Optional[str] = Query(None),
     tipo_alerta: Optional[str] = Query(None),
+    crypto_symbol: Optional[str] = Query(None, description="Filter by crypto symbol (BTC, ETH, BNB)"),
     leida: Optional[bool] = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Obtener lista de alertas con filtros opcionales"""
-    return crud_alertas.get_alertas(db=db, skip=skip, limit=limit, ticker=ticker, tipo_alerta=tipo_alerta, leida=leida)
+    return crud_alertas.get_alertas(db=db, skip=skip, limit=limit, ticker=ticker, tipo_alerta=tipo_alerta, leida=leida, crypto_symbol=crypto_symbol)
 
 @router.get("/{alerta_id}", response_model=AlertaResponse)
 def get_alerta(
