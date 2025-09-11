@@ -5,8 +5,7 @@
       <div class="mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
           <div>
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2 flex items-center">
-              <span class="text-4xl mr-3 text-yellow-500">🟡</span>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
               BNB Bot U-Pattern
             </h1>
             <p class="text-slate-600 text-base">Sistema avanzado de detección de patrones U para BNB Coin con backtesting probado</p>

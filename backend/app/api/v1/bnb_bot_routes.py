@@ -199,13 +199,12 @@ async def get_bnb_bot_status(current_user: User = Depends(get_current_user)):
 async def get_current_bnb_analysis(current_user: User = Depends(get_current_user)):
     """Obtiene el análisis actual de BNB"""
     try:
-        # Import and run the scanner for BNB
-        from binance_client import fetch_current_price
-        from scanner_crypto import scan_crypto_for_u
+        # Usar el scanner nuevo optimizado del 2023 para BNB
+        from app.services.bnb_scanner_service import bnb_scanner
         
-        # Get current BNB analysis
-        result = scan_crypto_for_u('BNBUSDT', verbose=False)
-        current_price = fetch_current_price('BNBUSDT')
+        # Get current BNB analysis usando el scanner optimizado
+        result = bnb_scanner.get_current_analysis()
+        current_price = result.get('current_price', 0)
         
         analysis = CurrentAnalysis(
             currentPrice=current_price,

@@ -87,10 +87,14 @@ async def run_backtest_async(symbol: str, years_back: int):
     global backtest_status
     
     try:
-        # Import required modules
-        from binance_client import get_spot_client, fetch_klines
-        from binance_scanner_u import scan_for_u_binance
+        # TODO: Actualizar para usar scanners optimizados 2023
+        # from binance_client import get_spot_client, fetch_klines
+        # from binance_scanner_u import scan_for_u_binance
         import pandas as pd
+        
+        # Por ahora retornamos un resultado de prueba
+        backtest_status["error"] = "Herramientas de testing temporalmente deshabilitadas - usando scanners optimizados 2023"
+        return
         
         backtest_status["is_running"] = True
         backtest_status["completed"] = False

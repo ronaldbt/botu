@@ -18,6 +18,7 @@ from app.db.database import SessionLocal
 from app.db import crud_users, crud_alertas
 from app.schemas.alerta_schema import AlertaCreate
 from app.telegram.telegram_bot import telegram_bot
+from app.services.auto_trading_executor import auto_trading_executor
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -152,11 +153,19 @@ class BnbScannerService:
                 self._add_log("WARNING", "No se pudieron obtener datos suficientes de Binance")
                 return
             
+            current_price = df['close'].iloc[-1]
+            
+            # 1.5. 🤖 MONITOREAR POSICIONES AUTOMÁTICAS BNB (Nueva funcionalidad)
+            # Verificar condiciones de salida para trading automático usando las mismas estrategias
+            try:
+                await auto_trading_executor.check_exit_conditions('bnb', current_price)
+            except Exception as auto_trade_error:
+                logger.error(f"❌ Error monitoreando posiciones automáticas BNB: {auto_trade_error}")
+            
             # 2. Detectar patrones U usando la lógica EXACTA del backtest BNB 2022
             signals = self._detect_u_patterns_2022(df)
             
             # 3. Procesar señales detectadas
-            current_price = df['close'].iloc[-1]
             if signals:
                 # Verificar cooldown para evitar spam
                 now = datetime.now()
@@ -195,12 +204,12 @@ class BnbScannerService:
         max_retries = 3
         for retry in range(max_retries):
             try:
-                # Obtener últimas 500 velas de 4h (optimizado servidor)
+                # Obtener últimas 1000 velas de 4h (igual que backtest BNB 2022)
                 url = "https://api.binance.com/api/v3/klines"
                 params = {
                     'symbol': self.config['symbol'],
                     'interval': self.config['timeframe'], 
-                    'limit': self.config['data_limit']  # 500 velas
+                    'limit': self.config['data_limit']  # 1000 velas
                 }
                 
                 response = requests.get(url, params=params, timeout=30)
@@ -471,6 +480,32 @@ class BnbScannerService:
                 self.alerts_count += 1
                 self.last_alert_sent = datetime.now()
                 
+                # 4. 🤖 EJECUTAR TRADING AUTOMÁTICO BNB (Nueva funcionalidad)
+                # Usar las mismas estrategias probadas (8% TP, 3% SL)
+                try:
+                    signal_data = {
+                        'entry_price': current_price,
+                        'rupture_level': rupture_level,
+                        'profit_target': profit_target,
+                        'stop_loss': stop_loss,
+                        'signal_strength': signal.get('signal_strength', 0),
+                        'depth': signal.get('depth', 0),
+                        'timestamp': signal.get('timestamp', datetime.now())
+                    }
+                    
+                    # Ejecutar trading automático para usuarios que lo tengan habilitado
+                    await auto_trading_executor.execute_buy_signal('bnb', signal_data, alerta_db.id)
+                    
+                    self._add_log("SUCCESS", "🤖 Trading automático BNB ejecutado para usuarios habilitados", {
+                        "crypto": "BNB",
+                        "entry_price": f"${current_price:.2f}",
+                        "alerta_id": alerta_db.id
+                    })
+                    
+                except Exception as trading_error:
+                    logger.error(f"❌ Error en trading automático BNB: {trading_error}")
+                    self._add_log("ERROR", f"Error en trading automático BNB: {str(trading_error)}")
+                
             finally:
                 db.close()
                 
@@ -630,6 +665,61 @@ class BnbScannerService:
                 await asyncio.sleep(120)  # 2 minutos
         
         self.add_log("info", "🏁 Escaneo continuo BNB terminado")
+    
+    def get_current_analysis(self) -> Dict[str, Any]:
+        """Obtiene análisis actual de BNB usando scanner optimizado 2023"""
+        try:
+            # Obtener datos actuales
+            df = self._get_historical_data()
+            if df is None or len(df) < 50:
+                return {
+                    "current_price": 0,
+                    "nivel_ruptura": None,
+                    "estado_sugerido": "ERROR",
+                    "signal_strength": 0,
+                    "slope_left": None,
+                    "min_local_depth": None,
+                    "pattern_description": "Error obteniendo datos"
+                }
+            
+            current_price = df.iloc[-1]['close']
+            
+            # Usar el mismo algoritmo de detección que el scanner
+            signals = self._detect_u_pattern_2023(df)
+            
+            if signals:
+                signal = signals[0]  # Tomar la primera señal
+                return {
+                    "current_price": current_price,
+                    "nivel_ruptura": signal['rupture_level'],
+                    "estado_sugerido": "PATTERN_DETECTED",
+                    "signal_strength": signal['signal_strength'],
+                    "slope_left": signal.get('slope_left'),
+                    "min_local_depth": signal['depth'],
+                    "pattern_description": f"Patrón U detectado - Fuerza: {signal['signal_strength']:.1f}/10"
+                }
+            else:
+                return {
+                    "current_price": current_price,
+                    "nivel_ruptura": None,
+                    "estado_sugerido": "NO_PATTERN",
+                    "signal_strength": 0,
+                    "slope_left": None,
+                    "min_local_depth": None,
+                    "pattern_description": "Monitoreando patrones U optimizados BNB 2022"
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ Error en análisis actual BNB: {e}")
+            return {
+                "current_price": 0,
+                "nivel_ruptura": None,
+                "estado_sugerido": "ERROR",
+                "signal_strength": 0,
+                "slope_left": None,
+                "min_local_depth": None,
+                "pattern_description": f"Error: {str(e)}"
+            }
     
     def get_status(self) -> Dict[str, Any]:
         """Obtiene el estado actual del scanner"""

@@ -15,7 +15,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src')
 
 from app.db.database import SessionLocal
 from app.db import crud_alertas, crud_users
-from app.telegram.health_bot import health_bot
 from app.services.eth_scanner_service import eth_scanner
 from app.services.bitcoin_scanner_service import bitcoin_scanner
 from app.services.bnb_scanner_service import bnb_scanner
@@ -380,6 +379,9 @@ class HealthMonitorService:
     async def _send_admin_telegram_message(self, message: str):
         """Envía mensaje a administradores por Health Bot de Telegram"""
         try:
+            # Import lazy para evitar circular import
+            from app.telegram.health_bot import health_bot
+            
             result = health_bot.broadcast_to_admins(message)
             logger.info(f"📤 Health Bot: {result['sent']}/{result['total_targets']} admins notificados")
             

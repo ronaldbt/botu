@@ -199,13 +199,12 @@ async def get_eth_bot_status(current_user: User = Depends(get_current_user)):
 async def get_current_eth_analysis(current_user: User = Depends(get_current_user)):
     """Obtiene el análisis actual de Ethereum"""
     try:
-        # Import and run the scanner for Ethereum
-        from binance_client import fetch_current_price
-        from scanner_crypto import scan_crypto_for_u
+        # Usar el scanner nuevo optimizado del 2023 para Ethereum
+        from app.services.eth_scanner_service import eth_scanner
         
-        # Get current Ethereum analysis
-        result = scan_crypto_for_u('ETHUSDT', verbose=False)
-        current_price = fetch_current_price('ETHUSDT')
+        # Get current Ethereum analysis usando el scanner optimizado
+        result = eth_scanner.get_current_analysis()
+        current_price = result.get('current_price', 0)
         
         analysis = CurrentAnalysis(
             currentPrice=current_price,

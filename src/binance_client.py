@@ -23,7 +23,7 @@ def get_spot_client():
     logger.info("Cliente Binance público creado - Solo datos históricos")
     return None  # No necesitamos cliente, usaremos requests directo
 
-def fetch_klines(symbol: str, interval: str = "1h", limit: int = 200):
+def fetch_klines(symbol: str, interval: str = "1h", limit: int = 1000):
     """
     Obtiene velas (klines) de Binance usando la API pública
     

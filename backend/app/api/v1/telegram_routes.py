@@ -46,14 +46,35 @@ class WebhookUpdate(BaseModel):
 
 @router.get("/status", response_model=TelegramStatusResponse)
 async def get_telegram_status(
+    crypto: str = "btc",  # Parámetro de query para especificar crypto
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Obtiene el estado de conexión de Telegram para el usuario actual"""
+    """Obtiene el estado de conexión de Telegram para el usuario actual y crypto específica"""
     try:
+        # Mapear crypto a campos del modelo
+        crypto = crypto.lower()
+        if crypto == "bitcoin":
+            crypto = "btc"
+        elif crypto == "ethereum":
+            crypto = "eth"
+        
+        subscribed = False
+        chat_id = None
+        
+        if crypto == "btc":
+            subscribed = current_user.telegram_subscribed_btc or False
+            chat_id = current_user.telegram_chat_id_btc
+        elif crypto == "eth":
+            subscribed = current_user.telegram_subscribed_eth or False
+            chat_id = current_user.telegram_chat_id_eth
+        elif crypto == "bnb":
+            subscribed = current_user.telegram_subscribed_bnb or False
+            chat_id = current_user.telegram_chat_id_bnb
+        
         return TelegramStatusResponse(
-            connected=current_user.telegram_subscribed,
-            chat_id=current_user.telegram_chat_id,
+            connected=subscribed,
+            chat_id=chat_id,
             subscription_status=current_user.subscription_status,
             bot_configured=telegram_bot.is_configured()
         )
@@ -66,27 +87,43 @@ async def get_telegram_status(
 
 @router.post("/connect", response_model=TelegramConnectionResponse)
 async def generate_telegram_connection(
+    crypto: str = "btc",  # Parámetro para especificar la crypto
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Genera un token único y QR para conectar Telegram"""
+    """Genera un token único y QR para conectar Telegram a una crypto específica"""
     try:
-        if not telegram_bot.is_configured():
+        # Normalizar crypto para obtener bot
+        crypto_for_bot = crypto.lower()
+        if crypto_for_bot == "btc":
+            crypto_for_bot = "bitcoin"
+        elif crypto_for_bot == "eth":
+            crypto_for_bot = "ethereum"
+        # bnb se mantiene como bnb
+        
+        # Mantener crypto original para campos de DB
+        crypto = crypto.lower()
+        
+        # Verificar si el bot específico está configurado
+        from app.telegram.crypto_bots import crypto_bots
+        crypto_bot = crypto_bots.get_bot(crypto_for_bot)
+        
+        if not crypto_bot or not crypto_bot.is_configured:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="El bot de Telegram no está configurado en el servidor"
+                detail=f"El bot de {crypto.upper()} no está configurado en el servidor"
             )
         
-        # Obtener o generar token único
-        telegram_token = crud_users.get_or_create_telegram_token(db, current_user.id)
+        # Obtener o generar token único para esta crypto
+        telegram_token = crud_users.get_or_create_telegram_token_crypto(db, current_user.id, crypto)
         if not telegram_token:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Usuario no encontrado"
             )
         
-        # Crear link de Telegram
-        bot_username = telegram_bot._get_bot_username()
+        # Crear link de Telegram con el bot específico
+        bot_username = crypto_bot.bot_username.replace('@', '')
         if not bot_username:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -126,12 +163,20 @@ async def generate_telegram_connection(
 async def validate_telegram_token(
     token: str,
     chat_id: str,
+    crypto: str = "btc",  # Parámetro para especificar la crypto
     db: Session = Depends(get_db)
 ):
-    """Valida un token de Telegram y registra la conexión (usado por el bot)"""
+    """Valida un token de Telegram y registra la conexión (usado por el bot crypto específico)"""
     try:
-        # Buscar usuario por token
-        user = crud_users.get_user_by_telegram_token(db, token)
+        # Normalizar crypto
+        crypto = crypto.lower()
+        if crypto == "bitcoin":
+            crypto = "btc"
+        elif crypto == "ethereum":
+            crypto = "eth"
+        
+        # Buscar usuario por token específico de crypto
+        user = crud_users.get_user_by_telegram_token_crypto(db, token, crypto)
         if not user:
             return {
                 "valid": False,
@@ -144,8 +189,8 @@ async def validate_telegram_token(
                 "message": "Usuario inactivo"
             }
         
-        # Actualizar suscripción
-        crud_users.update_telegram_subscription(db, user.id, chat_id, True)
+        # Actualizar suscripción para la crypto específica
+        crud_users.update_telegram_subscription_crypto(db, user.id, chat_id, crypto, True)
         
         return {
             "valid": True,

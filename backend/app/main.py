@@ -7,7 +7,7 @@ import asyncio
 import logging
 from app.db import models
 from app.db.database import engine
-from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes
+from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes, trading_routes
 from app.services.health_monitor_service import health_monitor
 
 # Configurar logging
@@ -84,5 +84,6 @@ app.include_router(eth_bot_routes.router, tags=["eth-bot"])      # Ethereum Bot 
 app.include_router(bnb_bot_routes.router, tags=["bnb-bot"])      # BNB Bot endpoints
 app.include_router(profile_routes.router, tags=["profile"])      # Profile and subscription endpoints
 app.include_router(telegram_routes.router)      # Ya tiene prefix="/telegram"
+app.include_router(trading_routes.router, tags=["trading"])      # Trading automático endpoints
 app.include_router(health_routes.router, tags=["health"])        # Health Monitor endpoints
 app.include_router(health_telegram_routes.router, tags=["health-telegram"])  # Health Telegram Bot endpoints

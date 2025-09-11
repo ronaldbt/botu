@@ -5,8 +5,7 @@
       <div class="mb-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
           <div>
-            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2 flex items-center">
-              <span class="text-4xl mr-3 text-blue-500">Ξ</span>
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
               Ethereum Bot U-Pattern
             </h1>
             <p class="text-slate-600 text-base">Sistema avanzado de detección de patrones U para Ethereum con backtesting probado</p>
@@ -337,6 +336,70 @@
           </button>
         </div>
       </div>
+
+      <!-- Alertas Recientes ETH -->
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mt-8">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <span class="text-2xl mr-2">🚨</span>
+            Alertas Recientes ETH
+          </h3>
+          <button 
+            @click="fetchRecentAlerts" 
+            class="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+          >
+            🔄 Actualizar
+          </button>
+        </div>
+
+        <div v-if="recentAlerts && recentAlerts.length > 0" class="space-y-3">
+          <div 
+            v-for="alert in recentAlerts" 
+            :key="alert.id"
+            class="bg-slate-50 rounded-lg p-4 border-l-4 border-green-500"
+          >
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex items-center space-x-2">
+                <span class="text-2xl">{{ alert.tipo_alerta === 'BUY' ? '🟢' : '🔴' }}</span>
+                <div>
+                  <div class="font-semibold text-slate-900">{{ alert.crypto_symbol }} - {{ alert.tipo_alerta }}</div>
+                  <div class="text-sm text-slate-600">{{ alert.ticker }}</div>
+                </div>
+              </div>
+              <div class="text-right text-sm text-slate-500">
+                {{ formatDate(alert.fecha_creacion) }}
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-3">
+              <div v-if="alert.precio_entrada">
+                <div class="text-xs text-slate-600">Precio Entrada</div>
+                <div class="font-semibold text-slate-900">${{ alert.precio_entrada.toFixed(2) }}</div>
+              </div>
+              <div v-if="alert.nivel_ruptura">
+                <div class="text-xs text-slate-600">Nivel Ruptura</div>
+                <div class="font-semibold text-blue-600">${{ alert.nivel_ruptura.toFixed(2) }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-600">Modo Bot</div>
+                <div class="font-semibold text-slate-900 capitalize">{{ alert.bot_mode }}</div>
+              </div>
+            </div>
+            
+            <div v-if="alert.mensaje" class="mt-3 text-sm text-slate-700 bg-white p-2 rounded">
+              {{ alert.mensaje.split('\n')[0] }}
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="text-center py-8">
+          <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl">🔍</span>
+          </div>
+          <h4 class="text-lg font-semibold text-slate-900 mb-2">No hay alertas recientes</h4>
+          <p class="text-slate-600">Las alertas de compra ETH aparecerán aquí cuando se detecten patrones U.</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -353,6 +416,7 @@ const selectedMode = ref('manual')
 const loading = ref(false)
 const currentAnalysis = ref(null)
 const scannerLogs = ref([])
+const recentAlerts = ref([])
 
 // Telegram state
 const telegramStatus = ref(null)
@@ -427,7 +491,8 @@ const refreshStatus = async () => {
   try {
     await Promise.all([
       fetchStatus(),
-      fetchCurrentAnalysis()
+      fetchCurrentAnalysis(),
+      fetchRecentAlerts()
     ])
   } catch (error) {
     console.error('Error actualizando estado:', error)
@@ -461,6 +526,21 @@ const fetchCurrentAnalysis = async () => {
     currentAnalysis.value = response.data
   } catch (error) {
     console.error('Error obteniendo análisis:', error)
+  }
+}
+
+const fetchRecentAlerts = async () => {
+  try {
+    const response = await axios.get('http://localhost:8000/alertas/?limit=10&crypto_symbol=ETH&tipo_alerta=BUY', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    recentAlerts.value = response.data
+  } catch (error) {
+    console.error('Error obteniendo alertas recientes ETH:', error)
+    recentAlerts.value = []
   }
 }
 
@@ -500,6 +580,18 @@ const getPatternStateClass = (state) => {
     case 'POST_RUPTURA': return 'text-purple-900'
     default: return 'text-gray-900'
   }
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 // Telegram functions

@@ -966,7 +966,7 @@ const getAlertTextClass = (type) => {
 // Telegram functions
 const fetchTelegramStatus = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/telegram/status', {
+    const response = await axios.get('http://localhost:8000/telegram/status?crypto=btc', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -985,7 +985,7 @@ const fetchTelegramStatus = async () => {
 const generateTelegramConnection = async () => {
   generatingQR.value = true
   try {
-    const response = await axios.post('http://localhost:8000/telegram/connect', {}, {
+    const response = await axios.post('http://localhost:8000/telegram/connect?crypto=btc', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }

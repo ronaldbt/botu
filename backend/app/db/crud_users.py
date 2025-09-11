@@ -150,6 +150,61 @@ def get_admin_telegram_users(db: Session):
     return db.query(models.User).filter(
         models.User.is_admin == True,
         models.User.is_active == True,
-        models.User.telegram_chat_id.isnot(None),
-        models.User.telegram_subscribed == True
+        models.User.telegram_chat_id_btc.isnot(None),
+        models.User.telegram_subscribed_btc == True
     ).all()
+
+def get_or_create_telegram_token_crypto(db: Session, user_id: int, crypto: str) -> str:
+    """Obtiene o crea un token de Telegram para un usuario y crypto específica"""
+    db_user = get_user(db, user_id)
+    if not db_user:
+        return None
+    
+    # Mapear crypto a campo del modelo
+    token_field = f"telegram_token_{crypto}"
+    current_token = getattr(db_user, token_field, None)
+    
+    if not current_token:
+        new_token = generate_telegram_token()
+        setattr(db_user, token_field, new_token)
+        db.commit()
+        db.refresh(db_user)
+        return new_token
+    
+    return current_token
+
+def get_user_by_telegram_token_crypto(db: Session, token: str, crypto: str):
+    """Obtiene un usuario por su token de Telegram de una crypto específica"""
+    token_field = f"telegram_token_{crypto}"
+    return db.query(models.User).filter(getattr(models.User, token_field) == token).first()
+
+def get_active_telegram_users_by_crypto(db: Session, crypto: str):
+    """Obtiene usuarios con suscripción activa de Telegram para una crypto específica"""
+    subscribed_field = f"telegram_subscribed_{crypto}"
+    chat_id_field = f"telegram_chat_id_{crypto}"
+    
+    return db.query(models.User).filter(
+        getattr(models.User, subscribed_field) == True,
+        models.User.subscription_status == 'active',
+        models.User.is_active == True,
+        getattr(models.User, chat_id_field).isnot(None)
+    ).all()
+
+def update_telegram_subscription_crypto(db: Session, user_id: int, chat_id: str, crypto: str, subscribed: bool = True):
+    """Actualiza la suscripción de Telegram de un usuario para una crypto específica"""
+    db_user = get_user(db, user_id)
+    if not db_user:
+        return None
+    
+    # Mapear crypto a campos del modelo
+    chat_id_field = f"telegram_chat_id_{crypto}"
+    subscribed_field = f"telegram_subscribed_{crypto}"
+    
+    setattr(db_user, chat_id_field, chat_id)
+    setattr(db_user, subscribed_field, subscribed)
+    db_user.subscription_status = 'active' if subscribed else 'inactive'
+    db_user.last_activity = datetime.now(timezone.utc)
+    
+    db.commit()
+    db.refresh(db_user)
+    return db_user

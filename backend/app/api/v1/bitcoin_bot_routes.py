@@ -221,13 +221,12 @@ async def get_current_analysis(current_user: User = Depends(get_current_user)):
     try:
         user_id = current_user.id
         
-        # Import and run the scanner
-        from binance_client import fetch_current_price
-        from scanner_crypto import scan_crypto_for_u
+        # Usar el scanner nuevo optimizado del 2023
+        from app.services.bitcoin_scanner_service import bitcoin_scanner
         
-        # Get current Bitcoin analysis
-        result = scan_crypto_for_u('BTCUSDT', verbose=False)
-        current_price = fetch_current_price('BTCUSDT')
+        # Get current Bitcoin analysis usando el scanner optimizado
+        result = bitcoin_scanner.get_current_analysis()
+        current_price = result.get('current_price', 0)
         
         analysis = CurrentAnalysis(
             currentPrice=current_price,

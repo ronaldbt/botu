@@ -208,3 +208,97 @@ class PaymentHistory(Base):
     # Relaciones
     user = relationship("User")
     plan = relationship("SubscriptionPlan")
+
+# --------------------------
+# Tabla Trading API Keys (Multitenant)
+# --------------------------
+
+class TradingApiKey(Base):
+    __tablename__ = "trading_api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    exchange = Column(String, nullable=False, default='binance')  # 'binance', 'bybit', etc.
+    api_key = Column(String, nullable=False)  # Encriptada
+    secret_key = Column(String, nullable=False)  # Encriptada
+    is_testnet = Column(Boolean, default=True)
+    is_active = Column(Boolean, default=True)
+    
+    # Configuración de trading específica por usuario
+    auto_trading_enabled = Column(Boolean, default=False)
+    max_position_size_usdt = Column(Float, default=50.0)  # Máximo por posición
+    max_concurrent_positions = Column(Integer, default=3)  # Máximo posiciones simultáneas
+    risk_percentage = Column(Float, default=0.02)  # 2% riesgo por trade
+    
+    # Cryptos habilitadas para auto-trading
+    btc_enabled = Column(Boolean, default=False)
+    eth_enabled = Column(Boolean, default=False)
+    bnb_enabled = Column(Boolean, default=False)
+    
+    # Asignación de balance por crypto (en USDT)
+    btc_allocated_usdt = Column(Float, default=0.0)
+    eth_allocated_usdt = Column(Float, default=0.0)
+    bnb_allocated_usdt = Column(Float, default=0.0)
+    
+    # Estrategias (usar las mismas probadas)
+    profit_target = Column(Float, default=0.08)  # 8% TP
+    stop_loss = Column(Float, default=0.03)     # 3% SL
+    max_hold_hours = Column(Integer, default=320)  # 13.3 días = 320h
+    
+    # Metadatos
+    created_at = Column(DateTime, default=func.now())
+    last_used = Column(DateTime, nullable=True)
+    last_balance_check = Column(DateTime, nullable=True)
+    connection_status = Column(String, default='not_tested')  # 'active', 'error', 'not_tested'
+    connection_error = Column(String, nullable=True)
+    
+    # Relaciones
+    user = relationship("User")
+
+# --------------------------
+# Tabla Trading Orders (Órdenes automáticas)
+# --------------------------
+
+class TradingOrder(Base):
+    __tablename__ = "trading_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    api_key_id = Column(Integer, ForeignKey("trading_api_keys.id"), nullable=False)
+    alerta_id = Column(Integer, ForeignKey("alertas.id"), nullable=True)  # Alerta que disparó la orden
+    
+    # Detalles de la orden
+    symbol = Column(String, nullable=False, index=True)  # BTCUSDT, ETHUSDT, etc.
+    side = Column(String, nullable=False)  # BUY, SELL
+    order_type = Column(String, nullable=False, default='MARKET')  # MARKET, LIMIT
+    quantity = Column(Float, nullable=False)
+    price = Column(Float, nullable=True)  # Para órdenes LIMIT
+    executed_price = Column(Float, nullable=True)
+    executed_quantity = Column(Float, nullable=True)
+    
+    # Status y resultados
+    status = Column(String, nullable=False, default='PENDING')  # PENDING, FILLED, PARTIALLY_FILLED, CANCELLED, REJECTED
+    binance_order_id = Column(String, nullable=True)
+    binance_client_order_id = Column(String, nullable=True)
+    
+    # Take Profit y Stop Loss levels
+    take_profit_price = Column(Float, nullable=True)
+    stop_loss_price = Column(Float, nullable=True)
+    
+    # Timing
+    created_at = Column(DateTime, default=func.now())
+    executed_at = Column(DateTime, nullable=True)
+    
+    # PnL (para órdenes SELL)
+    pnl_usdt = Column(Float, nullable=True)
+    pnl_percentage = Column(Float, nullable=True)
+    
+    # Información adicional
+    commission = Column(Float, nullable=True)
+    commission_asset = Column(String, nullable=True)
+    reason = Column(String, nullable=True)  # Razón del trade: 'U_PATTERN', 'TAKE_PROFIT', 'STOP_LOSS', 'MAX_HOLD'
+    
+    # Relaciones
+    user = relationship("User")
+    api_key = relationship("TradingApiKey")
+    alerta = relationship("Alerta")

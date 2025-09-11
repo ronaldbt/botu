@@ -21,14 +21,24 @@ class CryptoBotManager:
     """
     
     def __init__(self):
+        # Crear los bots
+        bitcoin_bot = CryptoBot('bitcoin', os.getenv('TELEGRAM_BITCOIN_BOT_TOKEN'))
+        ethereum_bot = CryptoBot('ethereum', os.getenv('TELEGRAM_ETHEREUM_BOT_TOKEN'))
+        bnb_bot = CryptoBot('bnb', os.getenv('TELEGRAM_BNB_BOT_TOKEN'))
+        
         self.bots = {
-            'bitcoin': CryptoBot('bitcoin', os.getenv('TELEGRAM_BITCOIN_BOT_TOKEN')),
-            'ethereum': CryptoBot('ethereum', os.getenv('TELEGRAM_ETHEREUM_BOT_TOKEN')),
-            'bnb': CryptoBot('bnb', os.getenv('TELEGRAM_BNB_BOT_TOKEN'))
+            'bitcoin': bitcoin_bot,
+            'ethereum': ethereum_bot,
+            'bnb': bnb_bot,
+            # Aliases para compatibilidad
+            'btc': bitcoin_bot,
+            'eth': ethereum_bot
         }
         
         logger.info("🤖 Crypto Bots Manager inicializado")
-        for crypto, bot in self.bots.items():
+        # Solo mostrar bots principales en logs, no aliases
+        for crypto in ['bitcoin', 'ethereum', 'bnb']:
+            bot = self.bots[crypto]
             if bot.is_configured:
                 logger.info(f"✅ {crypto.upper()} Bot configurado")
             else:

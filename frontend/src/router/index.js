@@ -16,6 +16,7 @@ import BnbBotView from '../views/BnbBotView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import SubscriptionView from '../views/SubscriptionView.vue';
 import BacktestView from '../views/BacktestView.vue';
+import TradingAutomaticoView from '../views/TradingAutomaticoView.vue';
 
 const routes = [
   {
@@ -103,6 +104,12 @@ const routes = [
     path: '/backtest',
     name: 'Backtest',
     component: BacktestView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/trading-automatico',
+    name: 'TradingAutomatico',
+    component: TradingAutomaticoView,
     meta: { requiresAuth: true },
   },
 ];
