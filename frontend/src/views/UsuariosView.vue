@@ -310,7 +310,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import apiClient from '@/config/api';
 import { useAuthStore } from '../stores/authStore';
 
 const authStore = useAuthStore();
@@ -339,7 +339,7 @@ const fetchUsuarios = async () => {
     console.log('User:', authStore.user);
     console.log('Is admin:', authStore.isAdmin);
     
-    const response = await axios.get('http://localhost:8000/users/', {
+    const response = await apiClient.get('/users/', {
       headers: {
         Authorization: `Bearer ${authStore.token}`,
       },
@@ -378,13 +378,13 @@ const saveUser = async () => {
     }
 
     if (showCreateModal.value) {
-      await axios.post('http://localhost:8000/users/', userData, {
+      await apiClient.post('/users/', userData, {
         headers: {
           Authorization: `Bearer ${authStore.token}`,
         },
       });
     } else {
-      await axios.put(`http://localhost:8000/users/${userForm.value.id}`, userData, {
+      await apiClient.put(`/users/${userForm.value.id}`, userData, {
         headers: {
           Authorization: `Bearer ${authStore.token}`,
         },
@@ -417,7 +417,7 @@ const deleteUser = async (usuario) => {
   }
 
   try {
-    await axios.delete(`http://localhost:8000/users/${usuario.id}`, {
+    await apiClient.delete(`/users/${usuario.id}`, {
       headers: {
         Authorization: `Bearer ${authStore.token}`,
       },
@@ -484,7 +484,7 @@ const toggleUserStatus = async (usuario, newStatus) => {
         break;
     }
     
-    await axios.put(`http://localhost:8000/users/${usuario.id}`, updateData, {
+    await apiClient.put(`/users/${usuario.id}`, updateData, {
       headers: {
         Authorization: `Bearer ${authStore.token}`,
       },

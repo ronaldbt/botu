@@ -486,7 +486,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
@@ -525,7 +525,7 @@ let statusInterval = null
 const startBot = async () => {
   loading.value = true
   try {
-    const response = await axios.post('http://localhost:8000/eth-bot/start', {
+    const response = await apiClient.post('/eth-bot/start', {
       mode: selectedMode.value,
       config: config
     }, {
@@ -551,7 +551,7 @@ const startBot = async () => {
 const stopBot = async () => {
   loading.value = true
   try {
-    await axios.post('http://localhost:8000/eth-bot/stop', {}, {
+    await apiClient.post('/eth-bot/stop', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -585,7 +585,7 @@ const refreshStatus = async () => {
 
 const fetchStatus = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/eth-bot/status', {
+    const response = await apiClient.get('/eth-bot/status', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -599,7 +599,7 @@ const fetchStatus = async () => {
 
 const fetchCurrentAnalysis = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/eth-bot/analysis', {
+    const response = await apiClient.get('/eth-bot/analysis', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -613,7 +613,7 @@ const fetchCurrentAnalysis = async () => {
 
 const fetchRecentAlerts = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/alertas/?limit=10&crypto_symbol=ETH&tipo_alerta=BUY', {
+    const response = await apiClient.get('/alertas/?limit=10&crypto_symbol=ETH&tipo_alerta=BUY', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -680,7 +680,7 @@ const formatDate = (dateString) => {
 const generateTelegramConnection = async () => {
   generatingQR.value = true
   try {
-    const response = await axios.post('http://localhost:8000/telegram/connect?crypto=eth', {}, {
+    const response = await apiClient.post('/telegram/connect?crypto=eth', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -699,7 +699,7 @@ const generateTelegramConnection = async () => {
 
 const disconnectTelegram = async () => {
   try {
-    await axios.post('http://localhost:8000/telegram/disconnect?crypto=eth', {}, {
+    await apiClient.post('/telegram/disconnect?crypto=eth', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -711,7 +711,7 @@ const disconnectTelegram = async () => {
 
 const sendTestAlert = async () => {
   try {
-    await axios.post('http://localhost:8000/telegram/send-alert/eth', {
+    await apiClient.post('/telegram/send-alert/eth', {
       type: 'INFO',
       symbol: 'ETHUSDT',
       price: 2500,
@@ -734,7 +734,7 @@ const closeQRModal = () => {
 // Scanner logs functions
 const refreshLogs = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/eth-bot/logs', {
+    const response = await apiClient.get('/eth-bot/logs', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }

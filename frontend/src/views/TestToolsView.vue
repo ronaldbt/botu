@@ -220,7 +220,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
@@ -237,7 +237,7 @@ const statusCheckInterval = ref(null)
 // Métodos
 const loadTickers = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/test-tools/tickers', {
+    const response = await apiClient.get('/test-tools/tickers', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -255,7 +255,7 @@ const startBacktest = async () => {
   backtestResult.value = null
   
   try {
-    const response = await axios.post('http://localhost:8000/test-tools/backtest/start', {
+    const response = await apiClient.post('/test-tools/backtest/start', {
       symbol: selectedTicker.value,
       years_back: parseInt(yearsBack.value)
     }, {
@@ -281,7 +281,7 @@ const startStatusCheck = () => {
   
   statusCheckInterval.value = setInterval(async () => {
     try {
-      const response = await axios.get('http://localhost:8000/test-tools/backtest/status', {
+      const response = await apiClient.get('/test-tools/backtest/status', {
         headers: {
           'Authorization': `Bearer ${authStore.token}`
         }
@@ -309,7 +309,7 @@ const startStatusCheck = () => {
 
 const clearResult = async () => {
   try {
-    await axios.delete('http://localhost:8000/test-tools/backtest/results', {
+    await apiClient.delete('/test-tools/backtest/results', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }

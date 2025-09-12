@@ -22,10 +22,8 @@ from app.schemas.trading_schema import (
 from app.core.auth import get_current_user
 
 # Importar binance_client desde src
-import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'src'))
-from binance_client import BinanceClient
+from trading_core.binance_client import BinanceClient
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)

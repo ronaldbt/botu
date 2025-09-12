@@ -332,7 +332,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
@@ -359,21 +359,21 @@ const loadData = async () => {
     const headers = { 'Authorization': `Bearer ${authStore.token}` }
     
     // Load trading summary
-    const summaryResponse = await axios.get('http://localhost:8000/alertas/trading/summary', { 
+    const summaryResponse = await apiClient.get('/alertas/trading/summary', { 
       headers,
       params: filtro.value.crypto ? { crypto_symbol: filtro.value.crypto } : {}
     })
     tradingSummary.value = summaryResponse.data
     
     // Load operations
-    const operationsResponse = await axios.get('http://localhost:8000/alertas/trading/operations', { 
+    const operationsResponse = await apiClient.get('/alertas/trading/operations', { 
       headers,
       params: filtro.value.crypto ? { crypto_symbol: filtro.value.crypto } : {}
     })
     operations.value = operationsResponse.data
     
     // Load open positions
-    const positionsResponse = await axios.get('http://localhost:8000/alertas/trading/open-positions', { 
+    const positionsResponse = await apiClient.get('/alertas/trading/open-positions', { 
       headers,
       params: filtro.value.crypto ? { crypto_symbol: filtro.value.crypto } : {}
     })
@@ -389,7 +389,7 @@ const loadData = async () => {
       if (ticker) alertsParams.append('ticker', ticker)
     }
     
-    const alertsResponse = await axios.get(`http://localhost:8000/alertas/?${alertsParams}`, { headers })
+    const alertsResponse = await apiClient.get(`/alertas/?${alertsParams}`, { headers })
     alertas.value = alertsResponse.data
     
   } catch (error) {
@@ -416,7 +416,7 @@ const closePosition = async () => {
   }
 
   try {
-    await axios.post('http://localhost:8000/alertas/trading/sell', {
+    await apiClient.post('/alertas/trading/sell', {
       buy_alert_id: selectedPosition.value.id,
       precio_salida: closePositionData.value.precio_salida,
       bot_mode: 'manual'
@@ -435,7 +435,7 @@ const closePosition = async () => {
 
 const markAsRead = async (alertaId) => {
   try {
-    await axios.put(`http://localhost:8000/alertas/${alertaId}`, {
+    await apiClient.put(`/alertas/${alertaId}`, {
       leida: true
     }, {
       headers: { 'Authorization': `Bearer ${authStore.token}` }

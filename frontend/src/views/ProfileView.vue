@@ -181,7 +181,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
@@ -256,7 +256,7 @@ const getSubscriptionStatusText = () => {
 
 const fetchProfile = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/users/profile', {
+    const response = await apiClient.get('/users/profile', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -278,7 +278,7 @@ const fetchProfile = async () => {
 const updateProfile = async () => {
   updating.value = true
   try {
-    const response = await axios.put('http://localhost:8000/users/profile', profileForm, {
+    const response = await apiClient.put('/users/profile', profileForm, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }

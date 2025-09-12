@@ -1,20 +1,16 @@
 # backend/app/services/auto_trading_executor.py
 
 import logging
-import sys
 import os
 from typing import Optional, Dict, List, Any
 from datetime import datetime
 from sqlalchemy.orm import Session
 
-# Add src path for trading modules
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src'))
-
 from app.db.database import SessionLocal
 from app.db import crud_trading
 from app.db.models import TradingApiKey, TradingOrder
 from app.schemas.trading_schema import TradingOrderCreate
-from binance_client import BinanceClient
+from trading_core.binance_client import BinanceClient
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)

@@ -847,9 +847,8 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
-import apiConfig from '../config/api'
 
 // Auth store
 const authStore = useAuthStore()
@@ -914,9 +913,7 @@ const loadData = async () => {
 const loadApiKeys = async () => {
   console.log('[TradingAutomatico] loadApiKeys() -> GET /trading/api-keys')
   try {
-    const response = await axios.get(`${apiConfig.baseURL}/trading/api-keys`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const response = await apiClient.get('/trading/api-keys')
     apiKeys.value = response.data
     console.log('[TradingAutomatico] API keys recibidas:', {
       total: apiKeys.value.length,
@@ -931,9 +928,7 @@ const loadApiKeys = async () => {
 const loadTradingStatus = async () => {
   console.log('[TradingAutomatico] loadTradingStatus() -> GET /trading/status')
   try {
-    const response = await axios.get(`${apiConfig.baseURL}/trading/status`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const response = await apiClient.get('/trading/status')
     tradingStatus.value = response.data
     console.log('[TradingAutomatico] Estado de trading:', tradingStatus.value)
   } catch (error) {
@@ -944,9 +939,7 @@ const loadTradingStatus = async () => {
 const loadOrders = async () => {
   console.log('[TradingAutomatico] loadOrders() -> GET /trading/orders?limit=20')
   try {
-    const response = await axios.get(`${apiConfig.baseURL}/trading/orders?limit=20`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const response = await apiClient.get('/trading/orders?limit=20')
     orders.value = response.data.trades || []
     console.log('[TradingAutomatico] Órdenes recibidas:', orders.value.length)
   } catch (error) {
@@ -958,9 +951,7 @@ const submitApiKey = async () => {
   console.log('[TradingAutomatico] submitApiKey() payload:', { ...apiKeyForm })
   submittingApiKey.value = true
   try {
-    await axios.post(`${apiConfig.baseURL}/trading/api-keys`, apiKeyForm, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    await apiClient.post('/trading/api-keys', apiKeyForm)
     closeAddApiKeyModal()
     await loadApiKeys()
     alert('✅ API Key agregada exitosamente')
@@ -977,9 +968,7 @@ const testConnection = async (apiKey) => {
   console.log('[TradingAutomatico] testConnection() para API Key:', apiKey?.id)
   testingConnection.value = apiKey.id
   try {
-    const response = await axios.post(`${apiConfig.baseURL}/trading/test-connection/${apiKey.id}`, {}, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const response = await apiClient.post(`/trading/test-connection/${apiKey.id}`, {})
     if (response.data.success) {
       alert(`✅ Conexión exitosa\n${response.data.testnet ? 'Testnet' : 'Mainnet'}\nBalance: $${response.data.balance_usdt?.toFixed(2) || '0.00'}`)
     } else {
@@ -999,9 +988,7 @@ const checkBalances = async (apiKey) => {
   console.log('[TradingAutomatico] checkBalances() para API Key:', apiKey?.id)
   loadingBalances.value = apiKey.id
   try {
-    const response = await axios.get(`${apiConfig.baseURL}/trading/balances/${apiKey.id}`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    const response = await apiClient.get(`/trading/balances/${apiKey.id}`)
     
     if (response.data.success) {
       const balances = response.data.balances
@@ -1053,9 +1040,7 @@ const deleteApiKey = async (apiKeyId) => {
   if (!confirm('¿Estás seguro de que quieres eliminar esta API key?')) return
   
   try {
-    await axios.delete(`${apiConfig.baseURL}/trading/api-keys/${apiKeyId}`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    })
+    await apiClient.delete(`/trading/api-keys/${apiKeyId}`)
     await loadApiKeys()
     alert('✅ API Key eliminada exitosamente')
   } catch (error) {
@@ -1094,12 +1079,10 @@ const toggleCrypto = (apiKey, crypto) => {
 const updateCryptoAllocation = async (apiKeyId, crypto, enabled, allocatedUsdt) => {
   console.log('[TradingAutomatico] updateCryptoAllocation() PUT /trading/crypto-allocation', { apiKeyId, crypto, enabled, allocatedUsdt })
   try {
-    const response = await axios.put(`${apiConfig.baseURL}/trading/crypto-allocation/${apiKeyId}`, {
+    const response = await apiClient.put(`/trading/crypto-allocation/${apiKeyId}`, {
       crypto: crypto,
       enabled: enabled,
       allocated_usdt: allocatedUsdt
-    }, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
     })
     
     await loadApiKeys()
@@ -1177,19 +1160,18 @@ const refreshAllScannerLogs = async () => {
   refreshingLogs.value = true
   
   try {
-    const headers = { 'Authorization': `Bearer ${authStore.token}` }
     console.log('[TradingAutomatico] Llamando a endpoints de logs...')
     
     const [btcRes, ethRes, bnbRes] = await Promise.all([
-      axios.get(`${apiConfig.baseURL}/bitcoin-bot/logs`, { headers }).catch((err) => {
+      apiClient.get('/bitcoin-bot/logs').catch((err) => {
         console.error('[TradingAutomatico] Error en bitcoin-bot/logs:', err)
         return { data: { logs: [] } }
       }),
-      axios.get(`${apiConfig.baseURL}/eth-bot/logs`, { headers }).catch((err) => {
+      apiClient.get('/eth-bot/logs').catch((err) => {
         console.error('[TradingAutomatico] Error en eth-bot/logs:', err)
         return { data: { logs: [] } }
       }),
-      axios.get(`${apiConfig.baseURL}/bnb-bot/logs`, { headers }).catch((err) => {
+      apiClient.get('/bnb-bot/logs').catch((err) => {
         console.error('[TradingAutomatico] Error en bnb-bot/logs:', err)
         return { data: { logs: [] } }
       }),

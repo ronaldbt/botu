@@ -155,7 +155,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
 
 const estados = ref([])
@@ -172,7 +172,7 @@ const fetchEstados = async () => {
     if (filters.value.tipo) params.tipo = filters.value.tipo
     if (filters.value.estado_actual) params.estado_actual = filters.value.estado_actual
 
-    const res = await axios.get('http://localhost:8000/estados_u', { 
+    const res = await apiClient.get('/estados_u', { 
       params,
       headers: {
         Authorization: `Bearer ${authStore.token}`,

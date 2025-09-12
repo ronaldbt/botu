@@ -194,7 +194,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
+import apiClient from '@/config/api';
 import { useAuthStore } from '../stores/authStore';
 
 const tickers = ref([]);
@@ -207,7 +207,7 @@ const filters = ['Todos', 'crypto', 'accion', 'otro'];
 // Traer tickers de backend
 const fetchTickers = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/tickers', {
+    const response = await apiClient.get('/tickers', {
       headers: {
         Authorization: `Bearer ${authStore.token}`,
       },

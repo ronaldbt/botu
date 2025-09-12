@@ -138,7 +138,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import axios from 'axios';
+import apiClient from '@/config/api';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from 'vue-router';
 
@@ -170,7 +170,7 @@ const formatDate = (dateString) => {
 
 const fetchSignals = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/signals', {
+    const response = await apiClient.get('/signals', {
       headers: {
         Authorization: `Bearer ${authStore.token}`,
       },

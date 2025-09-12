@@ -257,7 +257,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
@@ -340,7 +340,7 @@ const getPayPalLink = () => {
 
 const fetchSubscription = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/users/subscription', {
+    const response = await apiClient.get('/users/subscription', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -355,7 +355,7 @@ const fetchSubscription = async () => {
 
 const fetchPaymentHistory = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/users/payments', {
+    const response = await apiClient.get('/users/payments', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }

@@ -801,7 +801,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
@@ -853,7 +853,7 @@ let statusInterval = null
 const startBot = async () => {
   loading.value = true
   try {
-    const response = await axios.post('http://localhost:8000/bnb-bot/start', {
+    const response = await apiClient.post('/bnb-bot/start', {
       mode: selectedMode.value,
       config: config
     }, {
@@ -879,7 +879,7 @@ const startBot = async () => {
 const stopBot = async () => {
   loading.value = true
   try {
-    await axios.post('http://localhost:8000/bnb-bot/stop', {}, {
+    await apiClient.post('/bnb-bot/stop', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -913,7 +913,7 @@ const refreshStatus = async () => {
 
 const fetchStatus = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bnb-bot/status', {
+    const response = await apiClient.get('/bnb-bot/status', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -927,7 +927,7 @@ const fetchStatus = async () => {
 
 const fetchCurrentAnalysis = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bnb-bot/analysis', {
+    const response = await apiClient.get('/bnb-bot/analysis', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -981,7 +981,7 @@ const getPatternStateClass = (state) => {
 const generateTelegramConnection = async () => {
   generatingQR.value = true
   try {
-    const response = await axios.post('http://localhost:8000/telegram/connect?crypto=bnb', {}, {
+    const response = await apiClient.post('/telegram/connect?crypto=bnb', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -1000,7 +1000,7 @@ const generateTelegramConnection = async () => {
 
 const disconnectTelegram = async () => {
   try {
-    await axios.post('http://localhost:8000/telegram/disconnect?crypto=bnb', {}, {
+    await apiClient.post('/telegram/disconnect?crypto=bnb', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -1012,7 +1012,7 @@ const disconnectTelegram = async () => {
 
 const sendTestAlert = async () => {
   try {
-    await axios.post('http://localhost:8000/telegram/send-alert/bnb', {
+    await apiClient.post('/telegram/send-alert/bnb', {
       type: 'INFO',
       symbol: 'BNBUSDT',
       price: 600,
@@ -1035,7 +1035,7 @@ const closeQRModal = () => {
 const testApiConnection = async () => {
   testingConnection.value = true
   try {
-    const response = await axios.post('http://localhost:8000/bnb-bot/test-connection', {
+    const response = await apiClient.post('/bnb-bot/test-connection', {
       apiKey: config.apiKey,
       secretKey: config.secretKey,
       environment: config.environment
@@ -1060,7 +1060,7 @@ const testApiConnection = async () => {
 // Scanner logs functions
 const refreshLogs = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bnb-bot/logs', {
+    const response = await apiClient.get('/bnb-bot/logs', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -1076,7 +1076,7 @@ const refreshLogs = async () => {
 
 const fetchRecentAlerts = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bnb-bot/alerts', {
+    const response = await apiClient.get('/bnb-bot/alerts', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }

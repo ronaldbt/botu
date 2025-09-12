@@ -10,8 +10,7 @@ import json
 import logging
 from datetime import datetime
 
-# Add src path for importing trading modules
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'src'))
+# Import trading modules from trading_core
 
 from app.db.database import get_db
 from app.core.auth import get_current_user
@@ -325,7 +324,7 @@ async def test_binance_api(
 ):
     """Prueba la conexión con la API de Binance"""
     try:
-        from binance_client import BinanceClient
+        from trading_core.binance_client import BinanceClient
         
         # Test API connection
         client = BinanceClient(

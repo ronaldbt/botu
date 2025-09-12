@@ -697,7 +697,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
+import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
 
 const authStore = useAuthStore()
@@ -749,7 +749,7 @@ let statusInterval = null
 const startBot = async () => {
   loading.value = true
   try {
-    const response = await axios.post('http://localhost:8000/bitcoin-bot/start', {
+    const response = await apiClient.post('/bitcoin-bot/start', {
       mode: selectedMode.value,
       config: config
     }, {
@@ -776,7 +776,7 @@ const startBot = async () => {
 const stopBot = async () => {
   loading.value = true
   try {
-    await axios.post('http://localhost:8000/bitcoin-bot/stop', {}, {
+    await apiClient.post('/bitcoin-bot/stop', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -811,7 +811,7 @@ const refreshStatus = async () => {
 
 const fetchStatus = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bitcoin-bot/status', {
+    const response = await apiClient.get('/bitcoin-bot/status', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -825,7 +825,7 @@ const fetchStatus = async () => {
 
 const fetchCurrentAnalysis = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bitcoin-bot/analysis', {
+    const response = await apiClient.get('/bitcoin-bot/analysis', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -839,7 +839,7 @@ const fetchCurrentAnalysis = async () => {
 
 const fetchAlerts = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bitcoin-bot/alerts', {
+    const response = await apiClient.get('/bitcoin-bot/alerts', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -853,7 +853,7 @@ const fetchAlerts = async () => {
 
 const fetchStatistics = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bitcoin-bot/statistics', {
+    const response = await apiClient.get('/bitcoin-bot/statistics', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -896,7 +896,7 @@ const testApiConnection = async () => {
   apiStatus.value = null
   
   try {
-    const response = await axios.post('http://localhost:8000/bitcoin-bot/test-api', {
+    const response = await apiClient.post('/bitcoin-bot/test-api', {
       apiKey: config.apiKey,
       secretKey: config.secretKey,
       environment: config.environment
@@ -969,7 +969,7 @@ const getAlertTextClass = (type) => {
 // Telegram functions
 const fetchTelegramStatus = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/telegram/status?crypto=btc', {
+    const response = await apiClient.get('/telegram/status?crypto=btc', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -988,7 +988,7 @@ const fetchTelegramStatus = async () => {
 const generateTelegramConnection = async () => {
   generatingQR.value = true
   try {
-    const response = await axios.post('http://localhost:8000/telegram/connect?crypto=btc', {}, {
+    const response = await apiClient.post('/telegram/connect?crypto=btc', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -1021,7 +1021,7 @@ const generateTelegramConnection = async () => {
 
 const disconnectTelegram = async () => {
   try {
-    await axios.post('http://localhost:8000/telegram/disconnect', {}, {
+    await apiClient.post('/telegram/disconnect', {}, {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
@@ -1034,7 +1034,7 @@ const disconnectTelegram = async () => {
 
 const sendTestAlert = async () => {
   try {
-    await axios.post('http://localhost:8000/telegram/send-alert', {
+    await apiClient.post('/telegram/send-alert', {
       type: 'INFO',
       symbol: 'BTCUSDT',
       price: 45000,
@@ -1058,7 +1058,7 @@ const closeQRModal = () => {
 // Scanner logs functions
 const refreshLogs = async () => {
   try {
-    const response = await axios.get('http://localhost:8000/bitcoin-bot/logs', {
+    const response = await apiClient.get('/bitcoin-bot/logs', {
       headers: {
         'Authorization': `Bearer ${authStore.token}`
       }
