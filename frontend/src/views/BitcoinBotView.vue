@@ -389,9 +389,33 @@
                     </a>
                   </div>
 
-                  <!-- Tiempo de expiración -->
+                  <!-- Tiempo de expiración con contador -->
                   <div class="text-xs text-slate-500 mb-4">
-                    Este código expira en {{ qrConnection.expires_in_minutes }} minutos
+                    <div v-if="tokenTimeLeft > 0" class="flex items-center justify-center space-x-2">
+                      <div class="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                      <span class="font-mono">Expira en: {{ formatTimeLeft(tokenTimeLeft) }}</span>
+                    </div>
+                    <div v-else class="text-red-500 font-semibold">
+                      ⚠️ Token expirado - Genera uno nuevo
+                    </div>
+                  </div>
+
+                  <!-- Botón Regenerar Token -->
+                  <div class="mb-4">
+                    <button
+                      @click="regenerateToken"
+                      :disabled="regeneratingToken"
+                      class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-slate-400"
+                    >
+                      <span v-if="!regeneratingToken">🔄 Generar Nuevo Token</span>
+                      <span v-else class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generando...
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -721,6 +745,8 @@ const telegramStatus = ref(null)
 const showQRModal = ref(false)
 const qrConnection = ref(null)
 const generatingQR = ref(false)
+const regeneratingToken = ref(false)
+const tokenTimeLeft = ref(0)
 
 const botStatus = reactive({
   isRunning: false,
@@ -997,6 +1023,12 @@ const generateTelegramConnection = async () => {
     qrConnection.value = response.data
     showQRModal.value = true
     
+    // Inicializar contador si tenemos expires_in_seconds
+    if (response.data.expires_in_seconds) {
+      tokenTimeLeft.value = response.data.expires_in_seconds
+      startTokenCountdown()
+    }
+    
     // Actualizar estado cada 5 segundos mientras está abierto el modal
     const statusCheckInterval = setInterval(async () => {
       await fetchTelegramStatus()
@@ -1016,6 +1048,31 @@ const generateTelegramConnection = async () => {
     // Mostrar error al usuario
   } finally {
     generatingQR.value = false
+  }
+}
+
+const regenerateToken = async () => {
+  regeneratingToken.value = true
+  try {
+    const response = await apiClient.post('/telegram/regenerate-token?crypto=btc', {}, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    qrConnection.value = response.data
+    
+    // Reiniciar contador con el nuevo token
+    if (response.data.expires_in_seconds) {
+      tokenTimeLeft.value = response.data.expires_in_seconds
+      startTokenCountdown()
+    }
+    
+  } catch (error) {
+    console.error('Error regenerando token de Telegram:', error)
+    // Mostrar error al usuario
+  } finally {
+    regeneratingToken.value = false
   }
 }
 
@@ -1053,6 +1110,40 @@ const sendTestAlert = async () => {
 const closeQRModal = () => {
   showQRModal.value = false
   qrConnection.value = null
+  stopTokenCountdown()
+}
+
+// Token countdown functions
+let tokenCountdownInterval = null
+
+const startTokenCountdown = () => {
+  // Limpiar cualquier contador previo
+  if (tokenCountdownInterval) {
+    clearInterval(tokenCountdownInterval)
+  }
+  
+  tokenCountdownInterval = setInterval(() => {
+    if (tokenTimeLeft.value > 0) {
+      tokenTimeLeft.value--
+    } else {
+      clearInterval(tokenCountdownInterval)
+      tokenCountdownInterval = null
+    }
+  }, 1000)
+}
+
+const stopTokenCountdown = () => {
+  if (tokenCountdownInterval) {
+    clearInterval(tokenCountdownInterval)
+    tokenCountdownInterval = null
+  }
+  tokenTimeLeft.value = 0
+}
+
+const formatTimeLeft = (seconds) => {
+  const minutes = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
 }
 
 // Scanner logs functions
@@ -1130,6 +1221,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopPolling()
+  stopTokenCountdown()
 })
 </script>
 

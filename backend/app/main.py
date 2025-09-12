@@ -24,6 +24,13 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("🚀 BOTU SERVER STARTING UP...")
         
+        # Inicializar crypto bots
+        try:
+            from app.telegram.crypto_bots import crypto_bots
+            logger.info("🤖 Crypto Bots inicializados correctamente")
+        except Exception as e:
+            logger.error(f"❌ Error inicializando crypto bots: {e}")
+        
         # Iniciar Health Monitor automáticamente
         success = await health_monitor.start_monitoring()
         if success:

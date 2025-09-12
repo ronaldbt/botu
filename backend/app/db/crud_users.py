@@ -160,13 +160,25 @@ def get_or_create_telegram_token_crypto(db: Session, user_id: int, crypto: str) 
     if not db_user:
         return None
     
-    # Mapear crypto a campo del modelo
+    # Mapear crypto a campos del modelo
     token_field = f"telegram_token_{crypto}"
-    current_token = getattr(db_user, token_field, None)
+    token_created_field = f"telegram_token_{crypto}_created"
     
-    if not current_token:
+    current_token = getattr(db_user, token_field, None)
+    token_created = getattr(db_user, token_created_field, None)
+    
+    # Verificar si el token existe y no ha expirado (3 minutos)
+    token_expired = False
+    if token_created:
+        from datetime import datetime, timezone, timedelta
+        expiration_time = token_created + timedelta(minutes=3)
+        token_expired = datetime.now(timezone.utc) > expiration_time
+    
+    # Si no hay token o ha expirado, crear uno nuevo
+    if not current_token or token_expired:
         new_token = generate_telegram_token()
         setattr(db_user, token_field, new_token)
+        setattr(db_user, token_created_field, datetime.now(timezone.utc))
         db.commit()
         db.refresh(db_user)
         return new_token
@@ -208,3 +220,51 @@ def update_telegram_subscription_crypto(db: Session, user_id: int, chat_id: str,
     db.commit()
     db.refresh(db_user)
     return db_user
+
+def regenerate_telegram_token_crypto(db: Session, user_id: int, crypto: str) -> str:
+    """Regenera un nuevo token de Telegram para un usuario y crypto específica"""
+    db_user = get_user(db, user_id)
+    if not db_user:
+        return None
+    
+    # Mapear crypto a campos del modelo
+    token_field = f"telegram_token_{crypto}"
+    token_created_field = f"telegram_token_{crypto}_created"
+    
+    # Generar nuevo token
+    new_token = generate_telegram_token()
+    setattr(db_user, token_field, new_token)
+    setattr(db_user, token_created_field, datetime.now(timezone.utc))
+    
+    db.commit()
+    db.refresh(db_user)
+    return new_token
+
+def get_telegram_token_info_crypto(db: Session, user_id: int, crypto: str) -> dict:
+    """Obtiene información del token de una crypto específica incluyendo tiempo restante"""
+    db_user = get_user(db, user_id)
+    if not db_user:
+        return None
+    
+    token_field = f"telegram_token_{crypto}"
+    token_created_field = f"telegram_token_{crypto}_created"
+    
+    current_token = getattr(db_user, token_field, None)
+    token_created = getattr(db_user, token_created_field, None)
+    
+    if not current_token or not token_created:
+        return {"token": None, "expires_in_seconds": 0, "expired": True}
+    
+    from datetime import datetime, timezone, timedelta
+    expiration_time = token_created + timedelta(minutes=3)
+    now = datetime.now(timezone.utc)
+    
+    expires_in_seconds = max(0, int((expiration_time - now).total_seconds()))
+    expired = expires_in_seconds <= 0
+    
+    return {
+        "token": current_token,
+        "created_at": token_created,
+        "expires_in_seconds": expires_in_seconds,
+        "expired": expired
+    }

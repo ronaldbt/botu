@@ -8,6 +8,7 @@ import logging
 import qrcode
 from io import BytesIO
 import base64
+import requests
 from app.db.database import get_db
 from app.core.auth import get_current_user
 from app.db.models import User
@@ -25,7 +26,9 @@ class TelegramConnectionResponse(BaseModel):
     telegram_token: str
     qr_code_base64: str
     telegram_link: str
-    expires_in_minutes: int = 10
+    expires_in_seconds: int
+    expires_in_minutes: int = 3  # Ahora es 3 minutos
+    created_at: Optional[str] = None
 
 class TelegramStatusResponse(BaseModel):
     connected: bool
@@ -72,11 +75,22 @@ async def get_telegram_status(
             subscribed = current_user.telegram_subscribed_bnb or False
             chat_id = current_user.telegram_chat_id_bnb
         
+        # Obtener bot específico para verificar configuración
+        crypto_for_bot = crypto.lower()
+        if crypto_for_bot == "btc":
+            crypto_for_bot = "bitcoin"
+        elif crypto_for_bot == "eth":
+            crypto_for_bot = "ethereum"
+        
+        from app.telegram.crypto_bots import crypto_bots
+        crypto_bot = crypto_bots.get_bot(crypto_for_bot)
+        bot_configured = crypto_bot and crypto_bot.is_configured
+        
         return TelegramStatusResponse(
             connected=subscribed,
             chat_id=chat_id,
             subscription_status=current_user.subscription_status,
-            bot_configured=telegram_bot.is_configured()
+            bot_configured=bot_configured
         )
     except Exception as e:
         logger.error(f"Error obteniendo estado de Telegram: {e}")
@@ -122,6 +136,14 @@ async def generate_telegram_connection(
                 detail="Usuario no encontrado"
             )
         
+        # Obtener información del token incluyendo expiración
+        token_info = crud_users.get_telegram_token_info_crypto(db, current_user.id, crypto)
+        if not token_info:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se pudo obtener información del token"
+            )
+        
         # Crear link de Telegram con el bot específico
         bot_username = crypto_bot.bot_username.replace('@', '')
         if not bot_username:
@@ -147,7 +169,9 @@ async def generate_telegram_connection(
             telegram_token=telegram_token,
             qr_code_base64=qr_base64,
             telegram_link=telegram_link,
-            expires_in_minutes=10
+            expires_in_seconds=token_info["expires_in_seconds"],
+            expires_in_minutes=3,
+            created_at=token_info.get("created_at").isoformat() if token_info.get("created_at") else None
         )
         
     except HTTPException:
@@ -157,6 +181,90 @@ async def generate_telegram_connection(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error interno generando código de conexión"
+        )
+
+@router.post("/regenerate-token", response_model=TelegramConnectionResponse)
+async def regenerate_telegram_token(
+    crypto: str = "btc",  # Parámetro para especificar la crypto
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Regenera un nuevo token de Telegram para una crypto específica"""
+    try:
+        # Normalizar crypto para obtener bot
+        crypto_for_bot = crypto.lower()
+        if crypto_for_bot == "btc":
+            crypto_for_bot = "bitcoin"
+        elif crypto_for_bot == "eth":
+            crypto_for_bot = "ethereum"
+        # bnb se mantiene como bnb
+        
+        # Mantener crypto original para campos de DB
+        crypto = crypto.lower()
+        
+        # Verificar si el bot específico está configurado
+        from app.telegram.crypto_bots import crypto_bots
+        crypto_bot = crypto_bots.get_bot(crypto_for_bot)
+        
+        if not crypto_bot or not crypto_bot.is_configured:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"El bot de {crypto.upper()} no está configurado en el servidor"
+            )
+        
+        # Regenerar token para esta crypto
+        telegram_token = crud_users.regenerate_telegram_token_crypto(db, current_user.id, crypto)
+        if not telegram_token:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario no encontrado"
+            )
+        
+        # Obtener información del token incluyendo expiración
+        token_info = crud_users.get_telegram_token_info_crypto(db, current_user.id, crypto)
+        if not token_info:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se pudo obtener información del token"
+            )
+        
+        # Crear link de Telegram con el bot específico
+        bot_username = crypto_bot.bot_username.replace('@', '')
+        if not bot_username:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="No se pudo obtener información del bot"
+            )
+            
+        telegram_link = f"https://t.me/{bot_username}?start={telegram_token}"
+        
+        # Generar QR
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(telegram_link)
+        qr.make(fit=True)
+        
+        img = qr.make_image(fill_color="black", back_color="white")
+        buf = BytesIO()
+        img.save(buf, format='PNG')
+        buf.seek(0)
+        qr_base64 = base64.b64encode(buf.read()).decode()
+        
+        return TelegramConnectionResponse(
+            telegram_token=telegram_token,
+            qr_code_base64=qr_base64,
+            telegram_link=telegram_link,
+            expires_in_seconds=token_info["expires_in_seconds"],
+            expires_in_minutes=3,
+            created_at=token_info.get("created_at").isoformat() if token_info.get("created_at") else None
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error regenerando token de Telegram: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno regenerando token"
         )
 
 @router.post("/validate-token")
@@ -324,24 +432,289 @@ async def send_telegram_alert(
 
 @router.post("/webhook")
 async def telegram_webhook(request: Request):
-    """Endpoint para recibir updates del webhook de Telegram"""
+    """Endpoint genérico para webhooks (fallback)"""
+    return await process_webhook_generic(request, "generic")
+
+@router.post("/webhook/bitcoin")
+async def telegram_webhook_bitcoin(request: Request):
+    """Endpoint específico para el bot de Bitcoin"""
+    return await process_webhook_generic(request, "bitcoin")
+
+@router.post("/webhook/ethereum") 
+async def telegram_webhook_ethereum(request: Request):
+    """Endpoint específico para el bot de Ethereum"""
+    return await process_webhook_generic(request, "ethereum")
+
+@router.post("/webhook/bnb")
+async def telegram_webhook_bnb(request: Request):
+    """Endpoint específico para el bot de BNB"""
+    return await process_webhook_generic(request, "bnb")
+
+@router.post("/webhook/health")
+async def telegram_webhook_health(request: Request):
+    """Endpoint específico para el bot de Health"""
+    return await process_webhook_generic(request, "health")
+
+async def process_webhook_generic(request: Request, crypto_type: str) -> dict:
+    """Procesa webhook con el tipo de crypto específico"""
     try:
-        if not telegram_bot.is_configured():
-            return {"status": "error", "message": "Bot no configurado"}
-        
         # Obtener los datos del webhook
         update_data = await request.json()
+        logger.info(f"Webhook {crypto_type} recibido: {update_data}")
         
-        logger.info(f"Webhook recibido: {update_data}")
+        # Obtener el token correcto según el tipo
+        import os
+        token_map = {
+            "bitcoin": os.getenv('TELEGRAM_BITCOIN_BOT_TOKEN'),
+            "ethereum": os.getenv('TELEGRAM_ETHEREUM_BOT_TOKEN'),
+            "bnb": os.getenv('TELEGRAM_BNB_BOT_TOKEN'), 
+            "health": os.getenv('TELEGRAM_HEALTH_BOT_TOKEN'),
+            "generic": os.getenv('TELEGRAM_BITCOIN_BOT_TOKEN')  # fallback
+        }
         
-        # Procesar la actualización
-        result = telegram_bot.process_telegram_update(update_data)
+        bot_token = token_map.get(crypto_type)
+        if not bot_token:
+            logger.error(f"Token no encontrado para {crypto_type}")
+            return {"status": "error", "message": "Bot no configurado"}
         
-        return result
+        # Procesar mensaje con el bot correcto
+        if 'message' in update_data:
+            message = update_data['message']
+            chat_id = str(message['chat']['id'])
+            text = message.get('text', '')
+            
+            # Procesar comandos con el bot específico
+            result = await process_crypto_bot_message(update_data, chat_id, text, bot_token, crypto_type)
+            return result
+        
+        return {"status": "ok", "message": "Webhook procesado"}
         
     except Exception as e:
-        logger.error(f"Error procesando webhook de Telegram: {e}")
+        logger.error(f"Error procesando webhook {crypto_type}: {e}")
         return {"status": "error", "message": str(e)}
+
+def detect_bot_from_request(request: Request) -> str:
+    """Detecta qué bot envió el mensaje basado en la URL o headers"""
+    try:
+        import os
+        
+        # Por ahora, como todos usan el mismo webhook, necesitamos otra estrategia
+        # Podríamos usar diferentes endpoints por bot, pero mientras tanto
+        # retornamos el token de Bitcoin por defecto
+        # TODO: Implementar URLs específicas por bot
+        
+        # Verificar qué bots están configurados y retornar el primero
+        tokens = {
+            'bitcoin': os.getenv('TELEGRAM_BITCOIN_BOT_TOKEN'),
+            'ethereum': os.getenv('TELEGRAM_ETHEREUM_BOT_TOKEN'), 
+            'bnb': os.getenv('TELEGRAM_BNB_BOT_TOKEN'),
+            'health': os.getenv('TELEGRAM_HEALTH_BOT_TOKEN')
+        }
+        
+        # Por ahora retornar el de bitcoin, pero esto necesita mejorarse
+        return tokens['bitcoin']
+        
+    except Exception as e:
+        logger.error(f"Error detectando bot: {e}")
+        return None
+
+async def process_crypto_bot_message(update_data: dict, chat_id: str, text: str, bot_token: str, crypto_type: str = "bitcoin") -> dict:
+    """Procesa mensajes de los bots crypto"""
+    try:
+        from app.telegram.crypto_bots import crypto_bots
+        
+        # Comandos principales
+        if text.startswith('/start'):
+            return handle_start_command(chat_id, text, bot_token, crypto_type)
+        elif text.startswith('/status'):
+            return handle_status_command(chat_id, bot_token, crypto_type)
+        elif text.startswith('/help'):
+            return handle_help_command(chat_id, bot_token, crypto_type)
+        else:
+            # Comando no reconocido
+            return send_message_with_bot(chat_id, "❓ Comando no reconocido. Usa /help para ver comandos disponibles.", bot_token)
+            
+    except Exception as e:
+        logger.error(f"Error procesando mensaje crypto bot: {e}")
+        return {"status": "error", "message": str(e)}
+
+def handle_start_command(chat_id: str, text: str, bot_token: str, crypto_type: str) -> dict:
+    """Maneja el comando /start"""
+    try:
+        # Extraer token de conexión si existe
+        parts = text.split(' ')
+        if len(parts) > 1:
+            connection_token = parts[1]
+            # Procesar conexión con token
+            return process_connection_token(chat_id, connection_token, bot_token, crypto_type)
+        else:
+            # Mensaje de bienvenida
+            message = """🤖 ¡Bienvenido a BotU!
+
+Para conectar tu cuenta:
+1. Ve a la aplicación web
+2. Genera un código QR en la sección de Telegram
+3. Escanéalo o usa el link que te proporciona
+
+Comandos disponibles:
+/status - Ver tu estado de conexión
+/help - Ver esta ayuda"""
+            return send_message_with_bot(chat_id, message, bot_token)
+            
+    except Exception as e:
+        logger.error(f"Error en comando start: {e}")
+        return {"status": "error", "message": str(e)}
+
+def handle_status_command(chat_id: str, bot_token: str, crypto_type: str) -> dict:
+    """Maneja el comando /status"""
+    try:
+        # Buscar usuario por chat_id en cualquier crypto  
+        from app.db.database import SessionLocal
+        session = SessionLocal()
+        try:
+            from app.db.models import User
+            
+            user = session.query(User).filter(
+                (User.telegram_chat_id_btc == chat_id) |
+                (User.telegram_chat_id_eth == chat_id) |
+                (User.telegram_chat_id_bnb == chat_id)
+            ).first()
+            
+            if user:
+                # Determinar qué crypto está usando
+                crypto_type = "desconocido"
+                if user.telegram_chat_id_btc == chat_id:
+                    crypto_type = "Bitcoin ₿"
+                elif user.telegram_chat_id_eth == chat_id:
+                    crypto_type = "Ethereum Ξ"
+                elif user.telegram_chat_id_bnb == chat_id:
+                    crypto_type = "BNB 🟡"
+                
+                message = f"""✅ *Cuenta conectada*
+
+👤 Usuario: {user.username}
+📱 Bot: {crypto_type}
+📊 Suscripción: {user.subscription_status}
+🔔 Alertas: {'Activas' if user.telegram_subscribed_btc or user.telegram_subscribed_eth or user.telegram_subscribed_bnb else 'Inactivas'}
+
+¡Todo funcionando correctamente! 🚀"""
+            else:
+                message = """❌ *No tienes una cuenta conectada*
+
+Para conectar tu cuenta:
+1. Ve a la aplicación web BotU
+2. Inicia sesión con tu cuenta
+3. Ve a la sección de Telegram  
+4. Genera un código QR y escanéalo
+
+¿No tienes cuenta? Regístrate en la aplicación web."""
+            
+            return send_message_with_bot(chat_id, message, bot_token)
+            
+        finally:
+            session.close()
+            
+    except Exception as e:
+        logger.error(f"Error en comando status: {e}")
+        return {"status": "error", "message": str(e)}
+
+def handle_help_command(chat_id: str, bot_token: str, crypto_type: str) -> dict:
+    """Maneja el comando /help"""
+    message = """🤖 *Comandos BotU*
+
+/start - Iniciar o conectar cuenta
+/status - Ver estado de tu conexión
+/help - Ver esta ayuda
+
+📱 *¿Cómo usar?*
+1. Conecta tu cuenta desde la app web
+2. Recibirás alertas automáticas de trading
+3. Usa /status para verificar tu conexión
+
+🌐 *Aplicación web*
+Inicia sesión en tu navegador para gestionar alertas y configuración."""
+    
+    return send_message_with_bot(chat_id, message, bot_token)
+
+def process_connection_token(chat_id: str, token: str, bot_token: str, crypto_type: str) -> dict:
+    """Procesa un token de conexión"""
+    try:
+        # Este código ya existe en telegram_bot.py, lo reutilizamos
+        from app.telegram.telegram_bot import telegram_bot
+        
+        if telegram_bot.pending_connections and token in telegram_bot.pending_connections:
+            connection_data = telegram_bot.pending_connections[token]
+            user_id = connection_data['user_id']
+            
+            # Actualizar la conexión en la base de datos
+            from app.db.database import SessionLocal
+            session = SessionLocal()
+            try:
+                from app.db.models import User
+                user = session.query(User).filter(User.id == user_id).first()
+                if user:
+                    # Conectar al crypto específico según el bot
+                    if crypto_type == 'bitcoin':
+                        user.telegram_chat_id_btc = chat_id
+                        user.telegram_subscribed_btc = True
+                    elif crypto_type == 'ethereum':
+                        user.telegram_chat_id_eth = chat_id
+                        user.telegram_subscribed_eth = True
+                    elif crypto_type == 'bnb':
+                        user.telegram_chat_id_bnb = chat_id
+                        user.telegram_subscribed_bnb = True
+                    
+                    session.commit()
+                    
+                    # Limpiar token usado
+                    del telegram_bot.pending_connections[token]
+                    
+                    crypto_name = get_crypto_display_name(crypto_type)
+                    return send_message_with_bot(chat_id, f"✅ ¡Cuenta conectada exitosamente!\n\n👤 Usuario: {user.username}\n🤖 Bot: {crypto_name}\n\n¡Ya puedes recibir alertas de trading!", bot_token)
+                    
+            finally:
+                session.close()
+        
+        return send_message_with_bot(chat_id, "❌ Token de conexión inválido o expirado. Genera uno nuevo desde la aplicación web.", bot_token)
+        
+    except Exception as e:
+        logger.error(f"Error procesando token de conexión: {e}")
+        return {"status": "error", "message": str(e)}
+
+def send_message_with_bot(chat_id: str, message: str, bot_token: str) -> dict:
+    """Envía mensaje usando el bot específico"""
+    try:
+        if not bot_token:
+            return {"status": "error", "message": "Token de bot no proporcionado"}
+            
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        data = {
+            'chat_id': chat_id,
+            'text': message,
+            'parse_mode': 'Markdown'
+        }
+        
+        response = requests.post(url, json=data, timeout=10)
+        
+        if response.status_code == 200:
+            return {"status": "ok", "message": "Mensaje enviado"}
+        else:
+            logger.error(f"Error enviando mensaje: {response.status_code} - {response.text}")
+            return {"status": "error", "message": f"Error HTTP: {response.status_code}"}
+        
+    except Exception as e:
+        logger.error(f"Error enviando mensaje: {e}")
+        return {"status": "error", "message": str(e)}
+
+def get_crypto_display_name(crypto_type: str) -> str:
+    """Obtiene el nombre de display para cada crypto"""
+    names = {
+        'bitcoin': 'Bitcoin ₿',
+        'ethereum': 'Ethereum Ξ', 
+        'bnb': 'BNB 🟡',
+        'health': 'Health Monitor 🏥'
+    }
+    return names.get(crypto_type, crypto_type.title())
 
 @router.get("/bot-info")
 async def get_bot_info(current_user: User = Depends(get_current_user)):

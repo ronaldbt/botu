@@ -241,9 +241,43 @@
                     </a>
                   </div>
 
-                  <!-- Tiempo de expiración -->
-                  <div class="text-xs text-slate-500 mb-4">
-                    Este código expira en {{ qrConnection.expires_in_minutes }} minutos
+                  <!-- Contador de tiempo -->
+                  <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <div class="flex items-center justify-center space-x-2 text-sm">
+                      <span class="text-blue-600">⏰</span>
+                      <span class="font-medium text-blue-800">
+                        Expira en: {{ formatTimeLeft(tokenTimeLeft) }}
+                      </span>
+                    </div>
+                    <div class="mt-2">
+                      <div class="bg-blue-200 rounded-full h-2">
+                        <div 
+                          class="bg-blue-600 h-2 rounded-full transition-all duration-1000" 
+                          :style="{ width: `${Math.max(0, (tokenTimeLeft / 180) * 100)}%` }"
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Botón Regenerar Token -->
+                  <div class="mb-4">
+                    <button
+                      @click="regenerateToken"
+                      :disabled="regeneratingToken"
+                      class="w-full px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-slate-400"
+                    >
+                      <span v-if="!regeneratingToken" class="flex items-center justify-center">
+                        <span class="mr-2">🔄</span>
+                        Generar Nuevo Token ETH
+                      </span>
+                      <span v-else class="flex items-center justify-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generando...
+                      </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -503,6 +537,9 @@ const telegramStatus = ref(null)
 const showQRModal = ref(false)
 const qrConnection = ref(null)
 const generatingQR = ref(false)
+const tokenTimeLeft = ref(0)
+const regeneratingToken = ref(false)
+let tokenCountdownInterval = null
 
 const botStatus = reactive({
   isRunning: false,
@@ -689,6 +726,12 @@ const generateTelegramConnection = async () => {
     qrConnection.value = response.data
     showQRModal.value = true
     
+    // Iniciar countdown si hay expires_in_seconds
+    if (response.data.expires_in_seconds) {
+      tokenTimeLeft.value = response.data.expires_in_seconds
+      startTokenCountdown()
+    }
+    
     console.log('Telegram ETH connection generated:', response.data)
   } catch (error) {
     console.error('Error generando conexión de Telegram ETH:', error)
@@ -729,6 +772,7 @@ const sendTestAlert = async () => {
 const closeQRModal = () => {
   showQRModal.value = false
   qrConnection.value = null
+  stopTokenCountdown()
 }
 
 // Scanner logs functions
@@ -787,6 +831,58 @@ const getLogIcon = (level) => {
   }
 }
 
+// Token countdown functions
+const startTokenCountdown = () => {
+  stopTokenCountdown() // Limpiar cualquier intervalo existente
+  
+  tokenCountdownInterval = setInterval(() => {
+    if (tokenTimeLeft.value > 0) {
+      tokenTimeLeft.value--
+    } else {
+      stopTokenCountdown()
+    }
+  }, 1000)
+}
+
+const stopTokenCountdown = () => {
+  if (tokenCountdownInterval) {
+    clearInterval(tokenCountdownInterval)
+    tokenCountdownInterval = null
+  }
+}
+
+const formatTimeLeft = (seconds) => {
+  if (seconds <= 0) return '00:00'
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
+const regenerateToken = async () => {
+  regeneratingToken.value = true
+  try {
+    const response = await apiClient.post('/telegram/regenerate-token?crypto=eth', {}, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    qrConnection.value = response.data
+    
+    // Reiniciar countdown con nuevo tiempo
+    if (response.data.expires_in_seconds) {
+      tokenTimeLeft.value = response.data.expires_in_seconds
+      startTokenCountdown()
+    }
+    
+    console.log('Token ETH regenerated:', response.data)
+  } catch (error) {
+    console.error('Error regenerando token ETH:', error)
+  } finally {
+    regeneratingToken.value = false
+  }
+}
+
 // Lifecycle
 onMounted(() => {
   refreshStatus()
@@ -794,6 +890,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopPolling()
+  stopTokenCountdown()
 })
 </script>
 
