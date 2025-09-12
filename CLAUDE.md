@@ -130,3 +130,68 @@ Python type checking configured with:
 - Backend follows FastAPI best practices with dependency injection
 - Trading scripts are designed for standalone execution but share database models
 - All Python code is type-annotated for better IDE support
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+## CURRENT SESSION STATUS - TELEGRAM BOT SYSTEM (Sept 12, 2025)
+
+### COMPLETED ✅
+1. **Sistema completo funcionando en local** - Todos los features implementados
+2. **Crypto-specific bots** - @BotuBitcoinBot, @BotuEthereumBot, @BotuBnbBot funcionando
+3. **Webhook endpoints** - /webhook/bitcoin, /webhook/ethereum, /webhook/bnb
+4. **Token system** - 3 minutos de expiración con timestamps
+5. **Base de datos** - Nuevos campos: telegram_token_[crypto]_created
+6. **Backend en servidor** - API funcionando en https://api.botut.net
+7. **CORS arreglado** - Respuestas correctas en todas las rutas
+8. **Docker containers** - Reconstruidos y funcionando
+
+### ÚLTIMAS TAREAS PENDIENTES ⚠️
+**PROBLEMA ACTUAL:** Frontend en servidor no muestra countdown timer ni botón "Generar Nuevo Token"
+
+**Local funciona perfecto:**
+- Countdown de 3 minutos ✅
+- Barra de progreso ✅  
+- Botón "Generar Nuevo Token ETH" ✅
+- QR Code con link correcto ✅
+
+**Servidor le falta:**
+- Timer no inicia automáticamente
+- Barra de progreso no aparece
+- Botón regenerar token no funciona
+
+### ARCHIVOS CLAVE MODIFICADOS
+- `backend/app/db/models.py` - Agregados campos timestamp
+- `backend/app/db/crud_users.py` - Funciones token con expiración 3min
+- `backend/app/api/v1/telegram_routes.py` - Rutas crypto-específicas
+- `frontend/src/views/EthBotView.vue` - Countdown timer implementado
+- `frontend/src/views/BitcoinBotView.vue` - Mismo sistema
+- `frontend/src/views/BnbBotView.vue` - Mismo sistema
+
+### PRÓXIMOS PASOS
+1. **Verificar frontend en servidor** - Comprobar si archivos Vue están actualizados
+2. **Rebuild container web** - Puede que frontend no tenga cambios nuevos
+3. **Probar sistema completo** - QR codes, countdown, regenerar tokens
+
+### CONFIGURACIÓN IMPORTANTE
+- **Local:** http://localhost:5173 ↔ http://localhost:8000
+- **Servidor:** https://botut.net ↔ https://api.botut.net
+- **Docker:** botu-web-1, botu-api-1 containers activos
+- **DB:** deploy-postgres-1 con nuevas columnas timestamp
+
+### COMANDOS SERVER
+```bash
+# SSH
+sshpass -p '0dmTuEBqJFru4r6IlqMWo3' ssh -p 7979 vlad@84.46.242.48
+
+# Docker rebuild
+cd /home/vlad/botu
+docker compose -f docker-compose-fixed.yml down
+docker compose -f docker-compose-fixed.yml up -d --build
+
+# Git update
+git pull origin main
+```
