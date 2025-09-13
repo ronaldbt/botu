@@ -60,18 +60,18 @@
 
     <!-- Mobile Bottom Navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 text-white border-t border-slate-700 z-50">
-      <div class="flex justify-around items-center py-3">
+      <div class="flex overflow-x-auto py-3 px-3 scrollbar-hide snap-x snap-mandatory">
         <RouterLink
           v-for="item in menuItems"
           :key="item.path"
           :to="item.path"
-          class="flex flex-col items-center py-2 px-2 rounded-lg transition-all duration-200 min-w-0 flex-1"
+          class="flex flex-col items-center py-2 px-4 rounded-lg transition-all duration-200 min-w-max whitespace-nowrap mx-1 snap-start"
           :class="isActive(item.path) 
-            ? 'bg-slate-700 text-white' 
-            : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+            ? 'bg-slate-700 text-white border border-slate-600' 
+            : 'text-slate-300 hover:bg-slate-800 hover:text-white hover:border hover:border-slate-600'"
         >
-          <div class="w-2 h-2 rounded-full bg-current opacity-70 mb-1"></div>
-          <span class="text-xs font-medium text-center leading-tight">{{ item.label }}</span>
+          <div class="w-2 h-2 rounded-full bg-current opacity-70 mb-1.5 flex-shrink-0"></div>
+          <span class="text-xs font-medium text-center leading-tight px-1">{{ item.label }}</span>
         </RouterLink>
       </div>
     </nav>
@@ -103,6 +103,19 @@
   </script>
   
   <style scoped>
-  /* Puedes personalizar más el estilo */
+  /* Ocultar scrollbar en móvil pero mantener funcionalidad de scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+  
+  /* Suave scroll horizontal */
+  .scrollbar-hide {
+    scroll-behavior: smooth;
+  }
   </style>
   
