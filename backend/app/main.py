@@ -5,10 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import asyncio
 import logging
+import os
+from dotenv import load_dotenv
 from app.db import models
 from app.db.database import engine
 from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes, trading_routes
 from app.services.health_monitor_service import health_monitor
+
+# Cargar variables de entorno
+load_dotenv()
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -59,13 +64,23 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Configurar CORS
-origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://botut.net",
-    "https://www.botut.net",
-]
+# Configurar CORS dinámicamente según el entorno
+environment = os.getenv("ENVIRONMENT", "development")
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+
+if cors_origins_env:
+    # Usar orígenes desde variables de entorno
+    origins = [origin.strip() for origin in cors_origins_env.split(",")]
+else:
+    # Fallback a configuración por defecto (desarrollo + producción)
+    origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://botut.net",
+        "https://www.botut.net",
+    ]
+
+logger.info(f"🌐 CORS configurado para {environment} - Orígenes permitidos: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
