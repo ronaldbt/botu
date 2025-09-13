@@ -637,49 +637,47 @@ Inicia sesión en tu navegador para gestionar alertas y configuración."""
     return send_message_with_bot(chat_id, message, bot_token)
 
 def process_connection_token(chat_id: str, token: str, bot_token: str, crypto_type: str) -> dict:
-    """Procesa un token de conexión"""
+    """Procesa un token de conexión crypto-específico"""
     try:
-        # Este código ya existe en telegram_bot.py, lo reutilizamos
-        from app.telegram.telegram_bot import telegram_bot
+        # Normalizar crypto para validación
+        crypto_db = crypto_type.lower()
+        if crypto_db == "bitcoin":
+            crypto_db = "btc"
+        elif crypto_db == "ethereum":
+            crypto_db = "eth"
+        # bnb se mantiene como bnb
         
-        if telegram_bot.pending_connections and token in telegram_bot.pending_connections:
-            connection_data = telegram_bot.pending_connections[token]
-            user_id = connection_data['user_id']
+        # Usar el nuevo sistema crypto-específico con validación de expiración
+        from app.db.database import SessionLocal
+        session = SessionLocal()
+        try:
+            # Buscar usuario por token crypto-específico y verificar expiración
+            user = crud_users.get_user_by_telegram_token_crypto(session, token, crypto_db)
+            if not user:
+                return send_message_with_bot(chat_id, "❌ Token de conexión inválido o expirado. Genera uno nuevo desde la aplicación web.", bot_token)
             
-            # Actualizar la conexión en la base de datos
-            from app.db.database import SessionLocal
-            session = SessionLocal()
-            try:
-                from app.db.models import User
-                user = session.query(User).filter(User.id == user_id).first()
-                if user:
-                    # Conectar al crypto específico según el bot
-                    if crypto_type == 'bitcoin':
-                        user.telegram_chat_id_btc = chat_id
-                        user.telegram_subscribed_btc = True
-                    elif crypto_type == 'ethereum':
-                        user.telegram_chat_id_eth = chat_id
-                        user.telegram_subscribed_eth = True
-                    elif crypto_type == 'bnb':
-                        user.telegram_chat_id_bnb = chat_id
-                        user.telegram_subscribed_bnb = True
+            if not user.is_active:
+                return send_message_with_bot(chat_id, "❌ Usuario inactivo. Contacta al administrador.", bot_token)
+            
+            # Verificar si el token no ha expirado (3 minutos)
+            token_info = crud_users.get_telegram_token_info_crypto(session, user.id, crypto_db)
+            if not token_info or token_info.get("expired", True):
+                return send_message_with_bot(chat_id, "❌ Token de conexión expirado. Genera uno nuevo desde la aplicación web.", bot_token)
+            
+            # Conectar al crypto específico según el bot
+            crypto_updated = crud_users.update_telegram_subscription_crypto(session, user.id, chat_id, crypto_db, True)
+            if not crypto_updated:
+                return send_message_with_bot(chat_id, "❌ Error conectando la cuenta. Intenta nuevamente.", bot_token)
+            
+            crypto_name = get_crypto_display_name(crypto_type)
+            return send_message_with_bot(chat_id, f"✅ ¡Cuenta conectada exitosamente!\n\n👤 Usuario: {user.username}\n🤖 Bot: {crypto_name}\n\n¡Ya puedes recibir alertas de trading!", bot_token)
                     
-                    session.commit()
-                    
-                    # Limpiar token usado
-                    del telegram_bot.pending_connections[token]
-                    
-                    crypto_name = get_crypto_display_name(crypto_type)
-                    return send_message_with_bot(chat_id, f"✅ ¡Cuenta conectada exitosamente!\n\n👤 Usuario: {user.username}\n🤖 Bot: {crypto_name}\n\n¡Ya puedes recibir alertas de trading!", bot_token)
-                    
-            finally:
-                session.close()
-        
-        return send_message_with_bot(chat_id, "❌ Token de conexión inválido o expirado. Genera uno nuevo desde la aplicación web.", bot_token)
+        finally:
+            session.close()
         
     except Exception as e:
-        logger.error(f"Error procesando token de conexión: {e}")
-        return {"status": "error", "message": str(e)}
+        logger.error(f"Error procesando token de conexión crypto: {e}")
+        return send_message_with_bot(chat_id, "❌ Error interno del servidor. Intenta nuevamente.", bot_token)
 
 def send_message_with_bot(chat_id: str, message: str, bot_token: str) -> dict:
     """Envía mensaje usando el bot específico"""
