@@ -171,10 +171,20 @@ NEVER proactively create documentation files (*.md) or README files. Only create
 - `frontend/src/views/BitcoinBotView.vue` - Mismo sistema
 - `frontend/src/views/BnbBotView.vue` - Mismo sistema
 
-### PRÓXIMOS PASOS
-1. **Verificar frontend en servidor** - Comprobar si archivos Vue están actualizados
-2. **Rebuild container web** - Puede que frontend no tenga cambios nuevos
-3. **Probar sistema completo** - QR codes, countdown, regenerar tokens
+### CAMBIOS REALIZADOS (Sept 13, 2025) ✅
+1. **Problema de estilos Tailwind arreglado** - Rebuild completo del frontend sin cache
+2. **Problema de tokens crypto-específicos SOLUCIONADO**:
+   - Arreglada función `process_connection_token()` en `telegram_routes.py`
+   - Reemplazado sistema viejo de `pending_connections` por validación crypto-específica
+   - Ahora usa `crud_users.get_user_by_telegram_token_crypto()` correctamente
+   - Validación de expiración de 3 minutos implementada
+   - Mejorado manejo de errores
+
+### STATUS ACTUAL
+✅ **Tailwind CSS** - Funcionando completamente (48.04 kB CSS generado)
+✅ **Sistema de tokens crypto-específicos** - Funcionando con validación de expiración
+✅ **Frontend y Backend** - Sincronizados y funcionando
+✅ **Docker containers** - Reconstruidos y activos
 
 ### CONFIGURACIÓN IMPORTANTE
 - **Local:** http://localhost:5173 ↔ http://localhost:8000

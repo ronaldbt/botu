@@ -118,94 +118,7 @@
           </p>
         </div>
 
-        <!-- Telegram Integration (Manual Mode Only) - REFACTORIZED -->
-        <div v-if="selectedMode === 'manual'" class="mt-6 pt-6 border-t border-slate-200">
-          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
-            <div class="flex items-center mb-4">
-              <div class="text-2xl mr-3">📱</div>
-              <div>
-                <h4 class="font-semibold text-slate-900">Conexión con Telegram</h4>
-                <p class="text-sm text-slate-600">Recibe alertas directamente en Telegram</p>
-              </div>
-            </div>
-
-            <!-- Estado de Conexión -->
-            <div v-if="telegram.telegramStatus.value" class="mb-4">
-              <div class="flex items-center p-3 rounded-lg" :class="telegram.isConnected() ? 'bg-emerald-100' : 'bg-slate-100'">
-                <div class="text-lg mr-2">{{ telegram.isConnected() ? '✅' : '📱' }}</div>
-                <div>
-                  <div class="font-semibold" :class="telegram.isConnected() ? 'text-emerald-800' : 'text-slate-700'">
-                    {{ telegram.isConnected() ? 'Conectado a Telegram' : 'No conectado' }}
-                  </div>
-                  <div class="text-sm text-slate-600" v-if="telegram.isConnected()">
-                    Estado: {{ telegram.telegramStatus.value.subscription_status }} - Las alertas se enviarán automáticamente
-                  </div>
-                  <div class="text-sm text-slate-600" v-else>
-                    Escanea el código QR para recibir alertas en Telegram
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Botones de Control -->
-            <div class="flex items-center space-x-3">
-              <button
-                v-if="!telegram.isConnected()"
-                @click="telegram.generateTelegramConnection"
-                :disabled="telegram.generatingQR.value || !telegram.isBotConfigured()"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-slate-400"
-              >
-                <span v-if="!telegram.generatingQR.value">Conectar Telegram</span>
-                <span v-else class="flex items-center">
-                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Generando...
-                </span>
-              </button>
-
-              <button
-                v-if="telegram.isConnected()"
-                @click="telegram.disconnectTelegram"
-                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
-              >
-                Desconectar
-              </button>
-
-              <button
-                @click="telegram.sendTestAlert"
-                :disabled="!telegram.isConnected()"
-                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-slate-400"
-              >
-                Enviar Prueba
-              </button>
-            </div>
-
-            <!-- Warning si el bot no está configurado -->
-            <div v-if="!telegram.isBotConfigured()" class="mt-4 p-3 bg-yellow-100 border border-yellow-200 rounded-lg">
-              <div class="flex items-center">
-                <div class="text-lg mr-2">⚠️</div>
-                <div class="text-sm text-yellow-800">
-                  El bot de Telegram no está configurado en el servidor. Contacta al administrador.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- QR Code Modal using component -->
-          <TelegramQRModal
-            :show="telegram.showQRModal.value"
-            :connection="telegram.qrConnection.value"
-            :time-left="telegram.tokenTimeLeft.value"
-            :regenerating-token="telegram.regeneratingToken.value"
-            :crypto-name="telegram.config.displayName"
-            @close="telegram.closeQRModal"
-            @regenerate="telegram.regenerateToken"
-          />
-        </div>
-
-        <!-- API Configuration for automatic mode (unchanged) -->
+        <!-- Additional config for automatic mode -->
         <div v-if="selectedMode === 'automatic'" class="mt-6 pt-6 border-t border-gray-200">
           <!-- Trading Configuration -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -316,7 +229,7 @@
                 <span v-else class="flex items-center">
                   <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Probando...
                 </span>
@@ -337,6 +250,186 @@
                 <div>• Ve a <a href="https://www.binance.com/en/my/settings/api-management" target="_blank" class="text-red-600 hover:underline">Binance API Management</a></div>
                 <div>• Crea API Keys con permisos de Spot Trading</div>
                 <div class="text-red-700 font-semibold">⚠️ NUNCA compartas tus API Keys reales</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Telegram Integration (Manual Mode Only) -->
+        <div v-if="selectedMode === 'manual'" class="mt-6 pt-6 border-t border-slate-200">
+          <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+            <div class="flex items-center mb-4">
+              <div class="text-2xl mr-3">📱</div>
+              <div>
+                <h4 class="font-semibold text-slate-900">Conexión con Telegram</h4>
+                <p class="text-sm text-slate-600">Recibe alertas directamente en Telegram</p>
+              </div>
+            </div>
+
+            <!-- Estado de Conexión -->
+            <div v-if="telegramStatus" class="mb-4">
+              <div class="flex items-center p-3 rounded-lg" :class="telegramStatus.connected ? 'bg-emerald-100' : 'bg-slate-100'">
+                <div class="text-lg mr-2">{{ telegramStatus.connected ? '✅' : '📱' }}</div>
+                <div>
+                  <div class="font-semibold" :class="telegramStatus.connected ? 'text-emerald-800' : 'text-slate-700'">
+                    {{ telegramStatus.connected ? 'Conectado a Telegram' : 'No conectado' }}
+                  </div>
+                  <div class="text-sm text-slate-600" v-if="telegramStatus.connected">
+                    Estado: {{ telegramStatus.subscription_status }} - Las alertas se enviarán automáticamente
+                  </div>
+                  <div class="text-sm text-slate-600" v-else>
+                    Escanea el código QR para recibir alertas en Telegram
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones de Control -->
+            <div class="flex items-center space-x-3">
+              <button
+                v-if="!telegramStatus?.connected"
+                @click="generateTelegramConnection"
+                :disabled="generatingQR || !telegramStatus?.bot_configured"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-slate-400"
+              >
+                <span v-if="!generatingQR">Conectar Telegram</span>
+                <span v-else class="flex items-center">
+                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generando...
+                </span>
+              </button>
+
+              <button
+                v-if="telegramStatus?.connected"
+                @click="disconnectTelegram"
+                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+              >
+                Desconectar
+              </button>
+
+              <button
+                @click="sendTestAlert"
+                :disabled="!telegramStatus?.connected"
+                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-slate-400"
+              >
+                Enviar Prueba
+              </button>
+            </div>
+
+            <!-- Warning si el bot no está configurado -->
+            <div v-if="!telegramStatus?.bot_configured" class="mt-4 p-3 bg-yellow-100 border border-yellow-200 rounded-lg">
+              <div class="flex items-center">
+                <div class="text-lg mr-2">⚠️</div>
+                <div class="text-sm text-yellow-800">
+                  El bot de Telegram no está configurado en el servidor. Contacta al administrador.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QR Code Modal -->
+          <div v-if="showQRModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg w-full max-w-md max-h-screen overflow-y-auto">
+              <!-- Header fijo -->
+              <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 rounded-t-lg">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-semibold text-slate-900">Conectar con Telegram</h3>
+                  <button
+                    @click="closeQRModal"
+                    class="text-slate-400 hover:text-slate-600 transition-colors duration-200"
+                  >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Contenido scrolleable -->
+              <div class="px-6 py-4 space-y-4">
+                <div v-if="qrConnection" class="text-center">
+                  <!-- QR Code -->
+                  <div class="bg-white p-4 rounded-lg border-2 border-slate-200 mb-4">
+                    <img 
+                      :src="`data:image/png;base64,${qrConnection.qr_code_base64}`" 
+                      alt="QR Code Telegram"
+                      class="mx-auto max-w-full h-auto"
+                    />
+                  </div>
+                  
+                  <!-- Token Manual -->
+                  <div class="bg-slate-50 p-4 rounded-lg mb-4">
+                    <p class="text-sm text-slate-600 mb-2">O copia este link:</p>
+                    <div class="text-xs break-all font-mono text-slate-700 bg-white p-2 rounded border">
+                      {{ qrConnection.telegram_link }}
+                    </div>
+                  </div>
+
+                  <!-- Instrucciones -->
+                  <div class="text-left space-y-2 text-sm text-slate-600 mb-4">
+                    <p><strong>Instrucciones:</strong></p>
+                    <p>1. Abre Telegram en tu teléfono</p>
+                    <p>2. Escanea el código QR o haz clic en "Abrir en Telegram"</p>
+                    <p>3. El bot te conectará automáticamente</p>
+                    <p>4. ¡Listo! Recibirás las alertas de Bitcoin</p>
+                  </div>
+
+                  <!-- Enlace directo -->
+                  <div class="mb-4">
+                    <a 
+                      :href="qrConnection.telegram_link" 
+                      target="_blank"
+                      class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                    >
+                      <span class="mr-2">📱</span>
+                      Abrir en Telegram
+                    </a>
+                  </div>
+
+                  <!-- Tiempo de expiración con contador -->
+                  <div class="text-xs text-slate-500 mb-4">
+                    <div v-if="tokenTimeLeft > 0" class="flex items-center justify-center space-x-2">
+                      <div class="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                      <span class="font-mono">Expira en: {{ formatTimeLeft(tokenTimeLeft) }}</span>
+                    </div>
+                    <div v-else class="text-red-500 font-semibold">
+                      ⚠️ Token expirado - Genera uno nuevo
+                    </div>
+                  </div>
+
+                  <!-- Botón Regenerar Token -->
+                  <div class="mb-4">
+                    <button
+                      @click="regenerateToken"
+                      :disabled="regeneratingToken"
+                      class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-slate-400"
+                    >
+                      <span v-if="!regeneratingToken">🔄 Generar Nuevo Token</span>
+                      <span v-else class="flex items-center">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generando...
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer fijo -->
+              <div class="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-4 rounded-b-lg">
+                <div class="text-center">
+                  <button
+                    @click="closeQRModal"
+                    class="px-6 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors duration-200"
+                  >
+                    Cerrar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -370,7 +463,7 @@
               <span v-else class="flex items-center">
                 <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 718-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 Iniciando Scanner...
               </span>
@@ -564,21 +657,77 @@
           </div>
         </div>
       </div>
+
+      <!-- Scanner Logs Panel -->
+      <div v-if="botStatus.isRunning" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <span class="text-2xl mr-2">📊</span>
+            Scanner Logs - Tiempo Real
+          </h3>
+          <div class="flex items-center space-x-2 text-sm text-gray-600">
+            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span>Activo</span>
+          </div>
+        </div>
+
+        <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm max-h-96 overflow-y-auto" ref="logsContainer">
+          <div v-if="scannerLogs.length === 0" class="text-gray-400 text-center py-8">
+            Esperando logs del scanner...
+          </div>
+          <div v-else>
+            <div 
+              v-for="(log, index) in scannerLogs" 
+              :key="index"
+              :class="[
+                'mb-2 p-2 rounded border-l-4',
+                getLogClass(log.level)
+              ]"
+            >
+              <div class="flex items-start space-x-3">
+                <span class="text-gray-400 text-xs">{{ formatLogTime(log.timestamp) }}</span>
+                <span :class="getLogTextClass(log.level)">{{ getLogIcon(log.level) }}</span>
+                <div class="flex-1">
+                  <div :class="getLogTextClass(log.level)">{{ log.message }}</div>
+                  <div v-if="log.details && Object.keys(log.details).length > 0" class="mt-1 text-xs text-gray-300">
+                    <div v-for="(value, key) in log.details" :key="key" class="inline-block mr-4">
+                      <span class="text-gray-400">{{ key }}:</span> <span class="text-gray-200">{{ value }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex justify-between items-center text-sm text-gray-600">
+          <div>
+            <span v-if="botStatus.alerts_count">Alertas enviadas: <strong>{{ botStatus.alerts_count }}</strong></span>
+            <span v-if="cooldownRemaining && cooldownRemaining > 0" class="ml-4">
+              Próxima alerta en: <strong>{{ Math.ceil(cooldownRemaining/60) }} min</strong>
+            </span>
+          </div>
+          <button 
+            @click="refreshLogs" 
+            class="text-blue-600 hover:text-blue-800 transition-colors duration-200"
+          >
+            🔄 Actualizar
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import apiClient from '@/config/api'
 import { useAuthStore } from '../stores/authStore'
-import { useTelegram } from '@/composables/useTelegram'
-import TelegramQRModal from '@/components/TelegramQRModal.vue'
 
 const authStore = useAuthStore()
 
-// Usar composable de Telegram para Bitcoin
-const telegram = useTelegram('btc')
+// Template refs
+const logsContainer = ref(null)
 
 // Reactive data
 const selectedMode = ref('manual')
@@ -586,6 +735,18 @@ const loading = ref(false)
 const currentAnalysis = ref(null)
 const alerts = ref([])
 const statistics = ref(null)
+
+// Scanner logs
+const scannerLogs = ref([])
+const cooldownRemaining = ref(0)
+
+// Telegram state
+const telegramStatus = ref(null)
+const showQRModal = ref(false)
+const qrConnection = ref(null)
+const generatingQR = ref(false)
+const regeneratingToken = ref(false)
+const tokenTimeLeft = ref(0)
 
 const botStatus = reactive({
   isRunning: false,
@@ -610,7 +771,7 @@ const testingConnection = ref(false)
 // Polling interval
 let statusInterval = null
 
-// Methods (sin funciones de Telegram - ya están en el composable)
+// Methods
 const startBot = async () => {
   loading.value = true
   try {
@@ -632,6 +793,7 @@ const startBot = async () => {
     console.log('Bitcoin Bot iniciado:', response.data)
   } catch (error) {
     console.error('Error iniciando Bitcoin Bot:', error)
+    // Show error notification
   } finally {
     loading.value = false
   }
@@ -741,7 +903,8 @@ const startPolling = () => {
       await Promise.all([
         fetchCurrentAnalysis(),
         fetchAlerts(),
-        fetchStatistics()
+        fetchStatistics(),
+        refreshLogs()
       ])
     }
   }, 30000) // Cada 30 segundos
@@ -829,10 +992,236 @@ const getAlertTextClass = (type) => {
   }
 }
 
+// Telegram functions
+const fetchTelegramStatus = async () => {
+  try {
+    const response = await apiClient.get('/telegram/status?crypto=btc', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    telegramStatus.value = response.data
+  } catch (error) {
+    console.error('Error obteniendo estado de Telegram:', error)
+    telegramStatus.value = {
+      connected: false,
+      bot_configured: false,
+      subscription_status: 'inactive'
+    }
+  }
+}
+
+const generateTelegramConnection = async () => {
+  generatingQR.value = true
+  try {
+    const response = await apiClient.post('/telegram/connect?crypto=btc', {}, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    qrConnection.value = response.data
+    showQRModal.value = true
+    
+    // Inicializar contador si tenemos expires_in_seconds
+    if (response.data.expires_in_seconds) {
+      tokenTimeLeft.value = response.data.expires_in_seconds
+      startTokenCountdown()
+    }
+    
+    // Actualizar estado cada 5 segundos mientras está abierto el modal
+    const statusCheckInterval = setInterval(async () => {
+      await fetchTelegramStatus()
+      if (telegramStatus.value?.connected) {
+        clearInterval(statusCheckInterval)
+        closeQRModal()
+      }
+    }, 5000)
+    
+    // Limpiar interval después de 10 minutos
+    setTimeout(() => {
+      clearInterval(statusCheckInterval)
+    }, 600000)
+    
+  } catch (error) {
+    console.error('Error generando conexión de Telegram:', error)
+    // Mostrar error al usuario
+  } finally {
+    generatingQR.value = false
+  }
+}
+
+const regenerateToken = async () => {
+  regeneratingToken.value = true
+  try {
+    const response = await apiClient.post('/telegram/regenerate-token?crypto=btc', {}, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    qrConnection.value = response.data
+    
+    // Reiniciar contador con el nuevo token
+    if (response.data.expires_in_seconds) {
+      tokenTimeLeft.value = response.data.expires_in_seconds
+      startTokenCountdown()
+    }
+    
+  } catch (error) {
+    console.error('Error regenerando token de Telegram:', error)
+    // Mostrar error al usuario
+  } finally {
+    regeneratingToken.value = false
+  }
+}
+
+const disconnectTelegram = async () => {
+  try {
+    await apiClient.post('/telegram/disconnect', {}, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    await fetchTelegramStatus()
+  } catch (error) {
+    console.error('Error desconectando de Telegram:', error)
+  }
+}
+
+const sendTestAlert = async () => {
+  try {
+    await apiClient.post('/telegram/send-alert', {
+      type: 'INFO',
+      symbol: 'BTCUSDT',
+      price: 45000,
+      message: '🧪 Esta es una alerta de prueba desde BotU. Si recibes este mensaje, tu conexión funciona correctamente!'
+    }, {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    // Mostrar mensaje de confirmación
+  } catch (error) {
+    console.error('Error enviando alerta de prueba:', error)
+  }
+}
+
+const closeQRModal = () => {
+  showQRModal.value = false
+  qrConnection.value = null
+  stopTokenCountdown()
+}
+
+// Token countdown functions
+let tokenCountdownInterval = null
+
+const startTokenCountdown = () => {
+  // Limpiar cualquier contador previo
+  if (tokenCountdownInterval) {
+    clearInterval(tokenCountdownInterval)
+  }
+  
+  tokenCountdownInterval = setInterval(() => {
+    if (tokenTimeLeft.value > 0) {
+      tokenTimeLeft.value--
+    } else {
+      clearInterval(tokenCountdownInterval)
+      tokenCountdownInterval = null
+    }
+  }, 1000)
+}
+
+const stopTokenCountdown = () => {
+  if (tokenCountdownInterval) {
+    clearInterval(tokenCountdownInterval)
+    tokenCountdownInterval = null
+  }
+  tokenTimeLeft.value = 0
+}
+
+const formatTimeLeft = (seconds) => {
+  const minutes = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${minutes}:${secs.toString().padStart(2, '0')}`
+}
+
+// Scanner logs functions
+const refreshLogs = async () => {
+  try {
+    const response = await apiClient.get('/bitcoin-bot/logs', {
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
+    
+    if (response.data.logs) {
+      scannerLogs.value = response.data.logs.slice(-50) // Último 50 logs
+      cooldownRemaining.value = response.data.cooldown_remaining || 0
+      
+      // Auto-scroll to bottom
+      setTimeout(() => {
+        if (logsContainer.value) {
+          logsContainer.value.scrollTop = logsContainer.value.scrollHeight
+        }
+      }, 100)
+    }
+  } catch (error) {
+    console.error('Error obteniendo logs del scanner:', error)
+  }
+}
+
+const formatLogTime = (timestamp) => {
+  if (!timestamp) return ''
+  const date = new Date(timestamp)
+  return date.toLocaleTimeString('es-ES', { hour12: false })
+}
+
+const getLogClass = (level) => {
+  switch (level?.toLowerCase()) {
+    case 'info': return 'bg-gray-800 border-blue-500'
+    case 'warning': return 'bg-yellow-900 border-yellow-500'
+    case 'error': return 'bg-red-900 border-red-500'
+    case 'success': return 'bg-green-900 border-green-500'
+    case 'alert': return 'bg-purple-900 border-purple-500'
+    default: return 'bg-gray-800 border-gray-500'
+  }
+}
+
+const getLogTextClass = (level) => {
+  switch (level?.toLowerCase()) {
+    case 'info': return 'text-blue-300'
+    case 'warning': return 'text-yellow-300'
+    case 'error': return 'text-red-300'
+    case 'success': return 'text-green-300'
+    case 'alert': return 'text-purple-300'
+    default: return 'text-gray-300'
+  }
+}
+
+const getLogIcon = (level) => {
+  switch (level?.toLowerCase()) {
+    case 'info': return 'ℹ️'
+    case 'warning': return '⚠️'
+    case 'error': return '❌'
+    case 'success': return '✅'
+    case 'alert': return '🚨'
+    default: return '📋'
+  }
+}
+
 // Lifecycle
-onMounted(async () => {
-  await refreshStatus()
-  await telegram.fetchTelegramStatus()
+onMounted(() => {
+  refreshStatus()
+  fetchTelegramStatus()
+  if (botStatus.isRunning) {
+    refreshLogs()
+  }
+})
+
+onUnmounted(() => {
+  stopPolling()
+  stopTokenCountdown()
 })
 </script>
 
