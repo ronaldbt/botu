@@ -3,7 +3,7 @@
     <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
       <div>
         <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2 flex items-center">
-          <span class="text-4xl mr-3" :class="`text-${config.colors.primary}`">{{ config.emoji }}</span>
+          <span class="text-4xl mr-3" :class="getEmojiColor()">{{ config.emoji }}</span>
           {{ config.name }} Bot U-Pattern
         </h1>
         <p class="text-slate-600 text-base">
@@ -13,7 +13,8 @@
           <span 
             v-for="achievement in config.achievements" 
             :key="achievement.label"
-            :class="`${achievement.bg} ${achievement.text} px-3 py-1 rounded-full font-semibold`"
+            :class="[achievement.bg, achievement.text]"
+            class="px-3 py-1 rounded-full font-semibold"
           >
             {{ achievement.label }}
           </span>
@@ -37,7 +38,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   config: {
     type: Object,
     required: true
@@ -51,4 +52,18 @@ defineProps({
     required: true
   }
 })
+
+// Función para obtener colores CSS estáticos
+const getEmojiColor = () => {
+  switch (props.config.name?.toLowerCase()) {
+    case 'bitcoin':
+      return 'text-yellow-600'
+    case 'ethereum':
+      return 'text-purple-600'
+    case 'bnb':
+      return 'text-yellow-600'
+    default:
+      return 'text-yellow-600'
+  }
+}
 </script>

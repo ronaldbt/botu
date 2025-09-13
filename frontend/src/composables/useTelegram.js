@@ -14,6 +14,15 @@ export function useTelegram(crypto = 'btc') {
   const generatingQR = ref(false)
   const regeneratingToken = ref(false)
   const tokenTimeLeft = ref(0)
+  
+  // Asegurar que el modal no se muestre automáticamente
+  const initializeTelegramState = () => {
+    showQRModal.value = false
+    qrConnection.value = null
+    generatingQR.value = false
+    regeneratingToken.value = false
+    tokenTimeLeft.value = 0
+  }
 
   // Intervalos para limpiar al unmount
   let tokenCountdownInterval = null
@@ -50,6 +59,9 @@ export function useTelegram(crypto = 'btc') {
 
   // Funciones principales
   const fetchTelegramStatus = async () => {
+    // Asegurar que el modal no se muestre automáticamente
+    initializeTelegramState()
+    
     try {
       const response = await apiClient.get(`/telegram/status?crypto=${crypto}`, {
         headers: {
@@ -256,6 +268,7 @@ export function useTelegram(crypto = 'btc') {
     disconnectTelegram,
     sendTestAlert,
     closeQRModal,
+    initializeTelegramState,
     
     // Utilidades
     formatTimeLeft,

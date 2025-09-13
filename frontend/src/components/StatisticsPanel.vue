@@ -38,11 +38,11 @@
           <div class="text-sm text-gray-600">Balance USDT</div>
         </div>
         
-        <div :class="`${config.colors.bg} rounded-lg p-4 text-center`">
-          <div :class="`text-2xl font-bold ${config.colors.text}`">
+        <div :class="getCryptoCardClasses()" class="rounded-lg p-4 text-center">
+          <div :class="getCryptoTextClasses()" class="text-2xl font-bold">
             {{ getCryptoBalance() }}
           </div>
-          <div :class="`text-sm ${config.colors.text} opacity-75`">{{ config.name }}</div>
+          <div :class="getCryptoSubTextClasses()" class="text-sm opacity-75">{{ config.name }}</div>
         </div>
         
         <div class="bg-green-50 rounded-lg p-4 text-center">
@@ -132,5 +132,44 @@ const getPnLText = () => {
   const pnl = props.statistics.portfolio?.pnl || 0
   const sign = pnl >= 0 ? '+' : ''
   return `${sign}$${pnl.toLocaleString()}`
+}
+
+const getCryptoCardClasses = () => {
+  switch (props.config.name?.toLowerCase()) {
+    case 'bitcoin':
+      return 'bg-orange-50'
+    case 'ethereum':
+      return 'bg-purple-50'
+    case 'bnb':
+      return 'bg-yellow-50'
+    default:
+      return 'bg-orange-50'
+  }
+}
+
+const getCryptoTextClasses = () => {
+  switch (props.config.name?.toLowerCase()) {
+    case 'bitcoin':
+      return 'text-orange-900'
+    case 'ethereum':
+      return 'text-purple-900'
+    case 'bnb':
+      return 'text-yellow-900'
+    default:
+      return 'text-orange-900'
+  }
+}
+
+const getCryptoSubTextClasses = () => {
+  switch (props.config.name?.toLowerCase()) {
+    case 'bitcoin':
+      return 'text-orange-600'
+    case 'ethereum':
+      return 'text-purple-600'
+    case 'bnb':
+      return 'text-yellow-600'
+    default:
+      return 'text-orange-600'
+  }
 }
 </script>

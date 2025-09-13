@@ -4,7 +4,7 @@
       {{ config.emoji }} Estrategia {{ config.name }} Optimizada - Modo {{ selectedMode === 'manual' ? 'Manual' : 'Automático' }}
     </h3>
     
-    <div :class="`bg-gradient-to-r ${config.colors.gradient} ${config.colors.border} rounded-lg p-4 mb-4`">
+    <div :class="getConfigGradientClasses()" class="rounded-lg p-4 mb-4">
       <div class="flex items-center mb-2">
         <span class="text-lg mr-2">⚙️</span>
         <h4 class="font-semibold text-slate-800">Parámetros Optimizados por Backtest 2023</h4>
@@ -38,7 +38,7 @@
 
     <!-- Telegram Integration (Manual Mode Only) -->
     <div v-if="selectedMode === 'manual'" class="mt-6 pt-6 border-t border-slate-200">
-      <div :class="`bg-gradient-to-br ${config.colors.gradient} ${config.colors.border} rounded-lg p-6`">
+      <div :class="getTelegramGradientClasses()" class="rounded-lg p-6">
         <div class="flex items-center mb-4">
           <div class="text-2xl mr-3">📱</div>
           <div>
@@ -148,7 +148,7 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   selectedMode: {
     type: String,
     required: true
@@ -186,4 +186,31 @@ defineProps({
     required: true
   }
 })
+
+// Funciones para clases CSS estáticas
+const getConfigGradientClasses = () => {
+  switch (props.config.name?.toLowerCase()) {
+    case 'bitcoin':
+      return 'bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200'
+    case 'ethereum':
+      return 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200'
+    case 'bnb':
+      return 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200'
+    default:
+      return 'bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200'
+  }
+}
+
+const getTelegramGradientClasses = () => {
+  switch (props.config.name?.toLowerCase()) {
+    case 'bitcoin':
+      return 'bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200'
+    case 'ethereum':
+      return 'bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200'
+    case 'bnb':
+      return 'bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200'
+    default:
+      return 'bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200'
+  }
+}
 </script>

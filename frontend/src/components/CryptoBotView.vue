@@ -9,15 +9,15 @@
       />
 
       <!-- Mode Selector -->
-      <ModeSelector v-model="cryptoBot.selectedMode" />
+      <ModeSelector :model-value="unref(cryptoBot.selectedMode)" @update:model-value="handleModeChange" />
 
       <!-- Configuration Panel -->
       <ConfigurationPanel
-        :selected-mode="cryptoBot.selectedMode"
+        :selected-mode="unref(cryptoBot.selectedMode)"
         :config="cryptoBot.config"
-        :bot-config="cryptoBot.botConfig"
-        :bot-status="cryptoBot.botStatus"
-        :loading="cryptoBot.loading"
+        :bot-config="unref(cryptoBot.botConfig)"
+        :bot-status="unref(cryptoBot.botStatus)"
+        :loading="unref(cryptoBot.loading)"
         :telegram="telegram"
         :start-bot="cryptoBot.startBot"
         :stop-bot="cryptoBot.stopBot"
@@ -26,10 +26,10 @@
 
       <!-- Current Analysis -->
       <CurrentAnalysis
-        v-if="cryptoBot.currentAnalysis"
-        :analysis="cryptoBot.currentAnalysis"
+        v-if="unref(cryptoBot.currentAnalysis)"
+        :analysis="unref(cryptoBot.currentAnalysis)"
         :config="cryptoBot.config"
-        :bot-config="cryptoBot.botConfig"
+        :bot-config="unref(cryptoBot.botConfig)"
         :format-price="cryptoBot.formatPrice"
         :get-pattern-state-class="cryptoBot.getPatternStateClass"
       />
@@ -51,9 +51,9 @@
 
       <!-- Scanner Logs -->
       <ScannerLogs
-        :logs="cryptoBot.scannerLogs"
+        :logs="unref(cryptoBot.scannerLogs)"
         :config="cryptoBot.config"
-        :bot-status="cryptoBot.botStatus"
+        :bot-status="unref(cryptoBot.botStatus)"
         :format-log-time="cryptoBot.formatLogTime"
         :get-log-class="cryptoBot.getLogClass"
         :get-log-text-class="cryptoBot.getLogTextClass"
@@ -63,27 +63,27 @@
 
       <!-- Alerts Panel -->
       <AlertsPanel
-        :alerts="cryptoBot.alerts"
+        :alerts="unref(cryptoBot.alerts)"
         :config="cryptoBot.config"
-        :selected-mode="cryptoBot.selectedMode"
+        :selected-mode="unref(cryptoBot.selectedMode)"
         :format-price="cryptoBot.formatPrice"
       />
 
       <!-- Statistics -->
       <StatisticsPanel
-        v-if="cryptoBot.statistics"
-        :statistics="cryptoBot.statistics"
+        v-if="unref(cryptoBot.statistics)"
+        :statistics="unref(cryptoBot.statistics)"
         :config="cryptoBot.config"
-        :selected-mode="cryptoBot.selectedMode"
+        :selected-mode="unref(cryptoBot.selectedMode)"
       />
     </div>
 
     <!-- Telegram QR Modal -->
     <TelegramQRModal
-      :show="telegram.showQRModal"
-      :connection="telegram.qrConnection"
-      :time-left="telegram.tokenTimeLeft"
-      :regenerating-token="telegram.regeneratingToken"
+      :show="unref(telegram.showQRModal)"
+      :connection="unref(telegram.qrConnection)"
+      :time-left="unref(telegram.tokenTimeLeft)"
+      :regenerating-token="unref(telegram.regeneratingToken)"
       :crypto-name="cryptoBot.config.displayName"
       @close="telegram.closeQRModal"
       @regenerate="telegram.regenerateToken"
@@ -92,7 +92,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, watch, unref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useCryptoBot } from '@/composables/useCryptoBot'
 import { useTelegram } from '@/composables/useTelegram'
@@ -123,7 +123,25 @@ const telegram = useTelegram(props.crypto)
 
 // Lifecycle
 onMounted(async () => {
+  // Debug: Log del modo inicial
+  console.log('CryptoBotView: Modo inicial:', cryptoBot.selectedMode.value)
+  
   await cryptoBot.refreshStatus()
   await telegram.fetchTelegramStatus()
+})
+
+// Función para manejar el cambio de modo
+const handleModeChange = (newMode) => {
+  console.log('CryptoBotView: handleModeChange llamado con:', newMode)
+  console.log('CryptoBotView: selectedMode antes del cambio:', cryptoBot.selectedMode.value)
+  cryptoBot.selectedMode.value = newMode
+  console.log('CryptoBotView: selectedMode después del cambio:', cryptoBot.selectedMode.value)
+}
+
+// Debug: Watch para cambios en el modo
+watch(() => cryptoBot.selectedMode.value, (newMode, oldMode) => {
+  console.log('CryptoBotView: Modo cambiado de', oldMode, 'a:', newMode)
+  console.log('CryptoBotView: cryptoBot.selectedMode:', cryptoBot.selectedMode)
+  console.log('CryptoBotView: cryptoBot.selectedMode.value:', cryptoBot.selectedMode.value)
 })
 </script>
