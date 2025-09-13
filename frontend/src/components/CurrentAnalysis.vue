@@ -21,36 +21,39 @@
         </div>
       </div>
 
-      <!-- Estado del Patrón -->
+      <!-- ATR (Volatilidad) -->
       <div class="text-center">
-        <div :class="getPatternStateClass(analysis.patternState)" class="inline-block px-3 py-2 rounded-lg font-semibold text-sm mb-1">
-          {{ analysis.patternState || 'Monitoreando' }}
+        <div class="text-2xl font-bold text-orange-600 mb-1">
+          {{ analysis.atr ? `$${analysis.atr.toFixed(0)}` : '--' }}
         </div>
-        <div class="text-sm text-slate-600">Estado U-Pattern</div>
+        <div class="text-sm text-slate-600">ATR (Volatilidad)</div>
         <div class="text-xs text-slate-500 mt-1">
-          {{ analysis.patternDescription || 'Esperando señal' }}
+          {{ analysis.atr ? `${((analysis.atr / analysis.currentPrice) * 100).toFixed(1)}%` : 'Calculando...' }}
         </div>
       </div>
 
       <!-- Tiempo Restante -->
       <div class="text-center">
-        <div class="text-2xl font-bold text-blue-600 mb-1">
-          {{ analysis.timeUntilNextScan || '00:00:00' }}
+        <div class="text-2xl font-bold mb-1" :class="getNextScanClass(analysis.timeUntilNextScan)">
+          {{ formatNextScanTime(analysis.timeUntilNextScan) }}
         </div>
         <div class="text-sm text-slate-600">Próximo Escaneo</div>
         <div class="text-xs text-slate-500 mt-1">
-          Ventana: {{ botConfig.timeframe }}
+          {{ analysis.isMonitoring ? `Ventana: ${botConfig.timeframe}` : 'Bot detenido' }}
         </div>
       </div>
 
-      <!-- Confianza -->
+      <!-- Estado del Monitoreo -->
       <div class="text-center">
-        <div class="text-2xl font-bold text-purple-600 mb-1">
-          {{ analysis.confidence || 0 }}%
+        <div v-if="analysis.isMonitoring" class="text-lg font-bold text-green-600 mb-1">
+          🟢 ACTIVO
         </div>
-        <div class="text-sm text-slate-600">Confianza Señal</div>
+        <div v-else class="text-lg font-bold text-red-600 mb-1">
+          🔴 INACTIVO
+        </div>
+        <div class="text-sm text-slate-600">Estado Monitoreo</div>
         <div class="text-xs text-slate-500 mt-1">
-          Min: 85% para trade
+          {{ analysis.isMonitoring ? 'Escaneando patrones' : 'Bot detenido' }}
         </div>
       </div>
     </div>
@@ -112,5 +115,40 @@ const formatTime = (timestamp) => {
   } catch {
     return timestamp
   }
+}
+
+const formatNextScanTime = (timeString) => {
+  if (!timeString) return '--:--:--'
+  
+  // Si es un mensaje de estado (no un tiempo)
+  if (timeString.includes('detenido') || timeString.includes('Error') || timeString.includes('Iniciando') || timeString.includes('Escaneando')) {
+    return timeString
+  }
+  
+  return timeString
+}
+
+const getNextScanClass = (timeString) => {
+  if (!timeString) return 'text-slate-400'
+  
+  if (timeString === 'Bot detenido' || timeString === 'Error') {
+    return 'text-red-600'
+  }
+  
+  if (timeString === 'Escaneando...' || timeString === 'Iniciando...') {
+    return 'text-green-600'
+  }
+  
+  // Si es un tiempo válido (formato HH:MM:SS)
+  if (timeString.match(/^\d{2}:\d{2}:\d{2}$/)) {
+    const [hours, minutes, seconds] = timeString.split(':').map(Number)
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds
+    
+    if (totalSeconds <= 60) return 'text-red-600'      // Menos de 1 minuto - rojo
+    if (totalSeconds <= 300) return 'text-orange-600'  // Menos de 5 minutos - naranja
+    return 'text-blue-600'                             // Más tiempo - azul
+  }
+  
+  return 'text-blue-600'
 }
 </script>
