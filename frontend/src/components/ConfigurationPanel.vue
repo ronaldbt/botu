@@ -70,10 +70,10 @@
           <button
             v-if="!telegram.telegramStatus?.connected"
             @click="telegram.generateTelegramConnection"
-            :disabled="telegram.generatingQR"
+            :disabled="telegram.generatingQR?.value"
             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors duration-200 disabled:bg-slate-400"
           >
-            <span v-if="!telegram.generatingQR">Conectar Telegram {{ config.name }}</span>
+            <span v-if="!telegram.generatingQR?.value">Conectar Telegram {{ config.name }}</span>
             <span v-else class="flex items-center">
               <svg class="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -148,6 +148,8 @@
 </template>
 
 <script setup>
+import { watch } from 'vue'
+
 const props = defineProps({
   selectedMode: {
     type: String,
@@ -186,6 +188,20 @@ const props = defineProps({
     required: true
   }
 })
+
+// Debug: Logs de depuración para Telegram (solo una vez)
+console.log('ConfigurationPanel: Props recibidos:', {
+  selectedMode: props.selectedMode,
+  config: props.config,
+  telegram: props.telegram
+})
+
+// Debug: Watch para generatingQR específicamente (solo cuando cambia realmente)
+watch(() => props.telegram?.generatingQR?.value, (newValue, oldValue) => {
+  if (oldValue !== newValue) {
+    console.log('ConfigurationPanel: generatingQR cambiado de', oldValue, 'a:', newValue)
+  }
+}, { immediate: true })
 
 // Funciones para clases CSS estáticas
 const getConfigGradientClasses = () => {

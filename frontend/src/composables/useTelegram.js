@@ -4,6 +4,8 @@ import apiClient from '@/config/api'
 import { useAuthStore } from '@/stores/authStore'
 
 export function useTelegram(crypto = 'btc') {
+  console.log(`[Telegram ${crypto}] useTelegram: Inicializando composable para ${crypto}`)
+  
   // Store
   const authStore = useAuthStore()
   
@@ -15,14 +17,14 @@ export function useTelegram(crypto = 'btc') {
   const regeneratingToken = ref(false)
   const tokenTimeLeft = ref(0)
   
-  // Asegurar que el modal no se muestre automáticamente
-  const initializeTelegramState = () => {
-    showQRModal.value = false
-    qrConnection.value = null
-    generatingQR.value = false
-    regeneratingToken.value = false
-    tokenTimeLeft.value = 0
-  }
+  console.log(`[Telegram ${crypto}] useTelegram: Estado inicial:`, {
+    telegramStatus: telegramStatus.value,
+    showQRModal: showQRModal.value,
+    qrConnection: qrConnection.value,
+    generatingQR: generatingQR.value,
+    regeneratingToken: regeneratingToken.value,
+    tokenTimeLeft: tokenTimeLeft.value
+  })
 
   // Intervalos para limpiar al unmount
   let tokenCountdownInterval = null
@@ -59,19 +61,24 @@ export function useTelegram(crypto = 'btc') {
 
   // Funciones principales
   const fetchTelegramStatus = async () => {
-    // Asegurar que el modal no se muestre automáticamente
-    initializeTelegramState()
-    
     try {
+      console.log(`[Telegram ${crypto}] fetchTelegramStatus: Haciendo petición a /telegram/status?crypto=${crypto}`)
       const response = await apiClient.get(`/telegram/status?crypto=${crypto}`, {
         headers: {
           'Authorization': `Bearer ${authStore.token}`
         }
       })
+      console.log(`[Telegram ${crypto}] fetchTelegramStatus: Respuesta recibida:`, response.data)
       telegramStatus.value = response.data
+      console.log(`[Telegram ${crypto}] fetchTelegramStatus: Estado actualizado:`, {
+        connected: response.data.connected,
+        chat_id: response.data.chat_id,
+        subscription_status: response.data.subscription_status,
+        bot_configured: response.data.bot_configured
+      })
       return response.data
     } catch (error) {
-      console.error(`Error obteniendo estado de Telegram ${crypto}:`, error)
+      console.error(`[Telegram ${crypto}] fetchTelegramStatus: Error obteniendo estado:`, error)
       telegramStatus.value = {
         connected: false,
         bot_configured: false,
@@ -82,27 +89,47 @@ export function useTelegram(crypto = 'btc') {
   }
 
   const generateTelegramConnection = async () => {
+    console.log(`[Telegram ${crypto}] generateTelegramConnection: Iniciando...`)
+    console.log(`[Telegram ${crypto}] generateTelegramConnection: generatingQR.value antes:`, generatingQR.value)
     generatingQR.value = true
+    console.log(`[Telegram ${crypto}] generateTelegramConnection: generatingQR.value después:`, generatingQR.value)
+    
     try {
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: Haciendo petición a /telegram/connect?crypto=${crypto}`)
       const response = await apiClient.post(`/telegram/connect?crypto=${crypto}`, {}, {
         headers: {
           'Authorization': `Bearer ${authStore.token}`
         }
       })
       
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: Respuesta recibida:`, response.data)
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: Datos del QR:`, {
+        hasQRCode: !!response.data.qr_code_base64,
+        telegramLink: response.data.telegram_link,
+        expiresInSeconds: response.data.expires_in_seconds,
+        token: response.data.token
+      })
+      
       qrConnection.value = response.data
       showQRModal.value = true
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: qrConnection.value:`, qrConnection.value)
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: showQRModal.value:`, showQRModal.value)
       
       // Inicializar contador si tenemos expires_in_seconds
       if (response.data.expires_in_seconds) {
         tokenTimeLeft.value = response.data.expires_in_seconds
+        console.log(`[Telegram ${crypto}] generateTelegramConnection: tokenTimeLeft.value establecido:`, tokenTimeLeft.value)
         startTokenCountdown()
       }
       
       // Actualizar estado cada 5 segundos mientras está abierto el modal
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: Configurando interval de status check`)
       statusCheckInterval = setInterval(async () => {
-        await fetchTelegramStatus()
+        console.log(`[Telegram ${crypto}] generateTelegramConnection: Ejecutando status check interval`)
+        const status = await fetchTelegramStatus()
+        console.log(`[Telegram ${crypto}] generateTelegramConnection: Status check result:`, status)
         if (telegramStatus.value?.connected) {
+          console.log(`[Telegram ${crypto}] generateTelegramConnection: Usuario conectado, cerrando modal`)
           clearInterval(statusCheckInterval)
           closeQRModal()
         }
@@ -110,18 +137,27 @@ export function useTelegram(crypto = 'btc') {
       
       // Limpiar interval después de 10 minutos
       statusCheckTimeout = setTimeout(() => {
+        console.log(`[Telegram ${crypto}] generateTelegramConnection: Timeout alcanzado, limpiando interval`)
         if (statusCheckInterval) {
           clearInterval(statusCheckInterval)
           statusCheckInterval = null
         }
       }, 600000)
       
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: Función completada exitosamente`)
       return response.data
     } catch (error) {
-      console.error(`Error generando conexión de Telegram ${crypto}:`, error)
+      console.error(`[Telegram ${crypto}] generateTelegramConnection: Error generando conexión:`, error)
+      console.error(`[Telegram ${crypto}] generateTelegramConnection: Error details:`, {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      })
       throw error
     } finally {
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: Finally - generatingQR.value antes:`, generatingQR.value)
       generatingQR.value = false
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: Finally - generatingQR.value después:`, generatingQR.value)
     }
   }
 
@@ -268,7 +304,6 @@ export function useTelegram(crypto = 'btc') {
     disconnectTelegram,
     sendTestAlert,
     closeQRModal,
-    initializeTelegramState,
     
     // Utilidades
     formatTimeLeft,
