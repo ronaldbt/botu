@@ -3,11 +3,10 @@
     <div class="max-w-6xl mx-auto">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2 flex items-center">
-          <span class="text-4xl mr-3">💎</span>
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2">
           Suscripción Premium
         </h1>
-        <p class="text-slate-600">Desbloquea todo el potencial de BotU con nuestros planes premium</p>
+        <p class="text-slate-600">Elige el plan que mejor se adapte a tus necesidades de trading</p>
       </div>
 
       <!-- Current Subscription Status -->
@@ -55,30 +54,18 @@
 
           <div class="text-center mb-6">
             <h3 class="text-xl font-bold text-slate-900 mb-2">🚨 Plan Alertas</h3>
-            <div class="text-3xl font-bold text-blue-600 mb-1">$20</div>
-            <div class="text-slate-600">por mes</div>
+            <div class="text-2xl font-bold text-blue-600 mb-1">Alertas Telegram</div>
+            <div class="text-lg font-semibold text-blue-600">BTC, ETH y BNB</div>
           </div>
 
           <ul class="space-y-3 mb-6">
-            <li class="flex items-center text-sm">
-              <span class="text-green-500 mr-2">✅</span>
-              Dashboard completo con análisis
-            </li>
             <li class="flex items-center text-sm">
               <span class="text-green-500 mr-2">✅</span>
               Alertas Telegram para BTC, ETH y BNB
             </li>
             <li class="flex items-center text-sm">
               <span class="text-green-500 mr-2">✅</span>
-              Detección de patrones U en tiempo real
-            </li>
-            <li class="flex items-center text-sm">
-              <span class="text-green-500 mr-2">✅</span>
               Histórico completo de señales
-            </li>
-            <li class="flex items-center text-sm">
-              <span class="text-green-500 mr-2">✅</span>
-              Análisis técnico detallado
             </li>
             <li class="flex items-center text-sm">
               <span class="text-red-500 mr-2">❌</span>
@@ -113,10 +100,6 @@
           </div>
 
           <ul class="space-y-3 mb-6">
-            <li class="flex items-center text-sm">
-              <span class="text-green-500 mr-2">✅</span>
-              Todo del Plan Alertas incluido
-            </li>
             <li class="flex items-center text-sm">
               <span class="text-green-500 mr-2">✅</span>
               Trading automático BTC, ETH y BNB

@@ -1,40 +1,9 @@
 <template>
   <div v-if="selectedMode" class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-8">
     <h3 class="text-lg font-semibold text-slate-900 mb-4">
-      {{ config.emoji }} Estrategia {{ config.name }} Optimizada - Modo {{ selectedMode === 'manual' ? 'Manual' : 'Automático' }}
+      {{ config.emoji }} {{ config.name }} Bot - Modo {{ selectedMode === 'manual' ? 'Manual' : 'Automático' }}
     </h3>
     
-    <div :class="getConfigGradientClasses()" class="rounded-lg p-4 mb-4">
-      <div class="flex items-center mb-2">
-        <span class="text-lg mr-2">⚙️</span>
-        <h4 class="font-semibold text-slate-800">Parámetros Optimizados por Backtest 2023</h4>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-        <div class="flex items-center">
-          <span class="font-medium text-slate-700 mr-2">Timeframe:</span>
-          <span class="bg-white px-2 py-1 rounded text-slate-900 font-medium">{{ botConfig.timeframe }}</span>
-        </div>
-        <div class="flex items-center">
-          <span class="font-medium text-slate-700 mr-2">Take Profit:</span>
-          <span class="text-emerald-700 font-semibold">{{ botConfig.takeProfit }}%</span>
-        </div>
-        <div class="flex items-center">
-          <span class="font-medium text-slate-700 mr-2">Stop Loss:</span>
-          <span class="text-red-700 font-semibold">{{ botConfig.stopLoss }}%</span>
-        </div>
-      </div>
-      
-      <div class="mt-3 text-xs text-slate-600">
-        <p>
-          <strong>Patrón U:</strong> Detecta caídas del 5% seguidas de recuperación del 12% en ventanas de 4h.
-          {{ selectedMode === 'automatic' 
-            ? 'El bot ejecutará trades automáticamente en Testnet.' 
-            : 'Solo recibirás notificaciones para ejecutar manualmente.'
-          }}
-        </p>
-      </div>
-    </div>
 
     <!-- Telegram Integration (Manual Mode Only) -->
     <div v-if="selectedMode === 'manual'" class="mt-6 pt-6 border-t border-slate-200">

@@ -40,7 +40,7 @@
           <div class="text-4xl mb-3">👤</div>
           <h3 class="text-lg font-semibold text-blue-900 mb-2">Usuario Cliente</h3>
           <p class="text-blue-700 mb-4">
-            El {{ cryptoBot.config.name }} Bot está controlado por el administrador. Tú recibirás las alertas automáticamente en Telegram cuando se detecten patrones U en {{ cryptoBot.config.name }}.
+            El {{ cryptoBot.config.name }} Bot está controlado por el administrador. Tú recibirás las alertas automáticamente en Telegram cuando se detecten patrones en {{ cryptoBot.config.name }}.
           </p>
           <div class="text-sm text-blue-600">
             <div><strong>Estado del Bot:</strong> {{ cryptoBot.botStatus.isRunning ? '🟢 Activo - Escaneando cada 4h' : '⭕ Inactivo' }}</div>

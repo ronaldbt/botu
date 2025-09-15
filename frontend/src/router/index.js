@@ -2,7 +2,6 @@
 
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginView from '../views/LoginView.vue';
-import DashboardView from '../views/DashboardView.vue';
 import { useAuthStore } from '../stores/authStore';
 import TickersView from '../views/TickersView.vue';
 import EstadosTickersView from '../views/EstadosTickersView.vue';
@@ -21,18 +20,12 @@ import TradingAutomaticoView from '../views/TradingAutomaticoView.vue';
 const routes = [
   {
     path: '/',
-    redirect: '/dashboard',
+    redirect: '/trading-automatico',
   },
   {
     path: '/login',
     name: 'Login',
     component: LoginView,
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: DashboardView,
-    meta: { requiresAuth: true },
   },
   {
     path: '/tickers',
@@ -125,7 +118,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login');
   } else if (to.meta.requiresAdmin && !authStore.user?.is_admin) {
-    next('/dashboard'); // Redirigir a dashboard si no es admin
+    next('/trading-automatico'); // Redirigir a trading automático si no es admin
   } else {
     next();
   }

@@ -4,11 +4,8 @@
       <div>
         <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2 flex items-center">
           <span class="text-4xl mr-3" :class="getEmojiColor()">{{ config.emoji }}</span>
-          {{ config.name }} Bot U-Pattern
+          {{ config.name }} Bot
         </h1>
-        <p class="text-slate-600 text-base">
-          Sistema avanzado de detección de patrones U para {{ config.name }} con backtesting probado
-        </p>
         <div class="mt-2 flex items-center space-x-4 text-sm">
           <span 
             v-for="achievement in config.achievements" 

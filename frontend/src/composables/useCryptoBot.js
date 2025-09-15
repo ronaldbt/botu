@@ -25,10 +25,7 @@ export function useCryptoBot(crypto = 'btc') {
         text: 'text-orange-900'
       },
       emoji: '₿',
-      achievements: [
-        { label: '2022: +28% vs BTC -65%', bg: 'bg-emerald-100', text: 'text-emerald-800' },
-        { label: '2024: +6,530% vs BTC +123%', bg: 'bg-blue-100', text: 'text-blue-800' }
-      ]
+      achievements: []
     },
     eth: {
       name: 'Ethereum',
@@ -45,11 +42,8 @@ export function useCryptoBot(crypto = 'btc') {
         bg: 'bg-purple-50',
         text: 'text-purple-900'
       },
-      emoji: '💎',
-      achievements: [
-        { label: 'ETH Pattern Detection', bg: 'bg-emerald-100', text: 'text-emerald-800' },
-        { label: 'ETHUSDT Trading', bg: 'bg-blue-100', text: 'text-blue-800' }
-      ]
+      emoji: '',
+      achievements: []
     },
     bnb: {
       name: 'BNB',
@@ -66,11 +60,8 @@ export function useCryptoBot(crypto = 'btc') {
         bg: 'bg-yellow-50',
         text: 'text-yellow-900'
       },
-      emoji: '🪙',
-      achievements: [
-        { label: 'BNB Smart Chain', bg: 'bg-emerald-100', text: 'text-emerald-800' },
-        { label: 'BNBUSDT Trading', bg: 'bg-blue-100', text: 'text-blue-800' }
-      ]
+      emoji: '',
+      achievements: []
     }
   }
 

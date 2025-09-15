@@ -187,7 +187,7 @@ class BnbScannerService:
                         })
                         break  # Solo una alerta por escaneo
             else:
-                self._add_log("INFO", f"Escaneo completado - No se detectaron patrones U", {
+                self._add_log("INFO", f"Escaneo completado - No se detectaron patrones de compra", {
                     "current_price": f"${current_price:,.2f}",
                     "candles_analyzed": len(df)
                 })

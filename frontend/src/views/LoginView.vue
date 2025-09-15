@@ -100,7 +100,7 @@ const login = async () => {
 
     console.log('✅ Usuario guardado en authStore:', authStore.user);
 
-    router.push('/dashboard');
+    router.push('/trading-automatico');
   } catch (err) {
     console.error('❌ Error completo:', err);
 
