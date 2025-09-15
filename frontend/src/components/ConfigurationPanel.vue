@@ -71,8 +71,8 @@
       </div>
     </div>
 
-    <!-- Bot Controls -->
-    <div class="mt-6 pt-6 border-t border-slate-200">
+    <!-- Bot Controls (Admin Only) -->
+    <div v-if="authStore.isAdmin" class="mt-6 pt-6 border-t border-slate-200">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
           <h4 class="font-semibold text-slate-900 mb-1">Control del {{ config.name }} Bot</h4>
@@ -118,6 +118,9 @@
 
 <script setup>
 import { watch } from 'vue'
+import { useAuthStore } from '@/stores/authStore'
+
+const authStore = useAuthStore()
 
 const props = defineProps({
   selectedMode: {
