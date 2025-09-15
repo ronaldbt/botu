@@ -46,7 +46,7 @@
     <div v-if="logs && logs.length > 0" class="terminal-footer px-4 py-2 bg-slate-900 border-t border-slate-700">
       <div class="flex items-center justify-between text-xs font-mono">
         <span class="text-slate-500">Lines: {{ logs.length }}</span>
-        <span class="text-slate-500">Last update: {{ new Date().toLocaleTimeString() }}</span>
+        <span class="text-slate-500">Last update: {{ formatUTCTime() }}</span>
       </div>
     </div>
   </div>
@@ -169,6 +169,13 @@ const cleanLogMessage = (message) => {
   cleaned = cleaned.replace(/[\x00-\x1F\x7F]/g, '')
   
   return cleaned
+}
+
+// Format current time in UTC
+const formatUTCTime = () => {
+  const now = new Date()
+  const utcTime = now.toUTCString().split(' ')[4] // Gets HH:MM:SS from UTC string
+  return `${utcTime} UTC`
 }
 </script>
 
