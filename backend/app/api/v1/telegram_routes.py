@@ -528,11 +528,13 @@ async def process_crypto_bot_message(update_data: dict, chat_id: str, text: str,
             return handle_start_command(chat_id, text, bot_token, crypto_type)
         elif text.startswith('/status'):
             return handle_status_command(chat_id, bot_token, crypto_type)
+        elif text.startswith('/disconnect'):
+            return handle_disconnect_command(chat_id, bot_token, crypto_type)
         elif text.startswith('/help'):
             return handle_help_command(chat_id, bot_token, crypto_type)
         else:
             # Comando no reconocido
-            return send_message_with_bot(chat_id, "❓ Comando no reconocido. Usa /help para ver comandos disponibles.", bot_token)
+            return send_message_with_bot(chat_id, "Comando no reconocido. Usa /help para ver comandos disponibles.", bot_token)
             
     except Exception as e:
         logger.error(f"Error procesando mensaje crypto bot: {e}")
@@ -620,21 +622,68 @@ Para conectar tu cuenta:
 
 def handle_help_command(chat_id: str, bot_token: str, crypto_type: str) -> dict:
     """Maneja el comando /help"""
-    message = """🤖 *Comandos BotU*
+    message = """*Comandos BotU*
 
 /start - Iniciar o conectar cuenta
 /status - Ver estado de tu conexión
+/disconnect - Desconectar tu cuenta
 /help - Ver esta ayuda
 
-📱 *¿Cómo usar?*
+*Como usar?*
 1. Conecta tu cuenta desde la app web
-2. Recibirás alertas automáticas de trading
-3. Usa /status para verificar tu conexión
+2. Recibiras alertas automaticas de trading
+3. Usa /status para verificar tu conexion
+4. Usa /disconnect para desconectar cuando quieras
 
-🌐 *Aplicación web*
-Inicia sesión en tu navegador para gestionar alertas y configuración."""
+*Aplicacion web*
+Inicia sesion en tu navegador para gestionar alertas y configuracion."""
     
     return send_message_with_bot(chat_id, message, bot_token)
+
+def handle_disconnect_command(chat_id: str, bot_token: str, crypto_type: str) -> dict:
+    """Maneja el comando /disconnect"""
+    try:
+        from app.db.database import SessionLocal
+        session = SessionLocal()
+        try:
+            from app.db.models import User
+            
+            # Buscar usuario por chat_id en cualquier crypto
+            user = session.query(User).filter(
+                (User.telegram_chat_id_btc == chat_id) |
+                (User.telegram_chat_id_eth == chat_id) |
+                (User.telegram_chat_id_bnb == chat_id)
+            ).first()
+            
+            if not user:
+                return send_message_with_bot(chat_id, "No tienes una cuenta conectada.", bot_token)
+            
+            # Determinar qué crypto está usando y desconectarla
+            disconnected_crypto = None
+            if user.telegram_chat_id_btc == chat_id:
+                user.telegram_chat_id_btc = None
+                user.telegram_subscribed_btc = False
+                disconnected_crypto = "Bitcoin"
+            elif user.telegram_chat_id_eth == chat_id:
+                user.telegram_chat_id_eth = None
+                user.telegram_subscribed_eth = False
+                disconnected_crypto = "Ethereum"
+            elif user.telegram_chat_id_bnb == chat_id:
+                user.telegram_chat_id_bnb = None
+                user.telegram_subscribed_bnb = False
+                disconnected_crypto = "BNB"
+            
+            session.commit()
+            
+            message = f"*Cuenta desconectada exitosamente*\n\nTu cuenta ha sido desconectada del bot de {disconnected_crypto}.\n\nPuedes volver a conectarte en cualquier momento desde la aplicacion web."
+            return send_message_with_bot(chat_id, message, bot_token)
+            
+        finally:
+            session.close()
+            
+    except Exception as e:
+        logger.error(f"Error en comando disconnect: {e}")
+        return {"status": "error", "message": str(e)}
 
 def process_connection_token(chat_id: str, token: str, bot_token: str, crypto_type: str) -> dict:
     """Procesa un token de conexión crypto-específico"""
