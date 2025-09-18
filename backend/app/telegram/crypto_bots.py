@@ -164,7 +164,15 @@ class CryptoBot:
                 
                 for user in subscribed_users:
                     try:
-                        success = self.send_message(user.telegram_chat_id, formatted_message)
+                        # Obtener chat_id específico para la crypto
+                        chat_id_field = f"telegram_chat_id_{self.crypto_key}"
+                        chat_id = getattr(user, chat_id_field, None)
+                        
+                        if not chat_id:
+                            errors.append(f"Usuario {user.username} sin chat_id para {self.crypto_name}")
+                            continue
+                            
+                        success = self.send_message(chat_id, formatted_message)
                         if success:
                             sent_count += 1
                         else:

@@ -39,7 +39,7 @@ class BnbScannerService:
             "min_pattern_depth": 0.025, # 2.5% profundidad mínima (conservador como ETH)
             "max_hold_periods": 80,    # 80 períodos = 13 días (igual que backtest)
             "window_size": 120,        # 120 velas ventana análisis (igual que backtest)
-            "scan_interval": 5 * 60,   # 5 minutos para testing
+            "scan_interval": 60 * 60,   # 1 hora (3600 segundos)
             "symbol": "BNBUSDT",
             "data_limit": 1000         # 1000 velas para análisis completo
         }

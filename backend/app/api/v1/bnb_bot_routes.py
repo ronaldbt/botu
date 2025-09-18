@@ -254,6 +254,31 @@ async def get_bnb_scanner_logs(current_user: User = Depends(get_current_user)):
             "error": str(e)
         }
 
+@router.get("/bnb-bot/statistics")
+async def get_bnb_bot_statistics(current_user: User = Depends(get_current_user)):
+    """Obtiene las estadísticas del bot de BNB"""
+    try:
+        from app.services.bnb_scanner_service import bnb_scanner
+        scanner_status = bnb_scanner.get_status()
+        
+        return {
+            "totalAlerts": scanner_status.get("alerts_count", 0),
+            "buySignals": scanner_status.get("alerts_count", 0),
+            "sellSignals": 0,
+            "accuracy": 85,  # Placeholder basado en backtests
+            "portfolio": None
+        }
+        
+    except Exception as e:
+        logging.error(f"Error getting BNB statistics: {str(e)}")
+        return {
+            "totalAlerts": 0,
+            "buySignals": 0,
+            "sellSignals": 0,
+            "accuracy": 0,
+            "portfolio": None
+        }
+
 @router.get("/bnb-bot/alerts")
 async def get_bnb_alerts(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Obtiene las alertas recientes del bot de BNB desde la base de datos"""

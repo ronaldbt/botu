@@ -192,15 +192,38 @@ def get_user_by_telegram_token_crypto(db: Session, token: str, crypto: str):
 
 def get_active_telegram_users_by_crypto(db: Session, crypto: str):
     """Obtiene usuarios con suscripción activa de Telegram para una crypto específica"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     subscribed_field = f"telegram_subscribed_{crypto}"
     chat_id_field = f"telegram_chat_id_{crypto}"
     
-    return db.query(models.User).filter(
+    logger.info(f"🔍 Buscando usuarios para crypto: {crypto}")
+    logger.info(f"🔍 Campos: {subscribed_field}, {chat_id_field}")
+    
+    # Obtener todos los usuarios primero para debug
+    all_users = db.query(models.User).all()
+    logger.info(f"🔍 Total usuarios en BD: {len(all_users)}")
+    
+    for user in all_users:
+        subscribed = getattr(user, subscribed_field, None)
+        chat_id = getattr(user, chat_id_field, None)
+        logger.info(f"🔍 Usuario {user.username}: subscribed={subscribed}, chat_id={chat_id}, status={user.subscription_status}, active={user.is_active}")
+    
+    # Query original con logs
+    result = db.query(models.User).filter(
         getattr(models.User, subscribed_field) == True,
         models.User.subscription_status == 'active',
         models.User.is_active == True,
         getattr(models.User, chat_id_field).isnot(None)
     ).all()
+    
+    logger.info(f"🔍 Usuarios encontrados para {crypto}: {len(result)}")
+    for user in result:
+        chat_id = getattr(user, chat_id_field)
+        logger.info(f"✅ Usuario activo: {user.username} (chat_id: {chat_id})")
+    
+    return result
 
 def update_telegram_subscription_crypto(db: Session, user_id: int, chat_id: str, crypto: str, subscribed: bool = True):
     """Actualiza la suscripción de Telegram de un usuario para una crypto específica"""

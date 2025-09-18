@@ -75,12 +75,16 @@ export function useCryptoBot(crypto = 'btc') {
   const alerts = ref([])
   const statistics = ref(null)
   const scannerLogs = ref([])
+  const nextScanCountdown = ref(null)
   
   const botStatus = reactive({
     isRunning: false,
     lastCheck: null,
     mode: null,
-    alerts_count: 0
+    alerts_count: 0,
+    lastScanTime: null,
+    nextScanTime: null,
+    scanInterval: 5 * 60 // 5 minutos en segundos por defecto
   })
 
   const botConfig = reactive({
@@ -100,6 +104,7 @@ export function useCryptoBot(crypto = 'btc') {
 
   // Intervalos para limpiar
   let statusInterval = null
+  let countdownInterval = null
 
   // Funciones principales del bot
   const startBot = async () => {
@@ -117,6 +122,7 @@ export function useCryptoBot(crypto = 'btc') {
       botStatus.isRunning = true
       botStatus.mode = selectedMode.value
       botStatus.lastCheck = new Date().toLocaleString()
+      botStatus.lastScanTime = new Date().toISOString() // Establecer tiempo inicial de scan
       
       startPolling()
       
@@ -176,7 +182,29 @@ export function useCryptoBot(crypto = 'btc') {
         }
       })
       
+      const wasRunning = botStatus.isRunning
       Object.assign(botStatus, response.data)
+      
+      // Mapear campos específicos para el countdown
+      if (response.data.last_scan_time) {
+        botStatus.lastScanTime = response.data.last_scan_time
+      }
+      if (response.data.scanner_config?.scan_interval) {
+        botStatus.scanInterval = response.data.scanner_config.scan_interval
+      }
+      
+      // Si el bot cambió de estado a running, iniciar countdown
+      if (!wasRunning && botStatus.isRunning) {
+        startCountdown()
+      }
+      // Si el bot se detuvo, parar countdown
+      else if (wasRunning && !botStatus.isRunning) {
+        stopCountdown()
+      }
+      // Si ya estaba running, actualizar countdown
+      else if (botStatus.isRunning) {
+        startCountdown()
+      }
     } catch (error) {
       console.error('Error obteniendo estado:', error)
     }
@@ -204,7 +232,7 @@ export function useCryptoBot(crypto = 'btc') {
         }
       })
       
-      alerts.value = response.data.alerts || []
+      alerts.value = response.data || []
     } catch (error) {
       console.error('Error obteniendo alertas:', error)
     }
@@ -233,7 +261,12 @@ export function useCryptoBot(crypto = 'btc') {
       })
       
       if (response.data.logs) {
-        scannerLogs.value = response.data.logs.slice(-50) // Últimos 50 logs
+        scannerLogs.value = response.data.logs.slice(-1000) // Últimos 1000 logs
+      }
+      
+      // También actualizar información del scanner si está disponible
+      if (response.data.last_scan_time) {
+        botStatus.lastScanTime = response.data.last_scan_time
       }
     } catch (error) {
       console.error('Error obteniendo logs del scanner:', error)
@@ -263,6 +296,59 @@ export function useCryptoBot(crypto = 'btc') {
     }
   }
 
+  // Funciones para el countdown del próximo scanner
+  const calculateNextScanTime = () => {
+    if (!botStatus.lastScanTime) return null
+    
+    const lastScan = new Date(botStatus.lastScanTime)
+    const nextScan = new Date(lastScan.getTime() + (botStatus.scanInterval * 1000))
+    return nextScan
+  }
+
+  const updateCountdown = () => {
+    if (!botStatus.isRunning) {
+      nextScanCountdown.value = null
+      return
+    }
+
+    const nextScan = calculateNextScanTime()
+    if (!nextScan) {
+      nextScanCountdown.value = null
+      return
+    }
+
+    const now = new Date()
+    const timeLeft = nextScan.getTime() - now.getTime()
+
+    if (timeLeft <= 0) {
+      nextScanCountdown.value = "Escaneando ahora..."
+      return
+    }
+
+    const minutes = Math.floor(timeLeft / (1000 * 60))
+    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000)
+    
+    nextScanCountdown.value = `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  const startCountdown = () => {
+    stopCountdown()
+    
+    // Actualizar inmediatamente
+    updateCountdown()
+    
+    // Actualizar cada segundo
+    countdownInterval = setInterval(updateCountdown, 1000)
+  }
+
+  const stopCountdown = () => {
+    if (countdownInterval) {
+      clearInterval(countdownInterval)
+      countdownInterval = null
+    }
+    nextScanCountdown.value = null
+  }
+
   // Funciones de polling
   const startPolling = () => {
     stopPolling() // Limpiar cualquier polling previo
@@ -270,6 +356,11 @@ export function useCryptoBot(crypto = 'btc') {
     statusInterval = setInterval(async () => {
       await refreshStatus()
     }, 30000) // Cada 30 segundos
+    
+    // Iniciar countdown si el bot está corriendo
+    if (botStatus.isRunning) {
+      startCountdown()
+    }
   }
 
   const stopPolling = () => {
@@ -277,6 +368,7 @@ export function useCryptoBot(crypto = 'btc') {
       clearInterval(statusInterval)
       statusInterval = null
     }
+    stopCountdown()
   }
 
   // Funciones de utilidad
@@ -347,6 +439,7 @@ export function useCryptoBot(crypto = 'btc') {
   // Limpiar intervalos al desmontar
   onUnmounted(() => {
     stopPolling()
+    stopCountdown()
   })
 
   // API pública del composable
@@ -361,6 +454,7 @@ export function useCryptoBot(crypto = 'btc') {
     alerts,
     statistics,
     scannerLogs,
+    nextScanCountdown,
     botStatus,
     botConfig,
     apiStatus,

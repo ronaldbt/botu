@@ -39,7 +39,7 @@ class BitcoinScannerService:
             "min_pattern_depth": 0.025, # 2.5% profundidad mínima (igual que backtest 2023)
             "max_hold_periods": 80,    # 80 períodos = 13 días (igual que backtest 2023)
             "window_size": 120,        # 120 velas ventana análisis (igual que backtest 2023)
-            "scan_interval": 5 * 60,   # 5 minutos para testing
+            "scan_interval": 60 * 60,   # 1 hora (3600 segundos)
             "symbol": "BTCUSDT",
             "data_limit": 1000         # 1000 velas como backtest 2023
         }

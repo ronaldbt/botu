@@ -54,6 +54,7 @@
         :logs="unref(cryptoBot.scannerLogs)"
         :config="cryptoBot.config"
         :bot-status="unref(cryptoBot.botStatus)"
+        :next-scan-countdown="unref(cryptoBot.nextScanCountdown)"
         :format-log-time="cryptoBot.formatLogTime"
         :get-log-class="cryptoBot.getLogClass"
         :get-log-text-class="cryptoBot.getLogTextClass"

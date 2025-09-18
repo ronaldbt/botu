@@ -86,8 +86,11 @@ async def get_telegram_status(
         crypto_bot = crypto_bots.get_bot(crypto_for_bot)
         bot_configured = crypto_bot and crypto_bot.is_configured
         
+        # Usuario está conectado si está subscrito Y tiene chat_id
+        connected = bool(subscribed and chat_id)
+        
         return TelegramStatusResponse(
-            connected=subscribed,
+            connected=connected,
             chat_id=chat_id,
             subscription_status=current_user.subscription_status,
             bot_configured=bot_configured
@@ -362,7 +365,9 @@ async def get_active_telegram_users(
                 {
                     "user_id": user.id,
                     "username": user.username,
-                    "chat_id": user.telegram_chat_id,
+                    "bitcoin_chat_id": user.telegram_chat_id_btc,
+                    "ethereum_chat_id": user.telegram_chat_id_eth,
+                    "bnb_chat_id": user.telegram_chat_id_bnb,
                     "subscription_status": user.subscription_status,
                     "last_activity": user.last_activity
                 }

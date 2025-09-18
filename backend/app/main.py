@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 from app.db import models
 from app.db.database import engine
-from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes, trading_routes
+from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes, trading_routes, debug_routes
 from app.services.health_monitor_service import health_monitor
 
 # Cargar variables de entorno
@@ -42,6 +42,15 @@ async def lifespan(app: FastAPI):
             logger.info("✅ Health Monitor iniciado automáticamente")
         else:
             logger.error("❌ Error iniciando Health Monitor automáticamente")
+        
+        # Iniciar Alert Sender automáticamente
+        try:
+            from app.telegram.alert_sender import alert_sender
+            # Ejecutar en background sin bloquear
+            asyncio.create_task(alert_sender.start_monitoring())
+            logger.info("✅ Alert Sender iniciado automáticamente")
+        except Exception as e:
+            logger.error(f"❌ Error iniciando Alert Sender: {e}")
             
     except Exception as e:
         logger.error(f"❌ Error en startup automático: {e}")
@@ -53,6 +62,15 @@ async def lifespan(app: FastAPI):
         logger.info("🛑 BOTU SERVER SHUTTING DOWN...")
         await health_monitor.stop_monitoring()
         logger.info("✅ Health Monitor detenido correctamente")
+        
+        # Detener Alert Sender
+        try:
+            from app.telegram.alert_sender import alert_sender
+            alert_sender.stop_monitoring()
+            logger.info("✅ Alert Sender detenido correctamente")
+        except Exception as e:
+            logger.error(f"❌ Error deteniendo Alert Sender: {e}")
+            
     except Exception as e:
         logger.error(f"❌ Error en shutdown: {e}")
 
@@ -109,3 +127,4 @@ app.include_router(telegram_routes.router)      # Ya tiene prefix="/telegram"
 app.include_router(trading_routes.router, tags=["trading"])      # Trading automático endpoints
 app.include_router(health_routes.router, tags=["health"])        # Health Monitor endpoints
 app.include_router(health_telegram_routes.router, tags=["health-telegram"])  # Health Telegram Bot endpoints
+app.include_router(debug_routes.router, tags=["debug"])                   # Debug endpoints

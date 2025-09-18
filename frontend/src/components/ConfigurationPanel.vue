@@ -67,6 +67,15 @@
           >
             🧪 Probar
           </button>
+
+          <!-- Botón temporal para debug - refrescar estado -->
+          <button
+            @click="telegram.fetchTelegramStatus"
+            class="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+            title="Refrescar estado de conexión"
+          >
+            🔄 Estado
+          </button>
         </div>
       </div>
     </div>

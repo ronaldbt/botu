@@ -15,7 +15,7 @@
 
     <!-- Terminal Body -->
     <div class="terminal-body bg-black text-green-400 font-mono text-sm leading-relaxed">
-      <div class="terminal-content max-h-96 overflow-y-auto p-4 space-y-1">
+      <div ref="terminalContent" class="terminal-content max-h-96 overflow-y-auto p-4 space-y-1">
         <div
           v-for="log in logs"
           :key="`${log.timestamp}-${log.message}`"
@@ -29,6 +29,19 @@
           </span>
           <span :class="getTerminalLogColor(log.level)" class="flex-1 break-words">
             {{ cleanLogMessage(log.message) }}
+          </span>
+        </div>
+
+        <!-- Next Scan Countdown at the bottom when bot is running -->
+        <div v-if="botStatus.isRunning && nextScanCountdown" class="terminal-line flex items-start space-x-3 bg-slate-800 bg-opacity-30 rounded p-2 mt-2 sticky-bottom">
+          <span class="text-slate-500 text-xs w-20 flex-shrink-0">
+            {{ formatCurrentTime() }}
+          </span>
+          <span class="text-cyan-400 w-24 flex-shrink-0 font-bold whitespace-nowrap">
+            [SCANNER]
+          </span>
+          <span class="text-cyan-400 flex-1 break-words">
+            Próximo escaneo en: {{ nextScanCountdown }}
           </span>
         </div>
 
@@ -53,7 +66,7 @@
 </template>
 
 <script setup>
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
 
 const props = defineProps({
   logs: {
@@ -67,6 +80,10 @@ const props = defineProps({
   botStatus: {
     type: Object,
     required: true
+  },
+  nextScanCountdown: {
+    type: String,
+    default: null
   },
   formatLogTime: {
     type: Function,
@@ -89,6 +106,9 @@ const props = defineProps({
     required: true
   }
 })
+
+// Referencias para auto-scroll
+const terminalContent = ref(null)
 
 let autoRefreshInterval = null
 
@@ -123,6 +143,25 @@ onMounted(() => {
   if (props.botStatus.isRunning) {
     startAutoRefresh()
   }
+})
+
+// Auto-scroll to bottom function
+const scrollToBottom = () => {
+  if (terminalContent.value) {
+    nextTick(() => {
+      terminalContent.value.scrollTop = terminalContent.value.scrollHeight
+    })
+  }
+}
+
+// Watch for changes in logs to auto-scroll
+watch(() => props.logs, () => {
+  scrollToBottom()
+}, { deep: true })
+
+// Scroll to bottom when component mounts
+onMounted(() => {
+  scrollToBottom()
 })
 
 onUnmounted(() => {
@@ -176,6 +215,12 @@ const formatUTCTime = () => {
   const now = new Date()
   const utcTime = now.toUTCString().split(' ')[4] // Gets HH:MM:SS from UTC string
   return `${utcTime} UTC`
+}
+
+// Format current time for countdown display
+const formatCurrentTime = () => {
+  const now = new Date()
+  return now.toLocaleTimeString().split(' ')[0] // Gets HH:MM:SS
 }
 </script>
 
