@@ -54,62 +54,127 @@
         </div>
       </div>
 
-      <!-- Stats Cards -->
+      <!-- Portfolio Overview -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Balance Total -->
         <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-slate-600 text-sm font-medium">Total Órdenes</p>
-              <p class="text-3xl font-bold text-slate-900 mt-2">{{ ordenes.length }}</p>
+              <p class="text-slate-600 text-sm font-medium">Balance Total</p>
+              <p class="text-3xl font-bold text-slate-900 mt-2">${{ portfolio.total_balance_usdt?.toFixed(2) || '0.00' }}</p>
+              <p class="text-xs text-slate-500 mt-1">USDT</p>
             </div>
             <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
               <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-slate-600 text-sm font-medium">Pendientes</p>
-              <p class="text-3xl font-bold text-amber-600 mt-2">{{ ordenes.filter(o => o.estado === 'PENDING').length }}</p>
-            </div>
-            <div class="w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-slate-600 text-sm font-medium">Ejecutadas</p>
-              <p class="text-3xl font-bold text-green-600 mt-2">{{ ordenes.filter(o => o.estado === 'FILLED').length }}</p>
-            </div>
-            <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-            </div>
-          </div>
-        </div>
-        
-        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-slate-600 text-sm font-medium">Ganancia Total</p>
-              <p class="text-3xl font-bold mt-2" :class="gananciaTotal >= 0 ? 'text-green-600' : 'text-red-600'">
-                {{ gananciaTotal >= 0 ? '+' : '' }}{{ gananciaTotal.toFixed(2) }} USDT
-              </p>
-            </div>
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center" :class="gananciaTotal >= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-pink-500'">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
               </svg>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Fondos Disponibles -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-slate-600 text-sm font-medium">Disponible</p>
+              <p class="text-3xl font-bold text-emerald-600 mt-2">${{ portfolio.available_balance_usdt?.toFixed(2) || '0.00' }}</p>
+              <p class="text-xs text-slate-500 mt-1">
+                Bloqueado: ${{ portfolio.locked_balance_usdt?.toFixed(2) || '0.00' }}
+              </p>
+            </div>
+            <div class="w-12 h-12 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        
+        <!-- PnL Total -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-slate-600 text-sm font-medium">PnL Total</p>
+              <p class="text-3xl font-bold mt-2" :class="portfolio.total_pnl_usdt >= 0 ? 'text-green-600' : 'text-red-600'">
+                {{ portfolio.total_pnl_usdt >= 0 ? '+' : '' }}${{ portfolio.total_pnl_usdt?.toFixed(2) || '0.00' }}
+              </p>
+              <p class="text-xs" :class="portfolio.total_pnl_percentage >= 0 ? 'text-green-500' : 'text-red-500'">
+                {{ portfolio.total_pnl_percentage >= 0 ? '+' : '' }}{{ portfolio.total_pnl_percentage?.toFixed(2) || '0' }}%
+              </p>
+            </div>
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center" :class="portfolio.total_pnl_usdt >= 0 ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-red-500 to-pink-500'">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Trading Stats -->
+        <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-slate-600 text-sm font-medium">Win Rate</p>
+              <p class="text-3xl font-bold text-blue-600 mt-2">{{ portfolio.win_rate?.toFixed(1) || '0' }}%</p>
+              <p class="text-xs text-slate-500 mt-1">
+                {{ portfolio.winning_trades || 0 }}W / {{ portfolio.losing_trades || 0 }}L
+              </p>
+            </div>
+            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Environment Breakdown -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Testnet Stats -->
+        <div class="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-6 shadow-lg border border-orange-200">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-orange-800">🧪 Testnet</h3>
+            <span class="bg-orange-200 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">PRUEBAS</span>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <p class="text-xs text-orange-700">Balance</p>
+              <p class="text-lg font-bold text-orange-900">${{ portfolio.by_environment?.testnet?.balance_usdt?.toFixed(2) || '0.00' }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-orange-700">PnL</p>
+              <p class="text-lg font-bold" :class="portfolio.by_environment?.testnet?.pnl_usdt >= 0 ? 'text-green-700' : 'text-red-700'">
+                {{ portfolio.by_environment?.testnet?.pnl_usdt >= 0 ? '+' : '' }}${{ portfolio.by_environment?.testnet?.pnl_usdt?.toFixed(2) || '0.00' }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-orange-700">Trades</p>
+              <p class="text-lg font-bold text-orange-900">{{ portfolio.by_environment?.testnet?.trades || 0 }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mainnet Stats -->
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 shadow-lg border border-green-200">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-green-800">💰 Mainnet</h3>
+            <span class="bg-green-200 text-green-800 px-2 py-1 rounded-full text-xs font-medium">REAL</span>
+          </div>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <p class="text-xs text-green-700">Balance</p>
+              <p class="text-lg font-bold text-green-900">${{ portfolio.by_environment?.mainnet?.balance_usdt?.toFixed(2) || '0.00' }}</p>
+            </div>
+            <div>
+              <p class="text-xs text-green-700">PnL</p>
+              <p class="text-lg font-bold" :class="portfolio.by_environment?.mainnet?.pnl_usdt >= 0 ? 'text-green-700' : 'text-red-700'">
+                {{ portfolio.by_environment?.mainnet?.pnl_usdt >= 0 ? '+' : '' }}${{ portfolio.by_environment?.mainnet?.pnl_usdt?.toFixed(2) || '0.00' }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-green-700">Trades</p>
+              <p class="text-lg font-bold text-green-900">{{ portfolio.by_environment?.mainnet?.trades || 0 }}</p>
             </div>
           </div>
         </div>
@@ -123,69 +188,83 @@
               <tr>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Ticker</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Tipo</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Red</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Cantidad</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Precio</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Estado</th>
+                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">PnL</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Fecha</th>
-                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Motivo</th>
                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200">
               <tr v-for="orden in ordenes" :key="orden.id" class="hover:bg-slate-50 transition-colors duration-200">
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="text-sm font-semibold text-slate-900">{{ orden.ticker }}</span>
+                  <span class="text-sm font-semibold text-slate-900">{{ orden.symbol }}</span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium" 
-                        :class="orden.tipo_orden === 'BUY' 
+                        :class="orden.side === 'BUY' 
                           ? 'bg-green-100 text-green-800' 
                           : 'bg-red-100 text-red-800'">
                     <div class="w-2 h-2 rounded-full mr-2" 
-                         :class="orden.tipo_orden === 'BUY' ? 'bg-green-400' : 'bg-red-400'"></div>
-                    {{ orden.tipo_orden }}
+                         :class="orden.side === 'BUY' ? 'bg-green-400' : 'bg-red-400'"></div>
+                    {{ orden.side }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium" 
+                        :class="orden.is_testnet 
+                          ? 'bg-orange-100 text-orange-800' 
+                          : 'bg-green-100 text-green-800'">
+                    {{ orden.is_testnet ? '🧪 Testnet' : '💰 Mainnet' }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-medium">
-                  {{ orden.cantidad.toFixed(6) }}
+                  {{ orden.quantity ? orden.quantity.toFixed(6) : '0.000000' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                  <span v-if="orden.precio_ejecutado" class="font-semibold">
-                    ${{ orden.precio_ejecutado.toFixed(4) }}
+                  <span v-if="orden.executed_price" class="font-semibold">
+                    ${{ orden.executed_price.toFixed(4) }}
                   </span>
-                  <span v-else-if="orden.precio" class="text-slate-600">
-                    ${{ orden.precio.toFixed(4) }}
+                  <span v-else-if="orden.price" class="text-slate-600">
+                    ${{ orden.price.toFixed(4) }}
                   </span>
                   <span v-else class="text-slate-400">-</span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
                         :class="{
-                          'bg-amber-100 text-amber-800': orden.estado === 'PENDING',
-                          'bg-green-100 text-green-800': orden.estado === 'FILLED',
-                          'bg-red-100 text-red-800': orden.estado === 'CANCELLED' || orden.estado === 'FAILED'
+                          'bg-amber-100 text-amber-800': orden.status === 'PENDING',
+                          'bg-green-100 text-green-800': orden.status === 'FILLED',
+                          'bg-red-100 text-red-800': orden.status === 'CANCELLED' || orden.status === 'REJECTED'
                         }">
                     <div class="w-2 h-2 rounded-full mr-2"
                          :class="{
-                           'bg-amber-400': orden.estado === 'PENDING',
-                           'bg-green-400': orden.estado === 'FILLED',
-                           'bg-red-400': orden.estado === 'CANCELLED' || orden.estado === 'FAILED'
+                           'bg-amber-400': orden.status === 'PENDING',
+                           'bg-green-400': orden.status === 'FILLED',
+                           'bg-red-400': orden.status === 'CANCELLED' || orden.status === 'REJECTED'
                          }"></div>
-                    {{ getEstadoText(orden.estado) }}
+                    {{ getEstadoText(orden.status) }}
                   </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <div v-if="orden.pnl_usdt !== null && orden.pnl_usdt !== undefined">
+                    <span class="font-semibold" :class="orden.pnl_usdt >= 0 ? 'text-green-600' : 'text-red-600'">
+                      {{ orden.pnl_usdt >= 0 ? '+' : '' }}${{ orden.pnl_usdt.toFixed(2) }}
+                    </span>
+                    <div class="text-xs" :class="orden.pnl_percentage >= 0 ? 'text-green-500' : 'text-red-500'">
+                      {{ orden.pnl_percentage >= 0 ? '+' : '' }}{{ orden.pnl_percentage?.toFixed(2) || '0' }}%
+                    </div>
+                  </div>
+                  <span v-else class="text-slate-400">-</span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                  {{ formatDate(orden.fecha_creacion) }}
-                </td>
-                <td class="px-6 py-4 text-sm text-slate-600 max-w-xs">
-                  <span v-if="orden.motivo" class="truncate block">
-                    {{ orden.motivo }}
-                  </span>
-                  <span v-else class="text-slate-400">-</span>
+                  {{ formatDate(orden.created_at) }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                   <button 
-                    v-if="orden.estado === 'PENDING'" 
+                    v-if="orden.status === 'PENDING'" 
                     @click="cancelarOrden(orden.id)"
                     class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors duration-200"
                   >
@@ -221,39 +300,47 @@ export default {
   setup() {
     const authStore = useAuthStore()
     const ordenes = ref([])
+    const portfolio = ref({})
     const filtroEstado = ref('')
     const filtroTicker = ref('')
     const loading = ref(false)
 
     const gananciaTotal = computed(() => {
       return ordenes.value.reduce((total, orden) => {
-        if (orden.estado === 'FILLED' && orden.tipo_orden === 'SELL' && orden.precio_ejecutado) {
-          // Calcular ganancia basada en precio de compra y venta
-          // Esto es una simplificación - en la realidad necesitarías trackear el precio de compra
-          return total + (orden.precio_ejecutado * orden.cantidad)
+        if (orden.status === 'FILLED' && orden.side === 'SELL' && orden.pnl_usdt) {
+          return total + orden.pnl_usdt
         }
         return total
       }, 0)
     })
 
-    const cargarOrdenes = async () => {
+    const cargarDatos = async () => {
       loading.value = true
       try {
-        const params = new URLSearchParams()
-        if (filtroEstado.value) params.append('estado', filtroEstado.value)
-        if (filtroTicker.value) params.append('ticker', filtroTicker.value)
+        const headers = { 'Authorization': `Bearer ${authStore.token}` }
         
-        const response = await fetch(`/api/v1/ordenes/?${params}`, {
-          headers: {
-            'Authorization': `Bearer ${authStore.token}`
-          }
-        })
+        // Cargar órdenes
+        const ordenesParams = new URLSearchParams()
+        if (filtroEstado.value) ordenesParams.append('status', filtroEstado.value)
+        if (filtroTicker.value) ordenesParams.append('symbol', filtroTicker.value)
         
-        if (response.ok) {
-          ordenes.value = await response.json()
+        const [ordenesResponse, portfolioResponse] = await Promise.all([
+          fetch(`/trading/orders?${ordenesParams}`, { headers }),
+          fetch('/trading/portfolio', { headers })
+        ])
+        
+        if (ordenesResponse.ok) {
+          ordenes.value = await ordenesResponse.json()
         } else {
           console.error('Error cargando órdenes')
         }
+        
+        if (portfolioResponse.ok) {
+          portfolio.value = await portfolioResponse.json()
+        } else {
+          console.error('Error cargando portfolio')
+        }
+        
       } catch (error) {
         console.error('Error:', error)
       } finally {
@@ -261,16 +348,19 @@ export default {
       }
     }
 
+    const cargarOrdenes = cargarDatos
+
     const cancelarOrden = async (ordenId) => {
       if (!confirm('¿Estás seguro de que quieres cancelar esta orden?')) {
         return
       }
 
       try {
-        const response = await fetch(`/api/v1/ordenes/${ordenId}`, {
-          method: 'DELETE',
+        const response = await fetch(`/trading/orders/${ordenId}/cancel`, {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${authStore.token}`
+            'Authorization': `Bearer ${authStore.token}`,
+            'Content-Type': 'application/json'
           }
         })
         
@@ -286,14 +376,15 @@ export default {
       }
     }
 
-    const getEstadoText = (estado) => {
+    const getEstadoText = (status) => {
       const estados = {
         'PENDING': 'Pendiente',
         'FILLED': 'Ejecutada',
+        'PARTIALLY_FILLED': 'Parcial',
         'CANCELLED': 'Cancelada',
-        'FAILED': 'Fallida'
+        'REJECTED': 'Rechazada'
       }
-      return estados[estado] || estado
+      return estados[status] || status
     }
 
     const formatDate = (dateString) => {
@@ -301,11 +392,12 @@ export default {
     }
 
     onMounted(() => {
-      cargarOrdenes()
+      cargarDatos()
     })
 
     return {
       ordenes,
+      portfolio,
       filtroEstado,
       filtroTicker,
       loading,

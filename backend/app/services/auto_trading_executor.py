@@ -117,37 +117,51 @@ class AutoTradingExecutor:
             
             db_order = crud_trading.create_trading_order(db, order_data, user_id)
             
-            # Ejecutar orden en Binance
+            # Ejecutar orden REAL en Binance (testnet o mainnet)
             try:
-                # Si es testnet o modo simulación, solo simular
-                if api_key_config.is_testnet:
-                    logger.info(f"📊 TESTNET - Simulando compra usuario {user_id}: {quantity:.6f} {symbol} @ ${current_price:.2f}")
+                # Obtener credenciales y crear cliente
+                credentials = crud_trading.get_decrypted_api_credentials(db, api_key_config.id)
+                if not credentials:
+                    logger.error(f"❌ No se pudieron obtener credenciales para usuario {user_id}")
+                    crud_trading.update_trading_order_status(db, db_order.id, 'REJECTED')
+                    return
+                
+                api_key, secret_key = credentials
+                client = BinanceClient(api_key, secret_key, testnet=api_key_config.is_testnet)
+                
+                # Ejecutar orden REAL de compra
+                env_type = "TESTNET" if api_key_config.is_testnet else "MAINNET"
+                logger.info(f"🚀 {env_type} - Ejecutando compra REAL usuario {user_id}: {quantity:.6f} {symbol} @ ${current_price:.2f}")
+                
+                # Crear orden de mercado en Binance
+                order_result = client.place_market_order(symbol, 'BUY', quantity)
+                
+                if order_result['success']:
+                    binance_order = order_result['order']
+                    executed_price = float(binance_order.get('fills', [{}])[0].get('price', current_price))
+                    executed_quantity = float(binance_order.get('executedQty', quantity))
+                    commission = sum([float(fill.get('commission', 0)) for fill in binance_order.get('fills', [])])
                     
-                    # Simular orden ejecutada
+                    # Actualizar orden con datos reales de Binance
                     crud_trading.update_trading_order_status(
                         db, db_order.id, 'FILLED',
-                        binance_order_id=f"TESTNET_{db_order.id}",
-                        executed_price=current_price,
-                        executed_quantity=quantity
+                        binance_order_id=binance_order.get('orderId'),
+                        executed_price=executed_price,
+                        executed_quantity=executed_quantity,
+                        commission=commission,
+                        commission_asset=binance_order.get('fills', [{}])[0].get('commissionAsset', 'BNB')
                     )
                     
-                    logger.info(f"✅ Usuario {user_id}: Posición abierta ${position_size_usdt} - TP: ${take_profit_price:.2f} SL: ${stop_loss_price:.2f}")
+                    logger.info(f"✅ {env_type} - Usuario {user_id}: Compra ejecutada ${executed_price * executed_quantity:.2f} - TP: ${take_profit_price:.2f} SL: ${stop_loss_price:.2f}")
                     
                 else:
-                    # TODO: Implementar ejecución real en mainnet
-                    logger.info(f"🚀 MAINNET - Ejecutaría compra usuario {user_id}: {quantity:.6f} {symbol} @ ${current_price:.2f}")
-                    
-                    # Por ahora simular hasta completar implementación de órdenes reales
-                    crud_trading.update_trading_order_status(
-                        db, db_order.id, 'FILLED',
-                        binance_order_id=f"MAINNET_SIM_{db_order.id}",
-                        executed_price=current_price,
-                        executed_quantity=quantity
-                    )
+                    # Error en la orden
+                    logger.error(f"❌ {env_type} - Error ejecutando orden usuario {user_id}: {order_result.get('error', 'Unknown error')}")
+                    crud_trading.update_trading_order_status(db, db_order.id, 'REJECTED', reason=str(order_result.get('error')))
                     
             except Exception as e:
                 logger.error(f"❌ Error ejecutando orden Binance usuario {user_id}: {e}")
-                crud_trading.update_trading_order_status(db, db_order.id, 'REJECTED')
+                crud_trading.update_trading_order_status(db, db_order.id, 'REJECTED', reason=str(e))
                 
         except Exception as e:
             logger.error(f"❌ Error en _execute_user_buy_order: {e}")
@@ -253,35 +267,57 @@ class AutoTradingExecutor:
             
             db_sell_order = crud_trading.create_trading_order(db, sell_order_data, user_id)
             
-            # Ejecutar venta
-            if api_key_config.is_testnet:
-                logger.info(f"📊 TESTNET - Simulando venta usuario {user_id}: {reason} @ ${current_price:.2f}")
+            # Ejecutar venta REAL en Binance (testnet o mainnet)
+            try:
+                # Obtener credenciales y crear cliente
+                credentials = crud_trading.get_decrypted_api_credentials(db, api_key_config.id)
+                if not credentials:
+                    logger.error(f"❌ No se pudieron obtener credenciales para venta usuario {user_id}")
+                    crud_trading.update_trading_order_status(db, db_sell_order.id, 'REJECTED')
+                    return
                 
-                crud_trading.update_trading_order_status(
-                    db, db_sell_order.id, 'FILLED',
-                    binance_order_id=f"TESTNET_SELL_{db_sell_order.id}",
-                    executed_price=current_price,
-                    executed_quantity=buy_order.executed_quantity
-                )
+                api_key, secret_key = credentials
+                client = BinanceClient(api_key, secret_key, testnet=api_key_config.is_testnet)
                 
-                # Calcular PnL
-                crud_trading.calculate_pnl(db, db_sell_order.id)
+                # Ejecutar orden REAL de venta
+                env_type = "TESTNET" if api_key_config.is_testnet else "MAINNET"
+                logger.info(f"🚀 {env_type} - Ejecutando venta REAL usuario {user_id}: {reason} - {buy_order.executed_quantity:.6f} {symbol} @ ${current_price:.2f}")
                 
-                pnl_pct = ((current_price - buy_order.executed_price) / buy_order.executed_price) * 100
-                pnl_usd = (current_price - buy_order.executed_price) * buy_order.executed_quantity
+                # Crear orden de mercado en Binance
+                order_result = client.place_market_order(symbol, 'SELL', buy_order.executed_quantity)
                 
-                logger.info(f"✅ Usuario {user_id}: {reason} - PnL: {pnl_pct:.2f}% (${pnl_usd:.2f})")
-                
-            else:
-                # TODO: Implementar venta real en mainnet
-                logger.info(f"🚀 MAINNET - Ejecutaría venta usuario {user_id}: {reason} @ ${current_price:.2f}")
-                
-                crud_trading.update_trading_order_status(
-                    db, db_sell_order.id, 'FILLED',
-                    binance_order_id=f"MAINNET_SELL_SIM_{db_sell_order.id}",
-                    executed_price=current_price,
-                    executed_quantity=buy_order.executed_quantity
-                )
+                if order_result['success']:
+                    binance_order = order_result['order']
+                    executed_price = float(binance_order.get('fills', [{}])[0].get('price', current_price))
+                    executed_quantity = float(binance_order.get('executedQty', buy_order.executed_quantity))
+                    commission = sum([float(fill.get('commission', 0)) for fill in binance_order.get('fills', [])])
+                    
+                    # Actualizar orden con datos reales de Binance
+                    crud_trading.update_trading_order_status(
+                        db, db_sell_order.id, 'FILLED',
+                        binance_order_id=binance_order.get('orderId'),
+                        executed_price=executed_price,
+                        executed_quantity=executed_quantity,
+                        commission=commission,
+                        commission_asset=binance_order.get('fills', [{}])[0].get('commissionAsset', 'BNB')
+                    )
+                    
+                    # Calcular PnL real
+                    crud_trading.calculate_pnl(db, db_sell_order.id)
+                    
+                    pnl_pct = ((executed_price - buy_order.executed_price) / buy_order.executed_price) * 100
+                    pnl_usd = (executed_price - buy_order.executed_price) * executed_quantity
+                    
+                    logger.info(f"✅ {env_type} - Usuario {user_id}: {reason} ejecutado - PnL: {pnl_pct:.2f}% (${pnl_usd:.2f})")
+                    
+                else:
+                    # Error en la orden
+                    logger.error(f"❌ {env_type} - Error ejecutando venta usuario {user_id}: {order_result.get('error', 'Unknown error')}")
+                    crud_trading.update_trading_order_status(db, db_sell_order.id, 'REJECTED', reason=str(order_result.get('error')))
+                    
+            except Exception as sell_error:
+                logger.error(f"❌ Error ejecutando venta Binance usuario {user_id}: {sell_error}")
+                crud_trading.update_trading_order_status(db, db_sell_order.id, 'REJECTED', reason=str(sell_error))
                 
         except Exception as e:
             logger.error(f"❌ Error ejecutando orden de salida: {e}")

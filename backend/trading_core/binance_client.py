@@ -240,6 +240,86 @@ class BinanceClient:
             logger.error(f"Error obteniendo balances: {e}")
             raise
 
+    def place_market_order(self, symbol: str, side: str, quantity: float):
+        """
+        Coloca una orden de mercado en Binance
+        
+        Args:
+            symbol: Par de trading (ej: "BTCUSDT")
+            side: "BUY" o "SELL"
+            quantity: Cantidad a comprar/vender
+            
+        Returns:
+            dict: {"success": bool, "order": dict, "error": str}
+        """
+        try:
+            params = {
+                'symbol': symbol.upper(),
+                'side': side.upper(),
+                'type': 'MARKET',
+                'quantity': f"{quantity:.8f}".rstrip('0').rstrip('.')
+            }
+            
+            logger.info(f"🚀 Ejecutando orden {side} {quantity:.8f} {symbol} en {'TESTNET' if self.testnet else 'MAINNET'}")
+            
+            # Usar endpoint correcto según testnet/mainnet
+            endpoint = 'order' if not self.testnet else 'order'
+            
+            order_response = self._make_request('POST', endpoint, params, signed=True)
+            
+            logger.info(f"✅ Orden ejecutada: {order_response.get('orderId')} - Status: {order_response.get('status')}")
+            
+            return {
+                "success": True,
+                "order": order_response,
+                "error": None
+            }
+            
+        except Exception as e:
+            error_msg = f"Error ejecutando orden {side} {symbol}: {str(e)}"
+            logger.error(f"❌ {error_msg}")
+            
+            return {
+                "success": False,
+                "order": None,
+                "error": error_msg
+            }
+
+    def cancel_order(self, symbol: str, order_id: str):
+        """
+        Cancela una orden por ID
+        
+        Args:
+            symbol: Par de trading
+            order_id: ID de la orden a cancelar
+            
+        Returns:
+            dict: {"success": bool, "order": dict, "error": str}
+        """
+        try:
+            params = {
+                'symbol': symbol.upper(),
+                'orderId': order_id
+            }
+            
+            response = self._make_request('DELETE', 'order', params, signed=True)
+            
+            return {
+                "success": True,
+                "order": response,
+                "error": None
+            }
+            
+        except Exception as e:
+            error_msg = f"Error cancelando orden {order_id}: {str(e)}"
+            logger.error(f"❌ {error_msg}")
+            
+            return {
+                "success": False,
+                "order": None,
+                "error": error_msg
+            }
+
 if __name__ == "__main__":
     # Prueba básica
     print("Probando conexión con Binance...")

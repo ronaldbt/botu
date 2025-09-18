@@ -236,7 +236,8 @@ def update_trading_order_status(
     executed_price: Optional[float] = None,
     executed_quantity: Optional[float] = None,
     commission: Optional[float] = None,
-    commission_asset: Optional[str] = None
+    commission_asset: Optional[str] = None,
+    reason: Optional[str] = None
 ) -> Optional[TradingOrder]:
     """Actualiza el estado de una orden de trading"""
     db_order = db.query(TradingOrder).filter(TradingOrder.id == order_id).first()
@@ -254,6 +255,8 @@ def update_trading_order_status(
         db_order.commission = commission
     if commission_asset:
         db_order.commission_asset = commission_asset
+    if reason:
+        db_order.reason = reason
     
     if status in ['FILLED', 'PARTIALLY_FILLED']:
         db_order.executed_at = datetime.now()
@@ -315,3 +318,220 @@ def get_trading_statistics(db: Session, user_id: int, days: int = 30) -> dict:
         'win_rate': (winning_trades / total_trades * 100) if total_trades > 0 else 0,
         'active_positions': len(get_active_positions(db, user_id))
     }
+
+def get_trading_order(db: Session, order_id: int, user_id: int) -> Optional[TradingOrder]:
+    """Obtiene una orden específica por ID y usuario"""
+    return db.query(TradingOrder).filter(
+        and_(
+            TradingOrder.id == order_id,
+            TradingOrder.user_id == user_id
+        )
+    ).first()
+
+def cancel_trading_order(db: Session, order_id: int, user_id: int) -> bool:
+    """Cancela una orden de trading"""
+    try:
+        db_order = db.query(TradingOrder).filter(
+            and_(
+                TradingOrder.id == order_id,
+                TradingOrder.user_id == user_id,
+                TradingOrder.status == 'PENDING'
+            )
+        ).first()
+        
+        if not db_order:
+            return False
+        
+        db_order.status = 'CANCELLED'
+        db.commit()
+        return True
+        
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error cancelando orden {order_id}: {e}")
+        return False
+
+def get_user_trading_orders_with_api_info(
+    db: Session, 
+    user_id: int, 
+    limit: int = 100,
+    symbol: Optional[str] = None,
+    status: Optional[str] = None
+) -> List[dict]:
+    """Obtiene las órdenes de trading de un usuario con información de testnet/mainnet"""
+    query = db.query(TradingOrder, TradingApiKey).join(
+        TradingApiKey, TradingOrder.api_key_id == TradingApiKey.id
+    ).filter(TradingOrder.user_id == user_id)
+    
+    if symbol:
+        query = query.filter(TradingOrder.symbol == symbol)
+    if status:
+        query = query.filter(TradingOrder.status == status)
+    
+    orders = query.order_by(desc(TradingOrder.created_at)).limit(limit).all()
+    
+    # Construir respuesta con información adicional
+    result = []
+    for order, api_key in orders:
+        order_dict = {
+            "id": order.id,
+            "user_id": order.user_id,
+            "api_key_id": order.api_key_id,
+            "alerta_id": order.alerta_id,
+            "symbol": order.symbol,
+            "side": order.side,
+            "order_type": order.order_type,
+            "quantity": order.quantity,
+            "price": order.price,
+            "executed_price": order.executed_price,
+            "executed_quantity": order.executed_quantity,
+            "status": order.status,
+            "binance_order_id": order.binance_order_id,
+            "binance_client_order_id": order.binance_client_order_id,
+            "take_profit_price": order.take_profit_price,
+            "stop_loss_price": order.stop_loss_price,
+            "created_at": order.created_at,
+            "executed_at": order.executed_at,
+            "pnl_usdt": order.pnl_usdt,
+            "pnl_percentage": order.pnl_percentage,
+            "commission": order.commission,
+            "commission_asset": order.commission_asset,
+            "reason": order.reason,
+            # Información de la API key
+            "is_testnet": api_key.is_testnet,
+            "exchange": api_key.exchange
+        }
+        result.append(order_dict)
+    
+    return result
+
+def get_user_portfolio_summary(db: Session, user_id: int) -> dict:
+    """Obtiene resumen completo del portfolio del usuario con datos reales de Binance"""
+    try:
+        # Obtener todas las API keys del usuario
+        api_keys = get_user_trading_api_keys(db, user_id)
+        
+        portfolio_summary = {
+            "total_balance_usdt": 0.0,
+            "available_balance_usdt": 0.0,
+            "locked_balance_usdt": 0.0,
+            "total_pnl_usdt": 0.0,
+            "total_pnl_percentage": 0.0,
+            "total_trades": 0,
+            "winning_trades": 0,
+            "losing_trades": 0,
+            "win_rate": 0.0,
+            "open_positions": 0,
+            "by_environment": {
+                "testnet": {
+                    "balance_usdt": 0.0,
+                    "pnl_usdt": 0.0,
+                    "trades": 0
+                },
+                "mainnet": {
+                    "balance_usdt": 0.0,
+                    "pnl_usdt": 0.0,
+                    "trades": 0
+                }
+            },
+            "by_crypto": {
+                "BTC": {"pnl_usdt": 0.0, "trades": 0},
+                "ETH": {"pnl_usdt": 0.0, "trades": 0},
+                "BNB": {"pnl_usdt": 0.0, "trades": 0}
+            }
+        }
+        
+        for api_key in api_keys:
+            try:
+                # Obtener balances reales de Binance
+                credentials = get_decrypted_api_credentials(db, api_key.id)
+                if not credentials:
+                    continue
+                    
+                from trading_core.binance_client import BinanceClient
+                api_key_str, secret_key = credentials
+                client = BinanceClient(api_key_str, secret_key, testnet=api_key.is_testnet)
+                
+                success, account_info = client.test_connection()
+                if success and isinstance(account_info, dict):
+                    balances = account_info.get('balances', [])
+                    
+                    # Calcular balance total en USDT
+                    for balance in balances:
+                        asset = balance.get('asset', '')
+                        free = float(balance.get('free', 0))
+                        locked = float(balance.get('locked', 0))
+                        
+                        if asset == 'USDT':
+                            env_key = "testnet" if api_key.is_testnet else "mainnet"
+                            portfolio_summary["by_environment"][env_key]["balance_usdt"] += free + locked
+                            portfolio_summary["total_balance_usdt"] += free + locked
+                            portfolio_summary["available_balance_usdt"] += free
+                            portfolio_summary["locked_balance_usdt"] += locked
+                        
+            except Exception as e:
+                logger.warning(f"No se pudo obtener balance para API key {api_key.id}: {e}")
+                continue
+        
+        # Obtener estadísticas de trading de los últimos 30 días
+        orders = db.query(TradingOrder).filter(
+            and_(
+                TradingOrder.user_id == user_id,
+                TradingOrder.created_at >= datetime.now() - timedelta(days=30)
+            )
+        ).all()
+        
+        # Calcular estadísticas por órden
+        for order in orders:
+            if order.status == 'FILLED':
+                # Determinar crypto del símbolo
+                crypto = order.symbol.replace('USDT', '') if order.symbol.endswith('USDT') else 'OTHER'
+                
+                # Obtener información de testnet/mainnet
+                order_api_key = get_trading_api_key(db, order.api_key_id, user_id)
+                env_key = "testnet" if order_api_key and order_api_key.is_testnet else "mainnet"
+                
+                if order.side == 'SELL' and order.pnl_usdt is not None:
+                    portfolio_summary["total_pnl_usdt"] += order.pnl_usdt
+                    portfolio_summary["by_environment"][env_key]["pnl_usdt"] += order.pnl_usdt
+                    
+                    if crypto in portfolio_summary["by_crypto"]:
+                        portfolio_summary["by_crypto"][crypto]["pnl_usdt"] += order.pnl_usdt
+                        portfolio_summary["by_crypto"][crypto]["trades"] += 1
+                    
+                    if order.pnl_usdt > 0:
+                        portfolio_summary["winning_trades"] += 1
+                    else:
+                        portfolio_summary["losing_trades"] += 1
+                        
+                    portfolio_summary["total_trades"] += 1
+                    portfolio_summary["by_environment"][env_key]["trades"] += 1
+        
+        # Calcular win rate
+        if portfolio_summary["total_trades"] > 0:
+            portfolio_summary["win_rate"] = (portfolio_summary["winning_trades"] / portfolio_summary["total_trades"]) * 100
+        
+        # Calcular porcentaje de PnL total
+        if portfolio_summary["total_balance_usdt"] > 0:
+            portfolio_summary["total_pnl_percentage"] = (portfolio_summary["total_pnl_usdt"] / portfolio_summary["total_balance_usdt"]) * 100
+        
+        # Contar posiciones abiertas
+        portfolio_summary["open_positions"] = len(get_active_positions(db, user_id))
+        
+        return portfolio_summary
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo resumen de portfolio: {e}")
+        return {
+            "error": str(e),
+            "total_balance_usdt": 0.0,
+            "available_balance_usdt": 0.0,
+            "locked_balance_usdt": 0.0,
+            "total_pnl_usdt": 0.0,
+            "total_pnl_percentage": 0.0,
+            "total_trades": 0,
+            "winning_trades": 0,
+            "losing_trades": 0,
+            "win_rate": 0.0,
+            "open_positions": 0
+        }

@@ -258,6 +258,25 @@ async def update_crypto_allocation(
             enabled_field: request.enabled,
             allocated_field: request.allocated_usdt
         }
+        
+        # Si se está habilitando una crypto, activar auto_trading_enabled automáticamente
+        if request.enabled:
+            update_dict['auto_trading_enabled'] = True
+            logger.info(f"🚀 Auto-trading general habilitado al activar {request.crypto.upper()}")
+        else:
+            # Si se está deshabilitando, verificar si quedan otras cryptos habilitadas
+            # Obtener la API key actual para verificar otras cryptos
+            current_api_key = crud_trading.get_trading_api_key(db, api_key_id, current_user.id)
+            if current_api_key:
+                other_cryptos_enabled = (
+                    (request.crypto != 'btc' and getattr(current_api_key, 'btc_enabled', False)) or
+                    (request.crypto != 'eth' and getattr(current_api_key, 'eth_enabled', False)) or
+                    (request.crypto != 'bnb' and getattr(current_api_key, 'bnb_enabled', False))
+                )
+                if not other_cryptos_enabled:
+                    update_dict['auto_trading_enabled'] = False
+                    logger.info(f"🛑 Auto-trading general deshabilitado - no quedan cryptos activas")
+        
         updates = TradingApiKeyUpdate(**update_dict)
         
         # Actualizar
@@ -354,10 +373,10 @@ async def get_trading_orders(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Obtiene las órdenes de trading del usuario"""
+    """Obtiene las órdenes de trading del usuario con información de testnet/mainnet"""
     try:
-        orders = crud_trading.get_user_trading_orders(db, current_user.id, limit, symbol, status)
-        return [TradingOrderResponse.from_orm(order) for order in orders]
+        orders = crud_trading.get_user_trading_orders_with_api_info(db, current_user.id, limit, symbol, status)
+        return orders
         
     except Exception as e:
         logger.error(f"❌ Error obteniendo órdenes: {e}")
@@ -438,6 +457,50 @@ async def get_account_balances(
     except Exception as e:
         logger.error(f"❌ Error consultando balances: {e}")
         raise HTTPException(status_code=500, detail=f"Error consultando balances: {str(e)}")
+
+@router.post("/orders/{order_id}/cancel")
+async def cancel_trading_order(
+    order_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Cancela una orden de trading"""
+    try:
+        # Obtener la orden
+        order = crud_trading.get_trading_order(db, order_id, current_user.id)
+        if not order:
+            raise HTTPException(status_code=404, detail="Orden no encontrada")
+        
+        if order.status != 'PENDING':
+            raise HTTPException(status_code=400, detail="Solo se pueden cancelar órdenes pendientes")
+        
+        # Actualizar estado a cancelada
+        success = crud_trading.cancel_trading_order(db, order_id, current_user.id)
+        if not success:
+            raise HTTPException(status_code=500, detail="Error cancelando la orden")
+        
+        logger.info(f"✅ Orden {order_id} cancelada por usuario {current_user.id}")
+        return {"message": "Orden cancelada exitosamente", "order_id": order_id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error cancelando orden: {e}")
+        raise HTTPException(status_code=500, detail=f"Error cancelando orden: {str(e)}")
+
+@router.get("/portfolio")
+async def get_portfolio_data(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Obtiene datos completos del portfolio del usuario"""
+    try:
+        portfolio_data = crud_trading.get_user_portfolio_summary(db, current_user.id)
+        return portfolio_data
+        
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo datos del portfolio: {e}")
+        raise HTTPException(status_code=500, detail=f"Error obteniendo portfolio: {str(e)}")
 
 @router.get("/health")
 async def trading_health_check():
