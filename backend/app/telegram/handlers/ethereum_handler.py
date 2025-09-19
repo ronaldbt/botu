@@ -15,7 +15,7 @@ class EthereumTelegramHandler:
     """Handler específico para el bot de Ethereum de Telegram"""
     
     def __init__(self):
-        self.crypto_type = "ethereum"
+        self.crypto_type = "eth"
         self.crypto_name = "Ethereum"
         self.crypto_symbol = "Ξ"
         self.crypto_display = "Ethereum Ξ"

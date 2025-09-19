@@ -15,7 +15,7 @@ class BitcoinTelegramHandler:
     """Handler específico para el bot de Bitcoin de Telegram"""
     
     def __init__(self):
-        self.crypto_type = "bitcoin"
+        self.crypto_type = "btc"
         self.crypto_name = "Bitcoin"
         self.crypto_symbol = "₿"
         self.crypto_display = "Bitcoin ₿"
