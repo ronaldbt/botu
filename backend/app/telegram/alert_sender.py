@@ -121,8 +121,8 @@ class AlertSender:
     def get_crypto_from_symbol(self, crypto_symbol: str) -> str:
         """Determina el tipo de crypto por el símbolo"""
         crypto_mapping = {
-            'BTC': 'bitcoin',
-            'ETH': 'ethereum', 
+            'BTC': 'btc',
+            'ETH': 'eth', 
             'BNB': 'bnb'
         }
         return crypto_mapping.get(crypto_symbol.upper())
