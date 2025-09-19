@@ -93,13 +93,13 @@ class CryptoBot:
     def _get_bot_config(self) -> Dict[str, str]:
         """Configuración específica por crypto"""
         configs = {
-            'bitcoin': {
+            'btc': {
                 'username': '@BotuBitcoinBot',
                 'symbol': '₿',
                 'color': '🟡',
                 'name_full': 'Bitcoin'
             },
-            'ethereum': {
+            'eth': {
                 'username': '@BotuEthereumBot', 
                 'symbol': 'Ξ',
                 'color': '🔷',
