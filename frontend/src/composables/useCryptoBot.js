@@ -89,8 +89,8 @@ export function useCryptoBot(crypto = 'btc') {
 
   const botConfig = reactive({
     timeframe: '4h',
-    takeProfit: 12.0,
-    stopLoss: 5.0,
+    takeProfit: 8.0,
+    stopLoss: 3.0,
     tradeAmount: 50,
     maxConcurrentTrades: 1,
     environment: 'testnet',
@@ -311,17 +311,39 @@ export function useCryptoBot(crypto = 'btc') {
       return
     }
 
-    const nextScan = calculateNextScanTime()
-    if (!nextScan) {
-      nextScanCountdown.value = null
+    // Verificar si tenemos lastScanTime válido
+    if (!botStatus.lastScanTime) {
+      nextScanCountdown.value = "Próximo escaneo en la próxima hora"
       return
     }
 
+    // Verificar si el lastScanTime es muy antiguo (más de 2 horas)
+    const lastScan = new Date(botStatus.lastScanTime)
     const now = new Date()
+    const timeSinceLastScan = now.getTime() - lastScan.getTime()
+    const twoHoursMs = 2 * 60 * 60 * 1000 // 2 horas en milisegundos
+
+    if (timeSinceLastScan > twoHoursMs) {
+      nextScanCountdown.value = "Próximo escaneo en la próxima hora"
+      return
+    }
+
+    const nextScan = calculateNextScanTime()
+    if (!nextScan) {
+      nextScanCountdown.value = "Próximo escaneo en la próxima hora"
+      return
+    }
+
     const timeLeft = nextScan.getTime() - now.getTime()
 
     if (timeLeft <= 0) {
       nextScanCountdown.value = "Escaneando ahora..."
+      return
+    }
+
+    // Si es más de 90 minutos, mostrar mensaje genérico
+    if (timeLeft > 90 * 60 * 1000) {
+      nextScanCountdown.value = "Próximo escaneo en la próxima hora"
       return
     }
 
