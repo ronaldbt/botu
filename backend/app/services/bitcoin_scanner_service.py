@@ -699,7 +699,7 @@ class BitcoinScannerService:
             "last_scan_time": self.last_scan_time.isoformat() if self.last_scan_time else None,
             "alerts_count": self.alerts_count,
             "next_scan_in_seconds": self.config['scan_interval'] if self.is_running else None,
-            "logs": self.scanner_logs[-20:],  # Últimos 20 logs para el frontend
+            "logs": self.scanner_logs[-1000:],  # Últimos 1000 logs para el frontend
             "cooldown_remaining": None if not self.last_alert_sent else max(0, self.cooldown_period - (datetime.now() - self.last_alert_sent).total_seconds())
         }
 
