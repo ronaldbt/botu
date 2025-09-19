@@ -301,7 +301,9 @@ export function useCryptoBot(crypto = 'btc') {
     if (!botStatus.lastScanTime) return null
     
     const lastScan = new Date(botStatus.lastScanTime)
-    const nextScan = new Date(lastScan.getTime() + (botStatus.scanInterval * 1000))
+    // Scanner se ejecuta cada 1 hora (3600 segundos)
+    const oneHour = 60 * 60 * 1000 // 1 hora en milisegundos
+    const nextScan = new Date(lastScan.getTime() + oneHour)
     return nextScan
   }
 
@@ -317,12 +319,18 @@ export function useCryptoBot(crypto = 'btc') {
       return
     }
 
-    // Verificar si el lastScanTime es muy antiguo (más de 2 horas)
     const lastScan = new Date(botStatus.lastScanTime)
     const now = new Date()
     const timeSinceLastScan = now.getTime() - lastScan.getTime()
-    const twoHoursMs = 2 * 60 * 60 * 1000 // 2 horas en milisegundos
+    
+    // Si lastScanTime es inválido o muy futuro, mostrar mensaje genérico
+    if (isNaN(lastScan.getTime()) || timeSinceLastScan < 0) {
+      nextScanCountdown.value = "Próximo escaneo en la próxima hora"
+      return
+    }
 
+    // Si el último scan fue hace más de 2 horas, mostrar mensaje genérico
+    const twoHoursMs = 2 * 60 * 60 * 1000
     if (timeSinceLastScan > twoHoursMs) {
       nextScanCountdown.value = "Próximo escaneo en la próxima hora"
       return
@@ -336,19 +344,27 @@ export function useCryptoBot(crypto = 'btc') {
 
     const timeLeft = nextScan.getTime() - now.getTime()
 
+    // Si ya pasó el tiempo del próximo scan
     if (timeLeft <= 0) {
       nextScanCountdown.value = "Escaneando ahora..."
       return
     }
 
-    // Si es más de 90 minutos, mostrar mensaje genérico
-    if (timeLeft > 90 * 60 * 1000) {
+    // Si faltan más de 65 minutos (algo está mal), mostrar mensaje genérico
+    const maxTimeMs = 65 * 60 * 1000
+    if (timeLeft > maxTimeMs) {
       nextScanCountdown.value = "Próximo escaneo en la próxima hora"
       return
     }
 
     const minutes = Math.floor(timeLeft / (1000 * 60))
     const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000)
+    
+    // Validar que los minutos y segundos sean razonables
+    if (minutes < 0 || minutes > 60 || seconds < 0 || seconds > 59) {
+      nextScanCountdown.value = "Próximo escaneo en la próxima hora"
+      return
+    }
     
     nextScanCountdown.value = `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
