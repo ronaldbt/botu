@@ -2,7 +2,6 @@
 
 export const menuAdmin = [
     { path: '/trading-automatico', label: '🤖 Trading Automático' },
-    { path: '/bitcoin-30m-testnet', label: '🧪 Bitcoin 30m Testnet' },
     { path: '/bitcoin-30m-mainnet', label: '💰 Bitcoin 30m Mainnet' },
     { path: '/bitcoin-bot', label: '₿ Bitcoin Bot' },
     { path: '/eth-bot', label: 'Ethereum Bot' },
@@ -17,7 +16,6 @@ export const menuAdmin = [
   
   export const menuCliente = [
     { path: '/trading-automatico', label: '🤖 Trading Automático' },
-    { path: '/bitcoin-30m-testnet', label: '🧪 Bitcoin 30m Testnet' },
     { path: '/bitcoin-30m-mainnet', label: '💰 Bitcoin 30m Mainnet' },
     { path: '/bitcoin-bot', label: '₿ Bitcoin Bot' },
     { path: '/eth-bot', label: 'Ethereum Bot' },

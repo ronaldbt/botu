@@ -22,6 +22,7 @@
         :start-bot="cryptoBot.startBot"
         :stop-bot="cryptoBot.stopBot"
         :refresh-status="cryptoBot.refreshStatus"
+        :force-buy="cryptoBot.forceBuy"
       />
 
       <!-- Current Analysis -->

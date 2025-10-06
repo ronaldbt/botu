@@ -119,6 +119,16 @@
           >
             🔄
           </button>
+          
+          <!-- Botón de prueba de compra -->
+          <button
+            @click="handleForceBuy"
+            :disabled="loading || !botStatus.isRunning"
+            class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:bg-slate-400"
+            title="Forzar compra simulada en MAINNET"
+          >
+            🧪 Probar Compra
+          </button>
         </div>
       </div>
     </div>
@@ -167,6 +177,10 @@ const props = defineProps({
   refreshStatus: {
     type: Function,
     required: true
+  },
+  forceBuy: {
+    type: Function,
+    required: false
   }
 })
 
@@ -176,6 +190,29 @@ console.log('ConfigurationPanel: Props recibidos:', {
   config: props.config,
   telegram: props.telegram
 })
+
+// Función para manejar la compra forzada
+const handleForceBuy = async () => {
+  if (!props.forceBuy) {
+    console.warn('ConfigurationPanel: forceBuy function not provided')
+    return
+  }
+  
+  const confirmed = confirm(`¿Forzar compra simulada de ${props.config.name} en MAINNET?`)
+  if (!confirmed) return
+  
+  try {
+    const success = await props.forceBuy()
+    if (success) {
+      alert(`✅ Compra simulada de ${props.config.name} disparada exitosamente`)
+    } else {
+      alert(`❌ Error forzando compra de ${props.config.name}`)
+    }
+  } catch (error) {
+    console.error('Error en handleForceBuy:', error)
+    alert(`❌ Error forzando compra: ${error.message}`)
+  }
+}
 
 // Debug: Watch para generatingQR específicamente (solo cuando cambia realmente)
 watch(() => props.telegram?.generatingQR?.value, (newValue, oldValue) => {
