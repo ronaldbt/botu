@@ -1,0 +1,31 @@
+ticker,tipo,sub_tipo,pais,nombre
+MMM,accion,dow_jones,USA,3M Company
+AXP,accion,dow_jones,USA,American Express
+AMGN,accion,dow_jones,USA,Amgen Inc.
+AAPL,accion,dow_jones,USA,Apple Inc.
+BA,accion,dow_jones,USA,Boeing Company
+CAT,accion,dow_jones,USA,Caterpillar Inc.
+CVX,accion,dow_jones,USA,Chevron Corporation
+CSCO,accion,dow_jones,USA,Cisco Systems Inc.
+KO,accion,dow_jones,USA,Coca-Cola Company
+DOW,accion,dow_jones,USA,Dow Inc.
+GS,accion,dow_jones,USA,Goldman Sachs Group Inc.
+HD,accion,dow_jones,USA,Home Depot Inc.
+HON,accion,dow_jones,USA,Honeywell International Inc.
+IBM,accion,dow_jones,USA,International Business Machines Corp.
+JNJ,accion,dow_jones,USA,Johnson & Johnson
+JPM,accion,dow_jones,USA,JPMorgan Chase & Co.
+MCD,accion,dow_jones,USA,McDonald's Corporation
+MRK,accion,dow_jones,USA,Merck & Co. Inc.
+MSFT,accion,dow_jones,USA,Microsoft Corporation
+NKE,accion,dow_jones,USA,Nike Inc.
+PFE,accion,dow_jones,USA,Pfizer Inc.
+PG,accion,dow_jones,USA,Procter & Gamble Co.
+CRM,accion,dow_jones,USA,Salesforce Inc.
+TRV,accion,dow_jones,USA,Travelers Companies Inc.
+UNH,accion,dow_jones,USA,UnitedHealth Group Inc.
+VZ,accion,dow_jones,USA,Verizon Communications Inc.
+V,accion,dow_jones,USA,Visa Inc.
+WMT,accion,dow_jones,USA,Walmart Inc.
+DIS,accion,dow_jones,USA,Walt Disney Company
+NVDA,accion,dow_jones,USA,Nvidia Corporation

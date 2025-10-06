@@ -1,0 +1,26 @@
+{
+    "pythonVersion": "3.12",
+    "pythonPlatform": "Darwin",
+    "reportMissingImports": "warning",
+    "executionEnvironments": [
+        {
+            "root": "backend",
+            "pythonVersion": "3.12",
+            "pythonPlatform": "Darwin",
+            "extraPaths": [
+                "backend",
+                "backend/venv/lib/python3.12/site-packages"
+            ]
+        },
+        {
+            "root": "src",
+            "pythonVersion": "3.12",
+            "pythonPlatform": "Darwin",
+            "extraPaths": [
+                "backend",
+                "backend/venv/lib/python3.12/site-packages",
+                "src"
+            ]
+        }
+    ]
+}

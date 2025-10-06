@@ -1,0 +1,29 @@
+# dynamic.yml
+http:
+  routers:
+    frontend:
+      rule: "Host(`botut.net`) || Host(`www.botut.net`)"
+      service: "frontend"
+      entryPoints:
+        - "websecure"
+      tls:
+        certResolver: "letsencrypt"
+    
+    backend:
+      rule: "Host(`api.botut.net`)"
+      service: "backend"
+      entryPoints:
+        - "websecure"
+      tls:
+        certResolver: "letsencrypt"
+
+  services:
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://botu-frontend:80"
+    
+    backend:
+      loadBalancer:
+        servers:
+          - url: "http://botu-backend:8000"

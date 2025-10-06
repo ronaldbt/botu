@@ -1,0 +1,52 @@
+version: "3.8"
+
+networks:
+  botu_net:
+    external: true
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://botu:T4L04KrFSayO7YyVQBDP85eh@postgres:5432/botu
+      - SECRET_KEY=3f538d33f9c75b531a1334613ce3155d2dda97547926acb1211252296863860f
+    networks:
+      - botu_net
+    depends_on:
+      - postgres
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=Host(`api.botut.net`)
+      - traefik.http.routers.api.entrypoints=websecure
+      - traefik.http.routers.api.tls.certresolver=letsencrypt
+      - traefik.http.services.api.loadbalancer.server.port=8000
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    networks:
+      - botu_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.web.rule=Host(`botut.net`,`www.botut.net`)
+      - traefik.http.routers.web.entrypoints=websecure
+      - traefik.http.routers.web.tls.certresolver=letsencrypt
+      - traefik.http.services.web.loadbalancer.server.port=80
+
+  postgres:
+    image: postgres:16
+    environment:
+      - POSTGRES_USER=botu
+      - POSTGRES_PASSWORD=T4L04KrFSayO7YyVQBDP85eh
+      - POSTGRES_DB=botu
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - botu_net
+
+volumes:
+  pg_data:
+    external: true

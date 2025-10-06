@@ -1,0 +1,97 @@
+ticker,tipo,sub_tipo,pais,nombre,activo
+BTC,crypto,,,Bitcoin,TRUE
+ETH,crypto,,,Ethereum,TRUE
+USDT,crypto,,,Tether,TRUE
+BNB,crypto,,,BNB,TRUE
+SOL,crypto,,,Solana,TRUE
+XRP,crypto,,,XRP,TRUE
+USDC,crypto,,,USD Coin,TRUE
+DOGE,crypto,,,Dogecoin,TRUE
+TON,crypto,,,Toncoin,TRUE
+ADA,crypto,,,Cardano,TRUE
+AVAX,crypto,,,Avalanche,TRUE
+SHIB,crypto,,,Shiba Inu,TRUE
+DOT,crypto,,,Polkadot,TRUE
+TRX,crypto,,,TRON,TRUE
+WBTC,crypto,,,Wrapped Bitcoin,TRUE
+LINK,crypto,,,Chainlink,TRUE
+NEAR,crypto,,,NEAR Protocol,TRUE
+BCH,crypto,,,Bitcoin Cash,TRUE
+LTC,crypto,,,Litecoin,TRUE
+ICP,crypto,,,Internet Computer,TRUE
+UNI,crypto,,,Uniswap,TRUE
+MATIC,crypto,,,Polygon,TRUE
+DAI,crypto,,,Dai,TRUE
+LEO,crypto,,,UNUS SED LEO,TRUE
+ETC,crypto,,,Ethereum Classic,TRUE
+APT,crypto,,,Aptos,TRUE
+TON,crypto,,,Toncoin,TRUE
+CRO,crypto,,,Cronos,TRUE
+XLM,crypto,,,Stellar,TRUE
+INJ,crypto,,,Injective,TRUE
+OKB,crypto,,,OKB,TRUE
+FIL,crypto,,,Filecoin,TRUE
+HBAR,crypto,,,Hedera,TRUE
+IMX,crypto,,,Immutable,TRUE
+LDO,crypto,,,Lido DAO,TRUE
+ARB,crypto,,,Arbitrum,TRUE
+VET,crypto,,,VeChain,TRUE
+RNDR,crypto,,,Render,TRUE
+FDUSD,crypto,,,First Digital USD,TRUE
+STX,crypto,,,Stacks,TRUE
+KAS,crypto,,,Kaspa,TRUE
+TIA,crypto,,,Celestia,TRUE
+ATOM,crypto,,,Cosmos,TRUE
+PEPE,crypto,,,Pepe,TRUE
+MKR,crypto,,,Maker,TRUE
+XMR,crypto,,,Monero,TRUE
+GRT,crypto,,,The Graph,TRUE
+QNT,crypto,,,Quant,TRUE
+RUNE,crypto,,,THORChain,TRUE
+BGB,crypto,,,Bitget Token,TRUE
+EGLD,crypto,,,MultiversX (Elrond),TRUE
+AAVE,crypto,,,Aave,TRUE
+SUI,crypto,,,Sui,TRUE
+NEO,crypto,,,Neo,TRUE
+XTZ,crypto,,,Tezos,TRUE
+USDD,crypto,,,USDD,TRUE
+SNX,crypto,,,Synthetix,TRUE
+FRAX,crypto,,,Frax,TRUE
+MINA,crypto,,,Mina Protocol,TRUE
+EOS,crypto,,,EOS,TRUE
+THETA,crypto,,,Theta Network,TRUE
+PAXG,crypto,,,PAX Gold,TRUE
+KCS,crypto,,,KuCoin Token,TRUE
+WEMIX,crypto,,,WEMIX,TRUE
+GT,crypto,,,GateToken,TRUE
+FLOW,crypto,,,Flow,TRUE
+GALA,crypto,,,Gala,TRUE
+KAVA,crypto,,,Kava,TRUE
+XEC,crypto,,,eCash,TRUE
+AXS,crypto,,,Axie Infinity,TRUE
+SAND,crypto,,,The Sandbox,TRUE
+CHZ,crypto,,,Chiliz,TRUE
+FXS,crypto,,,Frax Share,TRUE
+WOO,crypto,,,WOO Network,TRUE
+CRV,crypto,,,Curve DAO Token,TRUE
+IOTA,crypto,,,IOTA,TRUE
+OP,crypto,,,Optimism,TRUE
+ZEC,crypto,,,Zcash,TRUE
+RPL,crypto,,,Rocket Pool,TRUE
+GMX,crypto,,,GMX,TRUE
+XDC,crypto,,,XDC Network,TRUE
+DYDX,crypto,,,dYdX,TRUE
+LUNC,crypto,,,Terra Classic,TRUE
+ENS,crypto,,,Ethereum Name Service,TRUE
+BAT,crypto,,,Basic Attention Token,TRUE
+COMP,crypto,,,Compound,TRUE
+1INCH,crypto,,,1inch,TRUE
+CAKE,crypto,,,PancakeSwap,TRUE
+HOT,crypto,,,Holo,TRUE
+FET,crypto,,,Fetch.ai,TRUE
+DCR,crypto,,,Decred,TRUE
+CELO,crypto,,,Celo,TRUE
+KLAY,crypto,,,Klaytn,TRUE
+ANKR,crypto,,,Ankr,TRUE
+OMG,crypto,,,OMG Network,TRUE
+REV,crypto,,,Revain,TRUE

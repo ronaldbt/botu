@@ -1,0 +1,45 @@
+ticker,tipo,sub_tipo,pais,nombre
+AAPL,accion,nasdaq100,USA,Apple Inc.
+MSFT,accion,nasdaq100,USA,Microsoft Corporation
+GOOGL,accion,nasdaq100,USA,Alphabet Inc. Class A
+GOOG,accion,nasdaq100,USA,Alphabet Inc. Class C
+AMZN,accion,nasdaq100,USA,Amazon.com Inc.
+TSLA,accion,nasdaq100,USA,Tesla Inc.
+NVDA,accion,nasdaq100,USA,Nvidia Corporation
+META,accion,nasdaq100,USA,Meta Platforms Inc.
+PYPL,accion,nasdaq100,USA,PayPal Holdings Inc.
+ADBE,accion,nasdaq100,USA,Adobe Inc.
+INTC,accion,nasdaq100,USA,Intel Corporation
+CMCSA,accion,nasdaq100,USA,Comcast Corporation
+PEP,accion,nasdaq100,USA,PepsiCo Inc.
+CSCO,accion,nasdaq100,USA,Cisco Systems Inc.
+COST,accion,nasdaq100,USA,Costco Wholesale Corporation
+TMUS,accion,nasdaq100,USA,T‑Mobile US Inc.
+AVGO,accion,nasdaq100,USA,Broadcom Inc.
+AMGN,accion,nasdaq100,USA,Amgen Inc.
+TXN,accion,nasdaq100,USA,Texas Instruments Incorporated
+QCOM,accion,nasdaq100,USA,Qualcomm Incorporated
+ASML,accion,nasdaq100,USA,ASML Holding NV
+AMAT,accion,nasdaq100,USA,Applied Materials Inc.
+AMD,accion,nasdaq100,USA,Advanced Micro Devices Inc.
+GILD,accion,nasdaq100,USA,Gilead Sciences Inc.
+ORLY,accion,nasdaq100,USA,O’Reilly Automotive Inc.
+VRTX,accion,nasdaq100,USA,Vertex Pharmaceuticals Inc.
+MRVL,accion,nasdaq100,USA,Marvell Technology Inc.
+INTU,accion,nasdaq100,USA,Intuit Inc.
+ADP,accion,nasdaq100,USA,Automatic Data Processing Inc.
+LRCX,accion,nasdaq100,USA,Lam Research Corporation
+MNST,accion,nasdaq100,USA,Monster Beverage Corporation
+DDOG,accion,nasdaq100,USA,Datadog Inc.
+CSX,accion,nasdaq100,USA,CSX Corporation
+REGN,accion,nasdaq100,USA,Regeneron Pharmaceuticals Inc.
+MRVL,accion,nasdaq100,USA,Marvell Technology Inc.
+MDLZ,accion,nasdaq100,USA,Mondelez International Inc.
+NFLX,accion,nasdaq100,USA,Netflix Inc.
+TXN,accion,nasdaq100,USA,Texas Instruments
+MELI,accion,nasdaq100,USA,MercadoLibre Inc.
+ADSK,accion,nasdaq100,USA,Autodesk Inc.
+BIIB,accion,nasdaq100,USA,Biogen Inc.
+CINTA,accion,nasdaq100,USA,Cintas Corporation
+CTAS,accion,nasdaq100,USA,Chart holds – etc.
+...
