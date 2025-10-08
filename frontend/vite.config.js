@@ -8,7 +8,9 @@ export default defineConfig({
   plugins: [vue(), tailwindcss()],
   server: {
     port: 5173,
-    host: true
+    host: true,
+    // Proxy solo si no hay VITE_API_URL configurado (desarrollo local)
+    // Si VITE_API_URL está configurado, axios usará esa URL directamente
   },
   resolve: {
     alias: {

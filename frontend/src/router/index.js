@@ -16,8 +16,6 @@ import ProfileView from '../views/ProfileView.vue';
 import SubscriptionView from '../views/SubscriptionView.vue';
 import BacktestView from '../views/BacktestView.vue';
 import TradingAutomaticoView from '../views/TradingAutomaticoView.vue';
-import Bitcoin30mView from '../views/Bitcoin30mView.vue';
-import BitcoinTestnetView from '../views/BitcoinTestnetView.vue';
 import BitcoinMainnetView from '../views/BitcoinMainnetView.vue';
 
 const routes = [
@@ -106,18 +104,6 @@ const routes = [
     path: '/trading-automatico',
     name: 'TradingAutomatico',
     component: TradingAutomaticoView,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/bitcoin-30m',
-    name: 'Bitcoin30m',
-    component: Bitcoin30mView,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/bitcoin-30m-testnet',
-    name: 'Bitcoin30mTestnet',
-    component: BitcoinTestnetView,
     meta: { requiresAuth: true },
   },
   {

@@ -302,17 +302,21 @@ class AutoTradingMainnet30mExecutor:
             
             # Obtener órdenes de compra activas para BTC 30m Mainnet
             active_orders = db.query(TradingOrder).filter(
-                TradingOrder.crypto == self.crypto_symbol,
-                TradingOrder.environment == self.environment,
-                TradingOrder.status == 'filled',
-                TradingOrder.side == 'buy'
+                TradingOrder.symbol == 'BTCUSDT',
+                TradingOrder.status == 'FILLED',
+                TradingOrder.side == 'BUY'
             ).all()
             
-            for order in active_orders:
-                try:
-                    await self._check_sell_conditions(db, order)
-                except Exception as e:
-                    logger.error(f"Error verificando orden de venta {order.id}: {e}")
+            if active_orders:
+                logger.info(f"🔍 [Mainnet30m] Monitoreando {len(active_orders)} posición(es) activa(s) para venta")
+                
+                for order in active_orders:
+                    try:
+                        await self._check_sell_conditions(db, order)
+                    except Exception as e:
+                        logger.error(f"Error verificando orden de venta {order.id}: {e}")
+            else:
+                logger.info("🔍 [Mainnet30m] No hay posiciones activas para monitorear")
                     
         except Exception as e:
             logger.error(f"Error en check_and_execute_sell_orders: {e}")
@@ -338,12 +342,24 @@ class AutoTradingMainnet30mExecutor:
                 return
             
             # Calcular ganancia/pérdida
-            entry_price = buy_order.price
+            entry_price = buy_order.executed_price or buy_order.price
+            if not entry_price:
+                logger.error(f"❌ [Mainnet30m] No se puede obtener precio de entrada para orden {buy_order.id}")
+                return
+            
             profit_pct = (current_price - entry_price) / entry_price
             
             # Verificar condiciones de venta
             profit_target = 0.04  # 4%
             stop_loss = 0.015     # 1.5%
+            
+            # Log del estado de la posición
+            position_log = f"💰 Posición ID {buy_order.id}: Entrada ${entry_price:,.2f} | Actual ${current_price:,.2f} | PnL {profit_pct*100:+.2f}% | TP: {profit_target*100}% | SL: {stop_loss*100}%"
+            logger.info(f"[Mainnet30m] {position_log}")
+            
+            # También agregar al scanner para que aparezca en el frontend
+            from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+            bitcoin_30m_mainnet_scanner.add_log(position_log, "INFO", current_price=current_price)
             
             should_sell = False
             sell_reason = ""
@@ -351,12 +367,29 @@ class AutoTradingMainnet30mExecutor:
             if profit_pct >= profit_target:
                 should_sell = True
                 sell_reason = "TAKE_PROFIT"
+                tp_log = f"🎯 TAKE PROFIT activado para posición {buy_order.id}: {profit_pct*100:+.2f}%"
+                logger.info(f"[Mainnet30m] {tp_log}")
+                bitcoin_30m_mainnet_scanner.add_log(tp_log, "SUCCESS", current_price=current_price)
             elif profit_pct <= -stop_loss:
                 should_sell = True
                 sell_reason = "STOP_LOSS"
+                sl_log = f"🛑 STOP LOSS activado para posición {buy_order.id}: {profit_pct*100:+.2f}%"
+                logger.info(f"[Mainnet30m] {sl_log}")
+                bitcoin_30m_mainnet_scanner.add_log(sl_log, "WARNING", current_price=current_price)
             
             if should_sell:
                 await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct)
+            else:
+                # Verificar tiempo máximo de hold (24 horas)
+                from datetime import datetime, timedelta
+                max_hold_time = timedelta(hours=24)
+                if datetime.now() - buy_order.created_at > max_hold_time:
+                    should_sell = True
+                    sell_reason = "MAX_HOLD_TIME"
+                    max_hold_log = f"⏰ MAX HOLD TIME activado para posición {buy_order.id} (24h)"
+                    logger.info(f"[Mainnet30m] {max_hold_log}")
+                    bitcoin_30m_mainnet_scanner.add_log(max_hold_log, "WARNING", current_price=current_price)
+                    await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct)
                 
         except Exception as e:
             logger.error(f"Error en _check_sell_conditions: {e}")
@@ -374,26 +407,134 @@ class AutoTradingMainnet30mExecutor:
             if not api_key:
                 return
             
+            # Calcular cantidad a vender (usar executed_quantity si está disponible)
+            sell_quantity = buy_order.executed_quantity or buy_order.quantity
+            original_quantity = sell_quantity
+            
+            # Restar comisión si fue pagada en BTC (el activo que estamos vendiendo)
+            commission_info = ""
+            if buy_order.commission and buy_order.commission > 0:
+                if buy_order.commission_asset == 'BTC':
+                    # La comisión fue en BTC, debemos restarla del saldo disponible
+                    sell_quantity -= buy_order.commission
+                    commission_info = f" (Comisión compra: {buy_order.commission:.8f} BTC)"
+                    logger.info(f"📊 [Mainnet30m] Ajustando cantidad por comisión de compra: {original_quantity:.8f} BTC - {buy_order.commission:.8f} BTC = {sell_quantity:.8f} BTC")
+                    from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                    bitcoin_30m_mainnet_scanner.add_log(
+                        f"📊 Comisión de compra pagada en BTC: {buy_order.commission:.8f} BTC",
+                        "INFO",
+                        current_price=sell_price
+                    )
+                else:
+                    # La comisión fue en otro activo (BNB, USDT, etc.)
+                    commission_info = f" (Comisión compra: {buy_order.commission:.8f} {buy_order.commission_asset})"
+                    logger.info(f"📊 [Mainnet30m] Comisión de compra pagada en {buy_order.commission_asset}: {buy_order.commission:.8f}")
+                    from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                    bitcoin_30m_mainnet_scanner.add_log(
+                        f"📊 Comisión de compra pagada en {buy_order.commission_asset}: {buy_order.commission:.8f}",
+                        "INFO",
+                        current_price=sell_price
+                    )
+            
+            # Ajustar cantidad según LOT_SIZE de Binance (stepSize = 0.00001000 para BTCUSDT)
+            import math
+            step_size = 0.00001  # 0.00001 BTC es el stepSize para BTCUSDT
+            min_qty = 0.00001    # Cantidad mínima
+            
+            # Redondear hacia abajo al múltiplo más cercano de step_size
+            sell_quantity = math.floor(sell_quantity / step_size) * step_size
+            
+            # Verificar cantidad mínima y valor mínimo notional ($5 USD)
+            min_notional = 5.0  # $5 USD mínimo
+            order_value = sell_quantity * sell_price
+            
+            if sell_quantity < min_qty:
+                error_log = f"❌ Cantidad muy pequeña para vender: {sell_quantity:.8f} BTC (mínimo: {min_qty:.8f} BTC)"
+                logger.error(f"[Mainnet30m] {error_log}")
+                from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                bitcoin_30m_mainnet_scanner.add_log(error_log, "ERROR", current_price=sell_price)
+                return
+            
+            if order_value < min_notional:
+                error_log = f"❌ Valor de orden muy bajo: ${order_value:.2f} (mínimo: ${min_notional:.2f})"
+                logger.error(f"[Mainnet30m] {error_log}")
+                from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                bitcoin_30m_mainnet_scanner.add_log(error_log, "ERROR", current_price=sell_price)
+                return
+            
+            logger.info(f"💰 [Mainnet30m] Preparando venta: {sell_quantity:.8f} BTC @ ${sell_price:,.2f} (${order_value:.2f}) - {reason}{commission_info}")
+            
             # Crear orden de venta
             sell_order_data = {
                 'user_id': api_key.user_id,
                 'api_key_id': api_key.id,
-                'crypto': self.crypto_symbol,
-                'side': 'sell',
-                'order_type': 'market',
-                'quantity': buy_order.quantity,
+                'symbol': 'BTCUSDT',  # Para Binance API
+                'side': 'SELL',       # Mayúscula para Binance
+                'type': 'MARKET',     # Para Binance API
+                'quantity': sell_quantity,
                 'price': sell_price,
-                'total_usdt': buy_order.quantity * sell_price,
+                'total_usdt': sell_quantity * sell_price,
                 'environment': self.environment,
-                'parent_order_id': buy_order.id
+                'parent_order_id': buy_order.id,
+                # Campos adicionales para la base de datos
+                'crypto': self.crypto_symbol,
+                'order_type': 'market',
+                'side_db': 'sell'
             }
             
             # Ejecutar venta en Binance
             binance_result = await self._execute_binance_order(api_key, sell_order_data)
             
+            if not binance_result or not binance_result.get('success'):
+                # Error en la ejecución de la orden
+                error_msg = binance_result.get('msg', 'Error desconocido') if binance_result else 'Sin respuesta de Binance'
+                error_code = binance_result.get('code', 'N/A') if binance_result else 'N/A'
+                error_log = f"❌ Error ejecutando venta en Binance: [{error_code}] {error_msg}"
+                logger.error(f"[Mainnet30m] {error_log}")
+                from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                bitcoin_30m_mainnet_scanner.add_log(error_log, "ERROR", current_price=sell_price)
+                return
+            
             if binance_result and binance_result.get('success'):
+                # Preparar datos para la base de datos
+                from app.db.schemas import TradingOrderCreate
+                
+                db_order_data = TradingOrderCreate(
+                    api_key_id=sell_order_data['api_key_id'],
+                    symbol=sell_order_data['symbol'],
+                    side='sell',  # Para la base de datos usamos minúscula
+                    order_type='market',  # Para la base de datos usamos minúscula
+                    quantity=sell_order_data['quantity'],
+                    price=sell_order_data['price']
+                )
+                
                 # Guardar orden de venta
-                sell_order = create_trading_order(db, sell_order_data)
+                sell_order = create_trading_order(db, db_order_data, sell_order_data['user_id'])
+                
+                # Extraer información de comisión de la respuesta de Binance
+                sell_commission = 0
+                sell_commission_asset = ""
+                if binance_result.get('fills'):
+                    for fill in binance_result['fills']:
+                        if 'commission' in fill:
+                            sell_commission += float(fill.get('commission', 0))
+                            sell_commission_asset = fill.get('commissionAsset', '')
+                
+                # Actualizar con datos de ejecución
+                sell_order.executed_price = binance_result.get('fills', [{}])[0].get('price') if binance_result.get('fills') else sell_order_data['price']
+                sell_order.executed_quantity = sell_order_data['quantity']
+                sell_order.commission = sell_commission if sell_commission > 0 else None
+                sell_order.commission_asset = sell_commission_asset if sell_commission_asset else None
+                sell_order.status = 'FILLED'
+                sell_order.binance_order_id = str(binance_result.get('orderId', ''))
+                db.commit()
+                
+                # Log de comisión de venta
+                if sell_commission > 0:
+                    commission_log = f"📊 Comisión de venta pagada en {sell_commission_asset}: {sell_commission:.8f}"
+                    logger.info(f"[Mainnet30m] {commission_log}")
+                    from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                    bitcoin_30m_mainnet_scanner.add_log(commission_log, "INFO", current_price=sell_price)
                 
                 # Actualizar orden de compra
                 buy_order.status = 'completed'
@@ -403,7 +544,10 @@ class AutoTradingMainnet30mExecutor:
                 # Enviar notificación
                 await self._send_sell_notification(api_key, buy_order, sell_order_data, profit_pct, reason)
                 
-                logger.info(f"✅ Venta BTC 30m Mainnet ejecutada: {profit_pct*100:+.2f}% - {reason}")
+                success_log = f"✅ Venta ejecutada: {sell_order_data['quantity']:.8f} BTC @ ${sell_price:,.2f} | PnL: {profit_pct*100:+.2f}% - {reason}"
+                logger.info(f"[Mainnet30m] {success_log}")
+                from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                bitcoin_30m_mainnet_scanner.add_log(success_log, "SUCCESS", current_price=sell_price)
                 
         except Exception as e:
             logger.error(f"Error ejecutando venta: {e}")

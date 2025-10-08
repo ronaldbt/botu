@@ -380,12 +380,13 @@ async def get_trading_orders(
     limit: int = 50,
     symbol: Optional[str] = None,
     status: Optional[str] = None,
+    side: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Obtiene las órdenes de trading del usuario con información de testnet/mainnet"""
     try:
-        orders = crud_trading.get_user_trading_orders_with_api_info(db, current_user.id, limit, symbol, status)
+        orders = crud_trading.get_user_trading_orders_with_api_info(db, current_user.id, limit, symbol, status, side)
         return orders
         
     except Exception as e:

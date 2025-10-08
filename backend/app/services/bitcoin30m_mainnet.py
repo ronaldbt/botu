@@ -161,8 +161,13 @@ class Bitcoin30mMainnetScanner:
                     "INFO",
                     current_price=current_price
                 )
-                
+            
             # Siempre verificar si hay posiciones que vender (cada escaneo)
+            self.add_log(
+                f"🔍 Monitoreando posiciones activas para venta | Precio BTC: ${current_price:,.2f}",
+                "INFO",
+                current_price=current_price
+            )
             await self.executor.check_and_execute_sell_orders()
                 
         except Exception as e:

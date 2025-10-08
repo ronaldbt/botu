@@ -367,7 +367,8 @@ def get_user_trading_orders_with_api_info(
     user_id: int, 
     limit: int = 100,
     symbol: Optional[str] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
+    side: Optional[str] = None
 ) -> List[dict]:
     """Obtiene las órdenes de trading de un usuario con información de testnet/mainnet"""
     query = db.query(TradingOrder, TradingApiKey).join(
@@ -378,6 +379,8 @@ def get_user_trading_orders_with_api_info(
         query = query.filter(TradingOrder.symbol == symbol)
     if status:
         query = query.filter(TradingOrder.status == status)
+    if side:
+        query = query.filter(TradingOrder.side == side)
     
     orders = query.order_by(desc(TradingOrder.created_at)).limit(limit).all()
     
