@@ -3,6 +3,7 @@
 export const menuAdmin = [
     { path: '/trading-automatico', label: '🤖 Trading Automático' },
     { path: '/bitcoin-30m-mainnet', label: '💰 Bitcoin 30m Mainnet' },
+    { path: '/bnb-mainnet', label: '🟡 BNB 4h Mainnet' },
     { path: '/bitcoin-bot', label: '₿ Bitcoin Bot' },
     { path: '/eth-bot', label: 'Ethereum Bot' },
     { path: '/bnb-bot', label: 'BNB Bot' },
@@ -17,6 +18,7 @@ export const menuAdmin = [
   export const menuCliente = [
     { path: '/trading-automatico', label: '🤖 Trading Automático' },
     { path: '/bitcoin-30m-mainnet', label: '💰 Bitcoin 30m Mainnet' },
+    { path: '/bnb-mainnet', label: '🟡 BNB 4h Mainnet' },
     { path: '/bitcoin-bot', label: '₿ Bitcoin Bot' },
     { path: '/eth-bot', label: 'Ethereum Bot' },
     { path: '/bnb-bot', label: 'BNB Bot' },

@@ -17,6 +17,7 @@ import SubscriptionView from '../views/SubscriptionView.vue';
 import BacktestView from '../views/BacktestView.vue';
 import TradingAutomaticoView from '../views/TradingAutomaticoView.vue';
 import BitcoinMainnetView from '../views/BitcoinMainnetView.vue';
+import BnbMainnetView from '../views/BnbMainnetView.vue';
 
 const routes = [
   {
@@ -110,6 +111,12 @@ const routes = [
     path: '/bitcoin-30m-mainnet',
     name: 'Bitcoin30mMainnet',
     component: BitcoinMainnetView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/bnb-mainnet',
+    name: 'BnbMainnet',
+    component: BnbMainnetView,
     meta: { requiresAuth: true },
   },
 ];

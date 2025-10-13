@@ -41,7 +41,8 @@ class BnbScannerService:
             "window_size": 120,        # 120 velas ventana análisis (igual que backtest)
             "scan_interval": 60 * 60,   # 1 hora (3600 segundos)
             "symbol": "BNBUSDT",
-            "data_limit": 1000         # 1000 velas para análisis completo
+            "data_limit": 1000,        # 1000 velas para análisis completo
+            "environment": "mainnet"   # Solo mainnet
         }
         self.last_scan_time = None
         self.alerts_count = 0
@@ -49,19 +50,29 @@ class BnbScannerService:
         self.cooldown_period = 60 * 60  # 1 hora de cooldown entre alertas
         self.scanner_logs = []  # Lista de logs para mostrar en el frontend
         self.max_logs = 50  # Máximo número de logs a mantener
+        self.last_scan_price = None  # Último precio escaneado
+        self.readiness_cache = {
+            'auto_ready': False,
+            'enabled_keys': 0,
+            'allocated_ok': False,
+            'balance_ok': False,
+            'reasons': []
+        }
         
     def update_config(self, new_config: Dict[str, Any]):
         """Actualiza la configuración del scanner (solo admin)"""
         self.config.update(new_config)
         logger.info(f"✅ Configuración BNB actualizada: {self.config}")
     
-    def _add_log(self, level: str, message: str, details: dict = None):
+    def _add_log(self, level: str, message: str, details: dict = None, current_price: Optional[float] = None):
         """Agrega un log personalizado para el frontend"""
         log_entry = {
             "timestamp": datetime.now().isoformat(),
             "level": level,  # INFO, SUCCESS, WARNING, ERROR
             "message": message,
-            "details": details or {}
+            "details": details or {},
+            "bnb_price": current_price if current_price is not None else None,
+            "environment": "mainnet"
         }
         
         self.scanner_logs.append(log_entry)
@@ -143,6 +154,13 @@ class BnbScannerService:
         """Realiza un escaneo completo de BNB"""
         try:
             scan_start = datetime.now()
+            
+            # Evaluar readiness antes de escanear
+            self._evaluate_readiness()
+            if not self.readiness_cache.get('auto_ready'):
+                reasons = ", ".join(self.readiness_cache.get('reasons', []))
+                self._add_log("WARNING", f"⚠️ Auto-trading NO LISTO: {reasons}. No se ejecutarán compras.")
+            
             self._add_log("INFO", f"Iniciando escaneo de {self.config['symbol']}", {
                 "timestamp": scan_start.strftime('%H:%M:%S')
             })
@@ -154,6 +172,11 @@ class BnbScannerService:
                 return
             
             current_price = df['close'].iloc[-1]
+            self.last_scan_price = current_price
+            
+            # Log con precio
+            self._add_log("INFO", f"🟢 Escaneo BNB 4h - Velas: {len(df)} | Precio: ${current_price:,.2f}", 
+                         {"candles": len(df)}, current_price=current_price)
             
             # 1.5. 🤖 MONITOREAR POSICIONES AUTOMÁTICAS BNB (Nueva funcionalidad)
             # Verificar condiciones de salida para trading automático usando las mismas estrategias
@@ -187,10 +210,9 @@ class BnbScannerService:
                         })
                         break  # Solo una alerta por escaneo
             else:
-                self._add_log("INFO", f"Escaneo completado - No se detectaron patrones de compra", {
-                    "current_price": f"${current_price:,.2f}",
+                self._add_log("INFO", f"Escaneo completado - No se detectaron patrones de compra | Precio: ${current_price:,.2f}", {
                     "candles_analyzed": len(df)
-                })
+                }, current_price=current_price)
             
             self.last_scan_time = scan_start
             scan_duration = (datetime.now() - scan_start).total_seconds()
@@ -666,11 +688,11 @@ class BnbScannerService:
         
         self.add_log("info", "🏁 Escaneo continuo BNB terminado")
     
-    def get_current_analysis(self) -> Dict[str, Any]:
-        """Obtiene análisis actual de BNB usando scanner optimizado 2023"""
+    async def get_current_analysis(self) -> Dict[str, Any]:
+        """Obtiene análisis actual de BNB usando scanner optimizado 2022"""
         try:
             # Obtener datos actuales
-            df = self._get_historical_data()
+            df = await self._get_binance_data()
             if df is None or len(df) < 50:
                 return {
                     "current_price": 0,
@@ -685,7 +707,7 @@ class BnbScannerService:
             current_price = df.iloc[-1]['close']
             
             # Usar el mismo algoritmo de detección que el scanner
-            signals = self._detect_u_pattern_2023(df)
+            signals = self._detect_u_patterns_2022(df)
             
             if signals:
                 signal = signals[0]  # Tomar la primera señal
@@ -723,15 +745,82 @@ class BnbScannerService:
     
     def get_status(self) -> Dict[str, Any]:
         """Obtiene el estado actual del scanner"""
+        is_actually_running = self.is_running
+        
+        # Verificar si está corriendo por logs recientes
+        if not self.is_running and self.scanner_logs:
+            last_log_time = None
+            for log in reversed(self.scanner_logs):
+                if log.get('timestamp'):
+                    try:
+                        last_log_time = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
+                        break
+                    except:
+                        continue
+            
+            if last_log_time:
+                minutes_since_last_log = (datetime.now() - last_log_time.replace(tzinfo=None)).total_seconds() / 60
+                if minutes_since_last_log < 70:
+                    is_actually_running = True
+        
+        # Usar timestamp del último log si no hay last_scan_time
+        last_scan_time = self.last_scan_time
+        if not last_scan_time and self.scanner_logs:
+            for log in reversed(self.scanner_logs):
+                if log.get('timestamp'):
+                    try:
+                        last_scan_time = datetime.fromisoformat(log['timestamp'].replace('Z', '+00:00'))
+                        break
+                    except:
+                        continue
+        
         return {
-            "is_running": self.is_running,
+            "is_running": is_actually_running,
             "config": self.config,
-            "last_scan_time": self.last_scan_time.isoformat() if self.last_scan_time else None,
+            "last_scan_time": last_scan_time.isoformat() if last_scan_time else None,
             "alerts_count": self.alerts_count,
-            "next_scan_in_seconds": self.config['scan_interval'] if self.is_running else None,
-            "logs": self.scanner_logs[-1000:],  # Últimos 1000 logs para el frontend
-            "cooldown_remaining": None if not self.last_alert_sent else max(0, self.cooldown_period - (datetime.now() - self.last_alert_sent).total_seconds())
+            "next_scan_in_seconds": self.config['scan_interval'] if is_actually_running else None,
+            "logs": self.scanner_logs[-100:],  # Últimos 100 logs
+            "cooldown_remaining": None if not self.last_alert_sent else max(0, self.cooldown_period - (datetime.now() - self.last_alert_sent).total_seconds()),
+            "timeframe": "4h",
+            "environment": "mainnet",
+            "bnb_price": self.last_scan_price,
+            "auto_trading_readiness": self.readiness_cache
         }
+    
+    def _evaluate_readiness(self):
+        """Evalúa si hay condiciones para operar automáticamente"""
+        try:
+            from app.db.database import get_db
+            from app.db.models import TradingApiKey
+            db = next(get_db())
+            keys = db.query(TradingApiKey).filter(
+                TradingApiKey.is_testnet == False,
+                TradingApiKey.is_active == True
+            ).all()
+            enabled = [k for k in keys if getattr(k, 'bnb_mainnet_enabled', False)]
+            allocated_ok = any((k.bnb_mainnet_allocated_usdt or 0) > 0 for k in enabled)
+            reasons = []
+            if len(enabled) == 0:
+                reasons.append('sin claves mainnet habilitadas para BNB')
+            if not allocated_ok:
+                reasons.append('asignación BNB USDT=0')
+            auto_ready = len(enabled) > 0 and allocated_ok
+            self.readiness_cache = {
+                'auto_ready': auto_ready,
+                'enabled_keys': len(enabled),
+                'allocated_ok': allocated_ok,
+                'balance_ok': allocated_ok,
+                'reasons': reasons
+            }
+        except Exception:
+            self.readiness_cache = {
+                'auto_ready': False,
+                'enabled_keys': 0,
+                'allocated_ok': False,
+                'balance_ok': False,
+                'reasons': ['error evaluando readiness']
+            }
 
 # Instancia global del scanner
 bnb_scanner = BnbScannerService()

@@ -242,6 +242,9 @@ class TradingApiKey(Base):
     btc_30m_testnet_enabled = Column(Boolean, default=False)
     btc_30m_mainnet_enabled = Column(Boolean, default=False)
     
+    # BNB Mainnet (4h scanner - solo mainnet, no testnet)
+    bnb_mainnet_enabled = Column(Boolean, default=False)
+    
     # Asignación de balance por crypto (en USDT)
     btc_allocated_usdt = Column(Float, default=0.0)
     eth_allocated_usdt = Column(Float, default=0.0)
@@ -250,6 +253,9 @@ class TradingApiKey(Base):
     # Bitcoin 30m - Asignaciones separadas por red
     btc_30m_testnet_allocated_usdt = Column(Float, default=0.0)
     btc_30m_mainnet_allocated_usdt = Column(Float, default=0.0)
+    
+    # BNB Mainnet - Asignación
+    bnb_mainnet_allocated_usdt = Column(Float, default=0.0)
     
     # Estrategias (usar las mismas probadas)
     profit_target = Column(Float, default=0.08)  # 8% TP

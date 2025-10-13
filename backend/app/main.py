@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 from app.db import models
 from app.db.database import engine
-from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes, trading_routes, debug_routes, bitcoin30m_scanner_routes, bitcoin30m_mainnet_routes
+from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes, trading_routes, debug_routes, bitcoin30m_scanner_routes, bitcoin30m_mainnet_routes, bnb_mainnet_routes
 from app.services.health_monitor_service import health_monitor
 
 # Cargar variables de entorno
@@ -128,6 +128,7 @@ app.include_router(telegram_routes.router)      # Ya tiene prefix="/telegram"
 app.include_router(trading_routes.router, tags=["trading"])      # Trading automático endpoints
 app.include_router(bitcoin30m_scanner_routes.router, tags=["bitcoin-30m-scanner"])  # Bitcoin 30m Scanner endpoints
 app.include_router(bitcoin30m_mainnet_routes.router, tags=["bitcoin-30m-mainnet-scanner"])  # Bitcoin 30m Mainnet Scanner endpoints
+app.include_router(bnb_mainnet_routes.router, tags=["bnb-mainnet-scanner"])  # BNB Mainnet Scanner endpoints
 app.include_router(health_routes.router, tags=["health"])        # Health Monitor endpoints
 app.include_router(health_telegram_routes.router, tags=["health-telegram"])  # Health Telegram Bot endpoints
 app.include_router(debug_routes.router, tags=["debug"])                   # Debug endpoints

@@ -249,23 +249,33 @@ async def update_crypto_allocation(
 ):
     """Actualiza la habilitación y asignación de balance para una crypto específica"""
     try:
+        logger.info(f"🔧 [CRYPTO ALLOCATION] Usuario {current_user.id} actualizando API key {api_key_id}")
+        logger.info(f"🔧 [CRYPTO ALLOCATION] Request: crypto={request.crypto}, enabled={request.enabled}, allocated_usdt={request.allocated_usdt}")
+        
         # Mapear crypto a campos en la base de datos
-        # Manejar Bitcoin 30m separado por red
+        # Manejar cryptos específicas por red/estrategia
         if request.crypto == 'btc_30m_mainnet':
             enabled_field = 'btc_30m_mainnet_enabled'
             allocated_field = 'btc_30m_mainnet_allocated_usdt'
         elif request.crypto == 'btc_30m_testnet':
             enabled_field = 'btc_30m_testnet_enabled'
             allocated_field = 'btc_30m_testnet_allocated_usdt'
+        elif request.crypto == 'bnb_mainnet':
+            enabled_field = 'bnb_mainnet_enabled'
+            allocated_field = 'bnb_mainnet_allocated_usdt'
         else:
             enabled_field = f"{request.crypto}_enabled"
             allocated_field = f"{request.crypto}_allocated_usdt"
+        
+        logger.info(f"🔧 [CRYPTO ALLOCATION] Campos mapeados: enabled_field={enabled_field}, allocated_field={allocated_field}")
         
         # Crear update dict
         update_dict = {
             enabled_field: request.enabled,
             allocated_field: request.allocated_usdt
         }
+        
+        logger.info(f"🔧 [CRYPTO ALLOCATION] Update dict: {update_dict}")
         
         # Si se está habilitando una crypto, activar auto_trading_enabled automáticamente
         if request.enabled:
@@ -280,6 +290,7 @@ async def update_crypto_allocation(
                     (request.crypto != 'btc' and getattr(current_api_key, 'btc_enabled', False)) or
                     (request.crypto != 'btc_30m_mainnet' and getattr(current_api_key, 'btc_30m_mainnet_enabled', False)) or
                     (request.crypto != 'btc_30m_testnet' and getattr(current_api_key, 'btc_30m_testnet_enabled', False)) or
+                    (request.crypto != 'bnb_mainnet' and getattr(current_api_key, 'bnb_mainnet_enabled', False)) or
                     (request.crypto != 'eth' and getattr(current_api_key, 'eth_enabled', False)) or
                     (request.crypto != 'bnb' and getattr(current_api_key, 'bnb_enabled', False))
                 )
@@ -287,7 +298,14 @@ async def update_crypto_allocation(
                     update_dict['auto_trading_enabled'] = False
                     logger.info(f"🛑 Auto-trading general deshabilitado - no quedan cryptos activas")
         
-        updates = TradingApiKeyUpdate(**update_dict)
+        logger.info(f"🔧 [CRYPTO ALLOCATION] Intentando crear TradingApiKeyUpdate con: {update_dict}")
+        try:
+            updates = TradingApiKeyUpdate(**update_dict)
+            logger.info(f"🔧 [CRYPTO ALLOCATION] TradingApiKeyUpdate creado exitosamente")
+        except Exception as schema_error:
+            logger.error(f"❌ [CRYPTO ALLOCATION] Error creando TradingApiKeyUpdate: {schema_error}")
+            logger.error(f"❌ [CRYPTO ALLOCATION] Update dict que falló: {update_dict}")
+            raise HTTPException(status_code=422, detail=f"Error en validación de schema: {str(schema_error)}")
         
         # Actualizar
         db_api_key = crud_trading.update_trading_api_key(db, api_key_id, current_user.id, updates)

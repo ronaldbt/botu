@@ -24,6 +24,9 @@ class TradingApiKeyBase(BaseModel):
     btc_30m_testnet_enabled: bool = False
     btc_30m_mainnet_enabled: bool = False
     
+    # BNB Mainnet (4h scanner)
+    bnb_mainnet_enabled: bool = False
+    
     btc_allocated_usdt: float = 0.0
     eth_allocated_usdt: float = 0.0
     bnb_allocated_usdt: float = 0.0
@@ -31,6 +34,10 @@ class TradingApiKeyBase(BaseModel):
     # Bitcoin 30m - Asignaciones separadas por red
     btc_30m_testnet_allocated_usdt: float = 0.0
     btc_30m_mainnet_allocated_usdt: float = 0.0
+    
+    # BNB Mainnet - Asignación
+    bnb_mainnet_allocated_usdt: float = 0.0
+    
     profit_target: float = 0.08  # 8% TP (misma estrategia probada)
     stop_loss: float = 0.03      # 3% SL (misma estrategia probada)
     max_hold_hours: int = 320    # 13.3 días (misma estrategia probada)
@@ -80,9 +87,16 @@ class TradingApiKeyUpdate(BaseModel):
     btc_30m_testnet_enabled: Optional[bool] = None
     btc_30m_mainnet_enabled: Optional[bool] = None
     
+    # BNB Mainnet (4h scanner)
+    bnb_mainnet_enabled: Optional[bool] = None
+    
     # Asignaciones Bitcoin 30m - Separado por red
     btc_30m_testnet_allocated_usdt: Optional[float] = None
     btc_30m_mainnet_allocated_usdt: Optional[float] = None
+    
+    # Asignaciones BNB Mainnet
+    bnb_mainnet_allocated_usdt: Optional[float] = None
+    
     profit_target: Optional[float] = None
     stop_loss: Optional[float] = None
     max_hold_hours: Optional[int] = None
@@ -174,7 +188,7 @@ class UpdateCryptoAllocationRequest(BaseModel):
     
     @validator('crypto')
     def validate_crypto(cls, v):
-        valid_cryptos = ['btc', 'btc_30m', 'btc_30m_testnet', 'btc_30m_mainnet', 'eth', 'bnb']
+        valid_cryptos = ['btc', 'btc_30m', 'btc_30m_testnet', 'btc_30m_mainnet', 'bnb_mainnet', 'eth', 'bnb']
         if v.lower() not in valid_cryptos:
             raise ValueError(f'Crypto debe ser uno de: {", ".join(valid_cryptos)}')
         return v.lower()

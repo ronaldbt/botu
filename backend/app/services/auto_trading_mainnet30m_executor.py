@@ -341,20 +341,35 @@ class AutoTradingMainnet30mExecutor:
             if not current_price:
                 return
             
-            # Calcular ganancia/pérdida
+            # Calcular ganancia/pérdida REAL considerando comisiones
             entry_price = buy_order.executed_price or buy_order.price
-            if not entry_price:
-                logger.error(f"❌ [Mainnet30m] No se puede obtener precio de entrada para orden {buy_order.id}")
+            executed_quantity = buy_order.executed_quantity or buy_order.quantity
+            
+            if not entry_price or not executed_quantity:
+                logger.error(f"❌ [Mainnet30m] No se puede obtener precio/cantidad de entrada para orden {buy_order.id}")
                 return
             
-            profit_pct = (current_price - entry_price) / entry_price
+            # Valor total invertido en la compra (USDT gastados)
+            valor_compra_usdt = executed_quantity * entry_price
+            
+            # Calcular cantidad vendible (restar comisión si fue pagada en BTC)
+            cantidad_vendible = executed_quantity
+            if buy_order.commission and buy_order.commission > 0 and buy_order.commission_asset == 'BTC':
+                cantidad_vendible -= buy_order.commission
+            
+            # Valor actual de la posición (sin considerar comisión de venta aún)
+            valor_actual_usdt = cantidad_vendible * current_price
+            
+            # PnL en USDT y porcentaje (PRECISO)
+            pnl_usdt = valor_actual_usdt - valor_compra_usdt
+            profit_pct = pnl_usdt / valor_compra_usdt
             
             # Verificar condiciones de venta
             profit_target = 0.04  # 4%
             stop_loss = 0.015     # 1.5%
             
-            # Log del estado de la posición
-            position_log = f"💰 Posición ID {buy_order.id}: Entrada ${entry_price:,.2f} | Actual ${current_price:,.2f} | PnL {profit_pct*100:+.2f}% | TP: {profit_target*100}% | SL: {stop_loss*100}%"
+            # Log del estado de la posición con valores precisos
+            position_log = f"💰 Posición ID {buy_order.id}: Invertido ${valor_compra_usdt:.2f} | Valor actual ${valor_actual_usdt:.2f} | PnL ${pnl_usdt:+.2f} ({profit_pct*100:+.2f}%) | TP: {profit_target*100}% | SL: {stop_loss*100}%"
             logger.info(f"[Mainnet30m] {position_log}")
             
             # También agregar al scanner para que aparezca en el frontend
@@ -378,7 +393,7 @@ class AutoTradingMainnet30mExecutor:
                 bitcoin_30m_mainnet_scanner.add_log(sl_log, "WARNING", current_price=current_price)
             
             if should_sell:
-                await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct)
+                await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct, pnl_usdt)
             else:
                 # Verificar tiempo máximo de hold (24 horas)
                 from datetime import datetime, timedelta
@@ -389,12 +404,12 @@ class AutoTradingMainnet30mExecutor:
                     max_hold_log = f"⏰ MAX HOLD TIME activado para posición {buy_order.id} (24h)"
                     logger.info(f"[Mainnet30m] {max_hold_log}")
                     bitcoin_30m_mainnet_scanner.add_log(max_hold_log, "WARNING", current_price=current_price)
-                    await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct)
+                    await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct, pnl_usdt)
                 
         except Exception as e:
             logger.error(f"Error en _check_sell_conditions: {e}")
     
-    async def _execute_sell_order(self, db: Session, buy_order: TradingOrder, sell_price: float, reason: str, profit_pct: float):
+    async def _execute_sell_order(self, db: Session, buy_order: TradingOrder, sell_price: float, reason: str, profit_pct: float, pnl_usdt: float):
         """
         Ejecuta orden de venta
         """
@@ -527,6 +542,27 @@ class AutoTradingMainnet30mExecutor:
                 sell_order.commission_asset = sell_commission_asset if sell_commission_asset else None
                 sell_order.status = 'FILLED'
                 sell_order.binance_order_id = str(binance_result.get('orderId', ''))
+                
+                # Calcular PnL FINAL real después de todas las comisiones
+                # Valor de compra
+                valor_compra_real = buy_order.executed_quantity * buy_order.executed_price
+                
+                # Valor de venta (después de comisiones)
+                valor_venta_real = sell_order.executed_quantity * sell_order.executed_price
+                if sell_commission > 0 and sell_commission_asset == 'USDT':
+                    # Si la comisión de venta fue en USDT, restarla
+                    valor_venta_real -= sell_commission
+                elif sell_commission > 0 and sell_commission_asset == 'BTC':
+                    # Si la comisión fue en BTC, ya está descontada de la cantidad vendida
+                    pass  # No hacer nada, el valor ya es correcto
+                
+                # Guardar PnL preciso en la orden de venta
+                pnl_final_usdt = valor_venta_real - valor_compra_real
+                pnl_final_pct = (pnl_final_usdt / valor_compra_real) * 100 if valor_compra_real > 0 else 0
+                
+                sell_order.pnl_usdt = pnl_final_usdt
+                sell_order.pnl_percentage = pnl_final_pct
+                
                 db.commit()
                 
                 # Log de comisión de venta
@@ -541,10 +577,10 @@ class AutoTradingMainnet30mExecutor:
                 buy_order.sell_order_id = sell_order.id
                 db.commit()
                 
-                # Enviar notificación
-                await self._send_sell_notification(api_key, buy_order, sell_order_data, profit_pct, reason)
+                # Enviar notificación con PnL preciso
+                await self._send_sell_notification(api_key, buy_order, sell_order_data, pnl_final_pct / 100, reason, pnl_final_usdt)
                 
-                success_log = f"✅ Venta ejecutada: {sell_order_data['quantity']:.8f} BTC @ ${sell_price:,.2f} | PnL: {profit_pct*100:+.2f}% - {reason}"
+                success_log = f"✅ Venta ejecutada: {sell_order_data['quantity']:.8f} BTC @ ${sell_price:,.2f} | PnL: ${pnl_final_usdt:+.2f} ({pnl_final_pct:+.2f}%) - {reason}"
                 logger.info(f"[Mainnet30m] {success_log}")
                 from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
                 bitcoin_30m_mainnet_scanner.add_log(success_log, "SUCCESS", current_price=sell_price)
@@ -570,25 +606,28 @@ class AutoTradingMainnet30mExecutor:
             logger.error(f"Error obteniendo precio actual: {e}")
             return None
     
-    async def _send_sell_notification(self, api_key: TradingApiKey, buy_order: TradingOrder, sell_order_data: Dict, profit_pct: float, reason: str):
+    async def _send_sell_notification(self, api_key: TradingApiKey, buy_order: TradingOrder, sell_order_data: Dict, profit_pct: float, reason: str, pnl_usdt: float = None):
         """
         Envía notificación de venta por Telegram
         """
         try:
             emoji = "💰" if profit_pct > 0 else "📉"
             
+            # Usar PnL preciso si está disponible
+            pnl_display = f"${pnl_usdt:+.2f} ({profit_pct*100:+.2f}%)" if pnl_usdt is not None else f"{profit_pct*100:+.2f}%"
+            
             message = f"""
 {emoji} **VENTA BTC 30m MAINNET EJECUTADA**
 
 📊 **Resultado de la operación:**
-• Ganancia/Pérdida: {profit_pct*100:+.2f}%
+• Ganancia/Pérdida: {pnl_display}
 • Precio de venta: ${sell_order_data['price']:.2f}
 • Cantidad: {sell_order_data['quantity']:.6f} BTC
 • Total: ${sell_order_data['total_usdt']:.2f} USDT
 • Razón: {reason}
 
 🎯 **Resumen:**
-• Precio entrada: ${buy_order.price:.2f}
+• Precio entrada: ${buy_order.executed_price or buy_order.price:.2f}
 • Precio salida: ${sell_order_data['price']:.2f}
 • Orden ID: {sell_order_data.get('order_id', 'N/A')}
 
