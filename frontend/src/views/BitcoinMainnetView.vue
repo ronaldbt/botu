@@ -99,11 +99,11 @@
                       :class="[
                         'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                         apiKey.btc_30m_mainnet_enabled 
-                          ? 'bg-orange-500 text-white hover:bg-orange-600' 
-                          : 'bg-slate-300 text-slate-600 hover:bg-slate-400'
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : 'bg-slate-400 text-white hover:bg-slate-500'
                       ]"
                     >
-                      {{ apiKey.btc_30m_mainnet_enabled ? 'ACTIVO' : 'INACTIVO' }}
+                      {{ apiKey.btc_30m_mainnet_enabled ? '✓ Activado' : 'Activar Scanner' }}
                     </button>
                   </div>
                   <div class="flex items-center gap-3 mb-3">
