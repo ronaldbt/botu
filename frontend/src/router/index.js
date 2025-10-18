@@ -18,6 +18,9 @@ import BacktestView from '../views/BacktestView.vue';
 import TradingAutomaticoView from '../views/TradingAutomaticoView.vue';
 import BitcoinMainnetView from '../views/BitcoinMainnetView.vue';
 import BnbMainnetView from '../views/BnbMainnetView.vue';
+import EthMainnetView from '../views/EthMainnetView.vue';
+import Btc4hMainnetView from '../views/Btc4hMainnetView.vue';
+import PaxgMainnetView from '../views/PaxgMainnetView.vue';
 
 const routes = [
   {
@@ -117,6 +120,24 @@ const routes = [
     path: '/bnb-mainnet',
     name: 'BnbMainnet',
     component: BnbMainnetView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/eth-mainnet',
+    name: 'EthMainnet',
+    component: EthMainnetView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/btc-4h-mainnet',
+    name: 'Btc4hMainnet',
+    component: Btc4hMainnetView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/paxg-mainnet',
+    name: 'PaxgMainnet',
+    component: PaxgMainnetView,
     meta: { requiresAuth: true },
   },
 ];

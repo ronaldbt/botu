@@ -1,4 +1,4 @@
-# backend/app/api/v1/bitcoin30m_mainnet_routes.py
+# backend/app/api/v1/eth_mainnet_routes.py
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
@@ -9,8 +9,8 @@ import logging
 from app.db.database import get_db
 from app.db.models import User
 from app.core.auth import get_current_user
-from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
-from app.services.auto_trading_mainnet30m_executor import AutoTradingMainnet30mExecutor
+from app.services.eth_scanner_service import eth_scanner
+from app.services.auto_trading_executor import auto_trading_executor
 from app.db.models import TradingOrder
 from datetime import datetime, timedelta
 
@@ -19,20 +19,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Crear router
-router = APIRouter(prefix="/trading/scanner/bitcoin-30m-mainnet", tags=["bitcoin-30m-mainnet-scanner"])
+router = APIRouter(prefix="/trading/scanner/eth-mainnet", tags=["eth-mainnet-scanner"])
 
 # --------------------------
-# Control del Scanner 30m Mainnet
+# Control del Scanner ETH Mainnet
 # --------------------------
 
 @router.post("/start")
-async def start_bitcoin_30m_mainnet_scanner(
+async def start_eth_scanner(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Inicia el scanner de Bitcoin 30m para Mainnet"""
+    """Inicia el scanner de ETH para Mainnet"""
     try:
-        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) iniciando scanner Bitcoin 30m Mainnet")
+        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) iniciando scanner ETH Mainnet")
         
         # Solo admins pueden controlar el scanner
         if not current_user.is_admin:
@@ -41,36 +41,36 @@ async def start_bitcoin_30m_mainnet_scanner(
                 detail="Solo administradores pueden controlar el scanner"
             )
         
-        if bitcoin_30m_mainnet_scanner.is_running:
+        if eth_scanner.is_running:
             return {
                 "success": False,
-                "message": "El scanner Bitcoin 30m Mainnet ya está ejecutándose",
-                "status": bitcoin_30m_mainnet_scanner.get_status()
+                "message": "El scanner ETH Mainnet ya está ejecutándose",
+                "status": eth_scanner.get_status()
             }
         
         # Iniciar scanner
         import asyncio
-        asyncio.create_task(bitcoin_30m_mainnet_scanner.start_scanner())
+        asyncio.create_task(eth_scanner.start_scanning())
         
-        logger.info("✅ Scanner Bitcoin 30m Mainnet iniciado exitosamente")
+        logger.info("✅ Scanner ETH Mainnet iniciado exitosamente")
         return {
             "success": True,
-            "message": "Scanner Bitcoin 30m Mainnet iniciado exitosamente",
-            "status": bitcoin_30m_mainnet_scanner.get_status()
+            "message": "Scanner ETH Mainnet iniciado exitosamente",
+            "status": eth_scanner.get_status()
         }
             
     except Exception as e:
-        logger.error(f"❌ Error iniciando scanner Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error iniciando scanner ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error iniciando scanner: {str(e)}")
 
 @router.post("/stop")
-async def stop_bitcoin_30m_mainnet_scanner(
+async def stop_eth_scanner(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Detiene el scanner de Bitcoin 30m Mainnet"""
+    """Detiene el scanner de ETH Mainnet"""
     try:
-        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) deteniendo scanner Bitcoin 30m Mainnet")
+        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) deteniendo scanner ETH Mainnet")
         
         # Solo admins pueden controlar el scanner
         if not current_user.is_admin:
@@ -79,26 +79,26 @@ async def stop_bitcoin_30m_mainnet_scanner(
                 detail="Solo administradores pueden controlar el scanner"
             )
         
-        await bitcoin_30m_mainnet_scanner.stop_scanner()
+        await eth_scanner.stop_scanning()
         
-        logger.info("⏹️ Scanner Bitcoin 30m Mainnet detenido exitosamente")
+        logger.info("⏹️ Scanner ETH Mainnet detenido exitosamente")
         return {
             "success": True,
-            "message": "Scanner Bitcoin 30m Mainnet detenido exitosamente",
-            "status": bitcoin_30m_mainnet_scanner.get_status()
+            "message": "Scanner ETH Mainnet detenido exitosamente",
+            "status": eth_scanner.get_status()
         }
             
     except Exception as e:
-        logger.error(f"❌ Error deteniendo scanner Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error deteniendo scanner ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error deteniendo scanner: {str(e)}")
 
 @router.get("/status")
-async def get_bitcoin_30m_mainnet_scanner_status(
+async def get_eth_scanner_status(
     current_user: User = Depends(get_current_user)
 ):
-    """Obtiene el estado actual del scanner Bitcoin 30m Mainnet"""
+    """Obtiene el estado actual del scanner ETH Mainnet"""
     try:
-        status_data = bitcoin_30m_mainnet_scanner.get_status()
+        status_data = eth_scanner.get_status()
         
         return {
             "success": True,
@@ -106,29 +106,29 @@ async def get_bitcoin_30m_mainnet_scanner_status(
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo estado del scanner Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo estado del scanner ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo estado: {str(e)}")
 
 @router.get("/logs")
-async def get_bitcoin_30m_mainnet_scanner_logs(
+async def get_eth_scanner_logs(
     current_user: User = Depends(get_current_user),
     limit: int = 100
 ):
-    """Obtiene los logs del scanner Bitcoin 30m Mainnet"""
+    """Obtiene los logs del scanner ETH Mainnet"""
     try:
-        logs = bitcoin_30m_mainnet_scanner.scanner_logs[-limit:] if bitcoin_30m_mainnet_scanner.scanner_logs else []
+        logs = eth_scanner.scanner_logs[-limit:] if eth_scanner.scanner_logs else []
         
         return {
             "success": True,
             "data": {
                 "logs": logs,
-                "total_logs": len(bitcoin_30m_mainnet_scanner.scanner_logs),
+                "total_logs": len(eth_scanner.scanner_logs),
                 "latest_log": logs[-1]['message'] if logs else "No hay logs disponibles"
             }
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo logs del scanner Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo logs del scanner ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo logs: {str(e)}")
 
 # --------------------------
@@ -136,7 +136,7 @@ async def get_bitcoin_30m_mainnet_scanner_logs(
 # --------------------------
 
 @router.post("/force-buy")
-async def force_buy_bitcoin_30m_mainnet(
+async def force_buy_eth_mainnet(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -145,39 +145,39 @@ async def force_buy_bitcoin_30m_mainnet(
         if not current_user.is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo administradores")
 
-        # Asegurar que el usuario tenga al menos una API key mainnet habilitada para BTC 30m
+        # Asegurar que el usuario tenga al menos una API key mainnet habilitada para ETH
         from app.db.models import TradingApiKey
         enabled_keys = db.query(TradingApiKey).filter(
             TradingApiKey.user_id == current_user.id,
             TradingApiKey.is_testnet == False,
             TradingApiKey.is_active == True,
-            TradingApiKey.btc_30m_mainnet_enabled == True
+            TradingApiKey.eth_mainnet_enabled == True
         ).all()
 
         auto_enabled = False
         if not enabled_keys:
-            # Buscar alguna key mainnet activa del usuario y habilitarla para BTC 30m
+            # Buscar alguna key mainnet activa del usuario y habilitarla para ETH
             candidate = db.query(TradingApiKey).filter(
                 TradingApiKey.user_id == current_user.id,
                 TradingApiKey.is_testnet == False,
                 TradingApiKey.is_active == True
             ).first()
             if candidate:
-                candidate.btc_30m_mainnet_enabled = True
+                candidate.eth_mainnet_enabled = True
                 # Mantener la asignación tal cual; si es 0, el ejecutor podría abortar por falta de USDT
                 db.commit()
                 auto_enabled = True
-                logger.info(f"🟢 Habilitada BTC 30m Mainnet en API key {candidate.id} para usuario {current_user.id}")
+                logger.info(f"🟢 Habilitada ETH Mainnet en API key {candidate.id} para usuario {current_user.id}")
                 enabled_keys = [candidate]
             else:
                 raise HTTPException(status_code=400, detail="No hay API keys mainnet activas para habilitar")
 
         # Precio del último escaneo o endpoint directo
-        price = bitcoin_30m_mainnet_scanner.last_scan_price
+        price = eth_scanner.last_scan_price
         if not price:
             # Fallback rápido al endpoint público de Binance
             import requests
-            resp = requests.get("https://api.binance.com/api/v3/ticker/price", params={"symbol": "BTCUSDT"}, timeout=8)
+            resp = requests.get("https://api.binance.com/api/v3/ticker/price", params={"symbol": "ETHUSDT"}, timeout=8)
             resp.raise_for_status()
             price = float(resp.json()["price"])
 
@@ -195,8 +195,8 @@ async def force_buy_bitcoin_30m_mainnet(
             'environment': 'mainnet'
         }
 
-        logger.info(f"🧪 Forzando compra BTC 30m Mainnet con precio ${price:.2f}")
-        await bitcoin_30m_mainnet_scanner.executor.execute_buy_order(fake_signal, user_id=current_user.id)
+        logger.info(f"🧪 Forzando compra ETH Mainnet con precio ${price:.2f}")
+        await auto_trading_executor.execute_buy_signal('eth', fake_signal, alerta_id=None)
 
         # Verificar persistencia de orden reciente
         recent = db.query(TradingOrder).filter(TradingOrder.user_id == current_user.id).order_by(TradingOrder.created_at.desc()).first()
@@ -218,13 +218,13 @@ async def force_buy_bitcoin_30m_mainnet(
         raise HTTPException(status_code=500, detail=f"Error forzando compra: {str(e)}")
 
 @router.post("/test-scan")
-async def test_bitcoin_30m_mainnet_scan(
+async def test_eth_mainnet_scan(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Ejecuta un escaneo de prueba del scanner Bitcoin 30m Mainnet"""
+    """Ejecuta un escaneo de prueba del scanner ETH Mainnet"""
     try:
-        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) ejecutando escaneo de prueba Bitcoin 30m Mainnet")
+        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) ejecutando escaneo de prueba ETH Mainnet")
         
         # Solo admins pueden ejecutar escaneos de prueba
         if not current_user.is_admin:
@@ -234,49 +234,47 @@ async def test_bitcoin_30m_mainnet_scan(
             )
         
         # Ejecutar un ciclo de escaneo
-        await bitcoin_30m_mainnet_scanner._scan_cycle()
+        await eth_scanner._perform_scan()
         
-        logger.info("✅ Escaneo de prueba Bitcoin 30m Mainnet completado")
+        logger.info("✅ Escaneo de prueba ETH Mainnet completado")
         return {
             "success": True,
             "message": "Escaneo de prueba completado exitosamente",
-            "status": bitcoin_30m_mainnet_scanner.get_status()
+            "status": eth_scanner.get_status()
         }
             
     except Exception as e:
-        logger.error(f"❌ Error en escaneo de prueba Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error en escaneo de prueba ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error en escaneo de prueba: {str(e)}")
 
 @router.get("/config")
-async def get_bitcoin_30m_mainnet_scanner_config(
+async def get_eth_scanner_config(
     current_user: User = Depends(get_current_user)
 ):
-    """Obtiene la configuración del scanner Bitcoin 30m Mainnet"""
+    """Obtiene la configuración del scanner ETH Mainnet"""
     try:
-        config = bitcoin_30m_mainnet_scanner.config.copy()
-        detection_params = bitcoin_30m_mainnet_scanner.detection_params.copy()
+        config = eth_scanner.config.copy()
         
         return {
             "success": True,
             "data": {
                 "config": config,
-                "detection_params": detection_params,
                 "environment": "mainnet"
             }
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo configuración del scanner Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo configuración del scanner ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo configuración: {str(e)}")
 
 @router.put("/config")
-async def update_bitcoin_30m_mainnet_scanner_config(
+async def update_eth_scanner_config(
     config_updates: Dict[str, Any],
     current_user: User = Depends(get_current_user)
 ):
-    """Actualiza la configuración del scanner Bitcoin 30m Mainnet"""
+    """Actualiza la configuración del scanner ETH Mainnet"""
     try:
-        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) actualizando configuración scanner Bitcoin 30m Mainnet")
+        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) actualizando configuración scanner ETH Mainnet")
         
         # Solo admins pueden actualizar configuración
         if not current_user.is_admin:
@@ -287,33 +285,29 @@ async def update_bitcoin_30m_mainnet_scanner_config(
         
         # Actualizar configuración
         if 'config' in config_updates:
-            bitcoin_30m_mainnet_scanner.config.update(config_updates['config'])
+            eth_scanner.config.update(config_updates['config'])
         
-        if 'detection_params' in config_updates:
-            bitcoin_30m_mainnet_scanner.detection_params.update(config_updates['detection_params'])
-        
-        logger.info("✅ Configuración del scanner Bitcoin 30m Mainnet actualizada")
+        logger.info("✅ Configuración del scanner ETH Mainnet actualizada")
         return {
             "success": True,
             "message": "Configuración actualizada exitosamente",
-            "config": bitcoin_30m_mainnet_scanner.config,
-            "detection_params": bitcoin_30m_mainnet_scanner.detection_params
+            "config": eth_scanner.config
         }
             
     except Exception as e:
-        logger.error(f"❌ Error actualizando configuración del scanner Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error actualizando configuración del scanner ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error actualizando configuración: {str(e)}")
 
 @router.get("/alerts")
-async def get_bitcoin_30m_mainnet_scanner_alerts(
+async def get_eth_scanner_alerts(
     current_user: User = Depends(get_current_user),
     limit: int = 50
 ):
-    """Obtiene las alertas generadas por el scanner Bitcoin 30m Mainnet"""
+    """Obtiene las alertas generadas por el scanner ETH Mainnet"""
     try:
         # Filtrar logs que contienen alertas
         alert_logs = []
-        for log in bitcoin_30m_mainnet_scanner.scanner_logs:
+        for log in eth_scanner.scanner_logs:
             if any(keyword in log['message'].lower() for keyword in ['señal', 'patrón', 'compra', 'alerta']):
                 alert_logs.append(log)
         
@@ -329,20 +323,20 @@ async def get_bitcoin_30m_mainnet_scanner_alerts(
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo alertas del scanner Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo alertas del scanner ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo alertas: {str(e)}")
 
 @router.get("/current-price")
-async def get_bitcoin_current_price_mainnet(
+async def get_eth_current_price_mainnet(
     current_user: User = Depends(get_current_user)
 ):
-    """Obtiene el precio actual de Bitcoin para Mainnet"""
+    """Obtiene el precio actual de ETH para Mainnet"""
     try:
         import requests
         
         # Obtener precio desde Binance
         url = "https://api.binance.com/api/v3/ticker/price"
-        params = {'symbol': 'BTCUSDT'}
+        params = {'symbol': 'ETHUSDT'}
         
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
@@ -358,20 +352,20 @@ async def get_bitcoin_current_price_mainnet(
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo precio actual de Bitcoin Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo precio actual de ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo precio: {str(e)}")
 
 @router.get("/positions")
-async def get_bitcoin_30m_mainnet_positions(
+async def get_eth_mainnet_positions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Obtiene las posiciones abiertas de Bitcoin 30m Mainnet"""
+    """Obtiene las posiciones abiertas de ETH Mainnet"""
     try:
         from app.db.models import TradingOrder, TradingApiKey
         from sqlalchemy import and_
         
-        logger.info(f"📊 Obteniendo posiciones Bitcoin 30m Mainnet para usuario {current_user.id}")
+        logger.info(f"📊 Obteniendo posiciones ETH Mainnet para usuario {current_user.id}")
         
         # Obtener API keys del usuario para mainnet
         api_keys = db.query(TradingApiKey).filter(
@@ -384,16 +378,13 @@ async def get_bitcoin_30m_mainnet_positions(
         
         positions = []
         for api_key in api_keys:
-            # Buscar órdenes de compra ejecutadas para BTCUSDT (solo las que NO están completed)
+            # Buscar órdenes de compra ejecutadas para ETHUSDT
             buy_orders = db.query(TradingOrder).filter(
                 TradingOrder.api_key_id == api_key.id,
-                TradingOrder.symbol == 'BTCUSDT',
+                TradingOrder.symbol == 'ETHUSDT',
                 TradingOrder.side == 'BUY',
                 TradingOrder.status == 'FILLED'
             ).order_by(TradingOrder.created_at.desc()).all()
-            
-            # Filtrar solo las que NO están marcadas como completed (ya vendidas)
-            buy_orders = [buy for buy in buy_orders if buy.status != 'completed']
             
             logger.info(f"📊 API Key {api_key.id}: {len(buy_orders)} órdenes BUY ejecutadas")
             
@@ -401,7 +392,7 @@ async def get_bitcoin_30m_mainnet_positions(
                 # Verificar si ya tiene orden de venta posterior
                 sell_order = db.query(TradingOrder).filter(
                     TradingOrder.api_key_id == api_key.id,
-                    TradingOrder.symbol == 'BTCUSDT',
+                    TradingOrder.symbol == 'ETHUSDT',
                     TradingOrder.side == 'SELL',
                     TradingOrder.status == 'FILLED',
                     TradingOrder.created_at > buy_order.created_at
@@ -427,7 +418,7 @@ async def get_bitcoin_30m_mainnet_positions(
                     }
                     
                     positions.append(position)
-                    logger.info(f"📊 Posición abierta encontrada: {position['quantity']:.6f} BTC @ ${position['entry_price']:.2f}")
+                    logger.info(f"📊 Posición abierta encontrada: {position['quantity']:.6f} ETH @ ${position['entry_price']:.2f}")
         
         logger.info(f"📊 Total posiciones abiertas: {len(positions)}")
         
@@ -441,38 +432,39 @@ async def get_bitcoin_30m_mainnet_positions(
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo posiciones Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo posiciones ETH Mainnet: {e}")
         logger.error(f"❌ Error details: {str(e)}")
         import traceback
         logger.error(f"❌ Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo posiciones: {str(e)}")
 
 @router.get("/performance")
-async def get_bitcoin_30m_mainnet_scanner_performance(
+async def get_eth_scanner_performance(
     current_user: User = Depends(get_current_user)
 ):
-    """Obtiene métricas de rendimiento del scanner Bitcoin 30m Mainnet"""
+    """Obtiene métricas de rendimiento del scanner ETH Mainnet"""
     try:
-        status_data = bitcoin_30m_mainnet_scanner.get_status()
+        status_data = eth_scanner.get_status()
         
         # Calcular métricas básicas
         uptime = None
-        if bitcoin_30m_mainnet_scanner.is_running and bitcoin_30m_mainnet_scanner.last_scan_time:
-            uptime = (datetime.now() - bitcoin_30m_mainnet_scanner.last_scan_time).total_seconds()
+        if eth_scanner.is_running and eth_scanner.last_scan_time:
+            uptime = (datetime.now() - eth_scanner.last_scan_time).total_seconds()
         
         return {
             "success": True,
             "data": {
-                "is_running": bitcoin_30m_mainnet_scanner.is_running,
-                "alerts_count": bitcoin_30m_mainnet_scanner.alerts_count,
-                "last_scan_time": bitcoin_30m_mainnet_scanner.last_scan_time.isoformat() if bitcoin_30m_mainnet_scanner.last_scan_time else None,
+                "is_running": eth_scanner.is_running,
+                "alerts_count": eth_scanner.alerts_count,
+                "last_scan_time": eth_scanner.last_scan_time.isoformat() if eth_scanner.last_scan_time else None,
                 "uptime_seconds": uptime,
-                "total_logs": len(bitcoin_30m_mainnet_scanner.scanner_logs),
+                "total_logs": len(eth_scanner.scanner_logs),
                 "environment": "mainnet",
-                "config": bitcoin_30m_mainnet_scanner.config
+                "config": eth_scanner.config
             }
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo rendimiento del scanner Bitcoin 30m Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo rendimiento del scanner ETH Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo rendimiento: {str(e)}")
+

@@ -58,6 +58,42 @@ class AutoTradingMainnet30mExecutor:
         except Exception as e:
             logger.error(f"Error verificando posición abierta: {e}")
             return None
+    
+    async def _detect_and_group_split_orders(self, db: Session, api_key_id: int) -> Dict[str, List[TradingOrder]]:
+        """
+        Detecta órdenes separadas del mismo orderId y las agrupa para venta
+        """
+        try:
+            # Buscar todas las órdenes BUY FILLED sin venta
+            open_orders = db.query(TradingOrder).filter(
+                TradingOrder.api_key_id == api_key_id,
+                TradingOrder.symbol == 'BTCUSDT',
+                TradingOrder.side == 'BUY',
+                TradingOrder.status == 'FILLED'
+            ).all()
+            
+            # Agrupar por binance_order_id
+            grouped_orders = {}
+            for order in open_orders:
+                if order.binance_order_id:
+                    if order.binance_order_id not in grouped_orders:
+                        grouped_orders[order.binance_order_id] = []
+                    grouped_orders[order.binance_order_id].append(order)
+            
+            # Filtrar solo grupos con múltiples órdenes (órdenes separadas)
+            split_groups = {order_id: orders for order_id, orders in grouped_orders.items() if len(orders) > 1}
+            
+            if split_groups:
+                logger.info(f"🔍 Detectadas {len(split_groups)} órdenes separadas para agrupar")
+                for order_id, orders in split_groups.items():
+                    total_qty = sum(float(order.executed_quantity or order.quantity or 0) for order in orders)
+                    logger.info(f"📊 Order ID {order_id}: {len(orders)} partes, total {total_qty:.8f} BTC")
+            
+            return split_groups
+            
+        except Exception as e:
+            logger.error(f"Error detectando órdenes separadas: {e}")
+            return {}
         
     async def execute_buy_order(self, signal: Dict, user_id: Optional[int] = None):
         """
@@ -81,6 +117,15 @@ class AutoTradingMainnet30mExecutor:
             
             for api_key in api_keys:
                 try:
+                    # Verificar balance de BNB para optimizar comisiones
+                    balance = await self._get_balance(api_key)
+                    bnb_balance = balance.get('BNB', 0.0) if balance else 0.0
+                    
+                    if bnb_balance > 0.1:  # Al menos 0.1 BNB para comisiones
+                        logger.info(f"✅ [Mainnet30mExecutor] API key {api_key.id} tiene {bnb_balance:.3f} BNB - Comisiones optimizadas")
+                    else:
+                        logger.warning(f"⚠️ [Mainnet30mExecutor] API key {api_key.id} tiene poco BNB ({bnb_balance:.3f}) - Considera agregar más para comisiones más baratas")
+                    
                     logger.info(f"[Mainnet30mExecutor] Intentando comprar con API key {api_key.id} | alloc_usdt={api_key.btc_30m_mainnet_allocated_usdt}")
                     await self._execute_buy_for_api_key(db, api_key, signal)
                 except Exception as e:
@@ -106,7 +151,8 @@ class AutoTradingMainnet30mExecutor:
             open_position = self._get_open_position(db, api_key.id)
             if open_position:
                 logger.info(f"API key {api_key.id} ya tiene una posición abierta (ID: {open_position.id}) - Saltando nueva compra")
-                return
+                # Devolver mensaje explícito para que el scanner lo muestre
+                return { 'success': False, 'msg': 'position_open' }
             
             # Obtener balance actual
             balance = await self._get_balance(api_key)
@@ -150,9 +196,38 @@ class AutoTradingMainnet30mExecutor:
                 order_id = str(binance_result.get('orderId')) if binance_result.get('orderId') else None
                 executed_qty = float(binance_result.get('executedQty', 0.0))
                 fills = binance_result.get('fills', [])
-                exec_price = float(fills[0].get('price', entry_price)) if fills else entry_price
-                commission = float(fills[0].get('commission', 0.0)) if fills else None
-                commission_asset = fills[0].get('commissionAsset', None) if fills else None
+                
+                # Calcular precio promedio ponderado para órdenes con múltiples fills
+                if len(fills) > 1:
+                    total_qty = 0
+                    total_value = 0
+                    total_commission = 0
+                    commission_asset = None
+                    
+                    for fill in fills:
+                        fill_qty = float(fill.get('qty', 0))
+                        fill_price = float(fill.get('price', 0))
+                        fill_commission = float(fill.get('commission', 0))
+                        
+                        total_qty += fill_qty
+                        total_value += fill_qty * fill_price
+                        total_commission += fill_commission
+                        
+                        if not commission_asset:
+                            commission_asset = fill.get('commissionAsset')
+                    
+                    exec_price = total_value / total_qty if total_qty > 0 else entry_price
+                    commission = total_commission if total_commission > 0 else None
+                    
+                    logger.info(f"📊 Orden ejecutada en {len(fills)} partes: {executed_qty:.8f} BTC @ precio promedio ${exec_price:.2f}")
+                    
+                    # Marcar como orden separada para futuras referencias
+                    new_order.is_split_order = True
+                    new_order.split_fills_count = len(fills)
+                else:
+                    exec_price = float(fills[0].get('price', entry_price)) if fills else entry_price
+                    commission = float(fills[0].get('commission', 0.0)) if fills else None
+                    commission_asset = fills[0].get('commissionAsset', None) if fills else None
 
                 update_trading_order_status(
                     db,
@@ -187,7 +262,7 @@ class AutoTradingMainnet30mExecutor:
     
     async def _get_balance(self, api_key: TradingApiKey) -> Optional[Dict]:
         """
-        Obtiene balance de la API key desde Binance
+        Obtiene balance de la API key desde Binance (incluyendo BNB)
         """
         try:
             # Obtener credenciales desencriptadas
@@ -209,7 +284,11 @@ class AutoTradingMainnet30mExecutor:
             resp.raise_for_status()
             data = resp.json()
             balances = { b['asset']: float(b['free']) + float(b['locked']) for b in data.get('balances', []) }
-            return { 'USDT': balances.get('USDT', 0.0), 'BTC': balances.get('BTC', 0.0) }
+            return { 
+                'USDT': balances.get('USDT', 0.0), 
+                'BTC': balances.get('BTC', 0.0),
+                'BNB': balances.get('BNB', 0.0)  # Agregar BNB para comisiones
+            }
             
         except Exception as e:
             logger.error(f"Error obteniendo balance: {e}")
@@ -299,22 +378,54 @@ class AutoTradingMainnet30mExecutor:
         """
         try:
             db = next(get_db())
+            # Paso 0: reconciliar con Binance antes de decidir ventas, para no operar sobre estado desfasado
+            await self._reconcile_with_binance(db)
             
-            # Obtener órdenes de compra activas para BTC 30m Mainnet
-            active_orders = db.query(TradingOrder).filter(
-                TradingOrder.symbol == 'BTCUSDT',
-                TradingOrder.status == 'FILLED',
-                TradingOrder.side == 'BUY'
+            # Obtener API keys activas
+            api_keys = db.query(TradingApiKey).filter(
+                TradingApiKey.btc_30m_mainnet_enabled == True,
+                TradingApiKey.is_active == True
             ).all()
             
-            if active_orders:
-                logger.info(f"🔍 [Mainnet30m] Monitoreando {len(active_orders)} posición(es) activa(s) para venta")
+            total_positions = 0
+            for api_key in api_keys:
+                # Detectar órdenes separadas y agruparlas
+                split_groups = await self._detect_and_group_split_orders(db, api_key.id)
                 
-                for order in active_orders:
+                # Obtener órdenes individuales (no agrupadas)
+                individual_orders = db.query(TradingOrder).filter(
+                    TradingOrder.api_key_id == api_key.id,
+                    TradingOrder.symbol == 'BTCUSDT',
+                    TradingOrder.status == 'FILLED',
+                    TradingOrder.side == 'BUY'
+                ).all()
+                
+                # Filtrar órdenes que no están en grupos separados
+                used_order_ids = set()
+                for orders in split_groups.values():
+                    for order in orders:
+                        used_order_ids.add(order.id)
+                
+                individual_orders = [order for order in individual_orders if order.id not in used_order_ids]
+                
+                # Procesar grupos de órdenes separadas
+                for order_id, grouped_orders in split_groups.items():
+                    try:
+                        await self._check_sell_conditions_for_group(db, grouped_orders)
+                        total_positions += 1
+                    except Exception as e:
+                        logger.error(f"Error verificando grupo de órdenes {order_id}: {e}")
+                
+                # Procesar órdenes individuales
+                for order in individual_orders:
                     try:
                         await self._check_sell_conditions(db, order)
+                        total_positions += 1
                     except Exception as e:
                         logger.error(f"Error verificando orden de venta {order.id}: {e}")
+            
+            if total_positions > 0:
+                logger.info(f"🔍 [Mainnet30m] Monitoreando {total_positions} posición(es) activa(s) para venta")
             else:
                 logger.info("🔍 [Mainnet30m] No hay posiciones activas para monitorear")
                     
@@ -336,6 +447,16 @@ class AutoTradingMainnet30mExecutor:
             if not api_key or not api_key.btc_30m_mainnet_enabled:
                 return
             
+            # COOLDOWN: Prevenir venta instantánea (mínimo 5 minutos después de la compra)
+            from datetime import datetime, timedelta
+            min_hold_time = timedelta(minutes=5)
+            time_since_buy = datetime.now() - buy_order.created_at
+            
+            if time_since_buy < min_hold_time:
+                remaining_minutes = (min_hold_time - time_since_buy).total_seconds() / 60
+                logger.info(f"⏳ Cooldown activo para posición {buy_order.id}: {remaining_minutes:.1f} min restantes")
+                return
+            
             # Obtener precio actual
             current_price = await self._get_current_price()
             if not current_price:
@@ -352,13 +473,23 @@ class AutoTradingMainnet30mExecutor:
             # Valor total invertido en la compra (USDT gastados)
             valor_compra_usdt = executed_quantity * entry_price
             
-            # Calcular cantidad vendible (restar comisión si fue pagada en BTC)
-            cantidad_vendible = executed_quantity
-            if buy_order.commission and buy_order.commission > 0 and buy_order.commission_asset == 'BTC':
-                cantidad_vendible -= buy_order.commission
+            # Obtener balance real de BTC disponible (Binance ya maneja las comisiones automáticamente)
+            balance = await self._get_balance(api_key)
+            if not balance:
+                logger.error(f"❌ No se pudo obtener balance para API key {api_key.id}")
+                return
             
-            # Valor actual de la posición (sin considerar comisión de venta aún)
-            valor_actual_usdt = cantidad_vendible * current_price
+            # Usar el balance real de BTC disponible (ya incluye comisiones descontadas)
+            cantidad_vendible = balance.get('BTC', 0.0)
+            
+            # Verificar que tenemos suficiente BTC para vender
+            if cantidad_vendible < 0.00001:  # Mínimo para BTCUSDT
+                logger.warning(f"⚠️ Balance BTC insuficiente para vender: {cantidad_vendible:.8f} BTC")
+                return
+            
+            # Valor actual de la posición: usar estrictamente la cantidad de la orden de compra
+            # para evitar sobreestimar si el usuario tiene más BTC en la cuenta.
+            valor_actual_usdt = executed_quantity * current_price
             
             # PnL en USDT y porcentaje (PRECISO)
             pnl_usdt = valor_actual_usdt - valor_compra_usdt
@@ -395,13 +526,13 @@ class AutoTradingMainnet30mExecutor:
             if should_sell:
                 await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct, pnl_usdt)
             else:
-                # Verificar tiempo máximo de hold (24 horas)
+                # Verificar tiempo máximo de hold (40 horas)
                 from datetime import datetime, timedelta
-                max_hold_time = timedelta(hours=24)
+                max_hold_time = timedelta(hours=40)
                 if datetime.now() - buy_order.created_at > max_hold_time:
                     should_sell = True
                     sell_reason = "MAX_HOLD_TIME"
-                    max_hold_log = f"⏰ MAX HOLD TIME activado para posición {buy_order.id} (24h)"
+                    max_hold_log = f"⏰ MAX HOLD TIME activado para posición {buy_order.id} (40h)"
                     logger.info(f"[Mainnet30m] {max_hold_log}")
                     bitcoin_30m_mainnet_scanner.add_log(max_hold_log, "WARNING", current_price=current_price)
                     await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct, pnl_usdt)
@@ -409,9 +540,110 @@ class AutoTradingMainnet30mExecutor:
         except Exception as e:
             logger.error(f"Error en _check_sell_conditions: {e}")
     
+    async def _check_sell_conditions_for_group(self, db: Session, grouped_orders: List[TradingOrder]):
+        """
+        Verifica condiciones de venta para un grupo de órdenes separadas del mismo orderId
+        """
+        try:
+            if not grouped_orders:
+                return
+            
+            # Usar la primera orden como referencia para API key y fechas
+            reference_order = grouped_orders[0]
+            api_key = db.query(TradingApiKey).filter(
+                TradingApiKey.id == reference_order.api_key_id
+            ).first()
+            
+            if not api_key or not api_key.btc_30m_mainnet_enabled:
+                return
+            
+            # COOLDOWN: Prevenir venta instantánea (mínimo 5 minutos después de la compra)
+            from datetime import datetime, timedelta
+            min_hold_time = timedelta(minutes=5)
+            time_since_buy = datetime.now() - reference_order.created_at
+            
+            if time_since_buy < min_hold_time:
+                remaining_minutes = (min_hold_time - time_since_buy).total_seconds() / 60
+                logger.info(f"⏳ Cooldown activo para grupo de órdenes {reference_order.binance_order_id}: {remaining_minutes:.1f} min restantes")
+                return
+            
+            # Obtener precio actual
+            current_price = await self._get_current_price()
+            if not current_price:
+                return
+            
+            # Calcular totales del grupo
+            total_quantity = 0
+            total_invested = 0
+            total_commission = 0
+            
+            for order in grouped_orders:
+                qty = float(order.executed_quantity or order.quantity or 0)
+                price = float(order.executed_price or order.price or 0)
+                commission = float(order.commission or 0)
+                
+                total_quantity += qty
+                total_invested += qty * price
+                total_commission += commission
+            
+            # Calcular precio promedio ponderado del grupo
+            avg_entry_price = total_invested / total_quantity if total_quantity > 0 else 0
+            
+            # Valor actual del grupo
+            current_value = total_quantity * current_price
+            
+            # PnL del grupo
+            pnl_usdt = current_value - total_invested
+            profit_pct = pnl_usdt / total_invested if total_invested > 0 else 0
+            
+            # Verificar condiciones de venta
+            profit_target = 0.04  # 4%
+            stop_loss = 0.015     # 1.5%
+            
+            # Log del estado del grupo
+            group_log = f"💰 Grupo {reference_order.binance_order_id} ({len(grouped_orders)} partes): Invertido ${total_invested:.2f} | Valor actual ${current_value:.2f} | PnL ${pnl_usdt:+.2f} ({profit_pct*100:+.2f}%) | TP: {profit_target*100}% | SL: {stop_loss*100}%"
+            logger.info(f"[Mainnet30m] {group_log}")
+            
+            # También agregar al scanner para que aparezca en el frontend
+            from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+            bitcoin_30m_mainnet_scanner.add_log(group_log, "INFO", current_price=current_price)
+            
+            should_sell = False
+            sell_reason = ""
+            
+            if profit_pct >= profit_target:
+                should_sell = True
+                sell_reason = "TAKE_PROFIT"
+                tp_log = f"🎯 TAKE PROFIT activado para grupo {reference_order.binance_order_id}: {profit_pct*100:+.2f}%"
+                logger.info(f"[Mainnet30m] {tp_log}")
+                bitcoin_30m_mainnet_scanner.add_log(tp_log, "SUCCESS", current_price=current_price)
+            elif profit_pct <= -stop_loss:
+                should_sell = True
+                sell_reason = "STOP_LOSS"
+                sl_log = f"🛑 STOP LOSS activado para grupo {reference_order.binance_order_id}: {profit_pct*100:+.2f}%"
+                logger.info(f"[Mainnet30m] {sl_log}")
+                bitcoin_30m_mainnet_scanner.add_log(sl_log, "WARNING", current_price=current_price)
+            
+            if should_sell:
+                await self._execute_sell_order_for_group(db, grouped_orders, current_price, sell_reason, profit_pct, pnl_usdt)
+            else:
+                # Verificar tiempo máximo de hold (40 horas)
+                from datetime import datetime, timedelta
+                max_hold_time = timedelta(hours=40)
+                if datetime.now() - reference_order.created_at > max_hold_time:
+                    should_sell = True
+                    sell_reason = "MAX_HOLD_TIME"
+                    max_hold_log = f"⏰ MAX HOLD TIME activado para grupo {reference_order.binance_order_id} (40h)"
+                    logger.info(f"[Mainnet30m] {max_hold_log}")
+                    bitcoin_30m_mainnet_scanner.add_log(max_hold_log, "WARNING", current_price=current_price)
+                    await self._execute_sell_order_for_group(db, grouped_orders, current_price, sell_reason, profit_pct, pnl_usdt)
+                
+        except Exception as e:
+            logger.error(f"Error en _check_sell_conditions_for_group: {e}")
+    
     async def _execute_sell_order(self, db: Session, buy_order: TradingOrder, sell_price: float, reason: str, profit_pct: float, pnl_usdt: float):
         """
-        Ejecuta orden de venta
+        Ejecuta orden de venta usando balance real de Binance
         """
         try:
             # Obtener API key
@@ -422,34 +654,39 @@ class AutoTradingMainnet30mExecutor:
             if not api_key:
                 return
             
-            # Calcular cantidad a vender (usar executed_quantity si está disponible)
-            sell_quantity = buy_order.executed_quantity or buy_order.quantity
-            original_quantity = sell_quantity
+            # Obtener balance real de BTC disponible (Binance ya maneja las comisiones automáticamente)
+            balance = await self._get_balance(api_key)
+            if not balance:
+                logger.error(f"❌ No se pudo obtener balance para API key {api_key.id}")
+                return
             
-            # Restar comisión si fue pagada en BTC (el activo que estamos vendiendo)
+            # Usar la menor entre el balance real y la cantidad original de la orden
+            original_quantity = buy_order.executed_quantity or buy_order.quantity
+            sell_quantity = min(balance.get('BTC', 0.0), original_quantity)
+            
+            # Verificar balance de BNB para comisiones optimizadas
+            bnb_balance = balance.get('BNB', 0.0)
+            bnb_info = f" (BNB: {bnb_balance:.3f})" if bnb_balance > 0 else " (sin BNB - comisiones estándar)"
+            
+            # Log de comisión de compra para referencia
             commission_info = ""
             if buy_order.commission and buy_order.commission > 0:
-                if buy_order.commission_asset == 'BTC':
-                    # La comisión fue en BTC, debemos restarla del saldo disponible
-                    sell_quantity -= buy_order.commission
-                    commission_info = f" (Comisión compra: {buy_order.commission:.8f} BTC)"
-                    logger.info(f"📊 [Mainnet30m] Ajustando cantidad por comisión de compra: {original_quantity:.8f} BTC - {buy_order.commission:.8f} BTC = {sell_quantity:.8f} BTC")
-                    from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
-                    bitcoin_30m_mainnet_scanner.add_log(
-                        f"📊 Comisión de compra pagada en BTC: {buy_order.commission:.8f} BTC",
-                        "INFO",
-                        current_price=sell_price
-                    )
-                else:
-                    # La comisión fue en otro activo (BNB, USDT, etc.)
-                    commission_info = f" (Comisión compra: {buy_order.commission:.8f} {buy_order.commission_asset})"
-                    logger.info(f"📊 [Mainnet30m] Comisión de compra pagada en {buy_order.commission_asset}: {buy_order.commission:.8f}")
-                    from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
-                    bitcoin_30m_mainnet_scanner.add_log(
-                        f"📊 Comisión de compra pagada en {buy_order.commission_asset}: {buy_order.commission:.8f}",
-                        "INFO",
-                        current_price=sell_price
-                    )
+                commission_info = f" (Comisión compra: {buy_order.commission:.8f} {buy_order.commission_asset})"
+                logger.info(f"📊 [Mainnet30m] Comisión de compra pagada en {buy_order.commission_asset}: {buy_order.commission:.8f}")
+                from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                bitcoin_30m_mainnet_scanner.add_log(
+                    f"📊 Comisión de compra pagada en {buy_order.commission_asset}: {buy_order.commission:.8f}",
+                    "INFO",
+                    current_price=sell_price
+                )
+            
+            # Verificar que tenemos BTC suficiente para vender
+            if sell_quantity < 0.00001:
+                error_log = f"❌ Balance BTC insuficiente para vender: {sell_quantity:.8f} BTC"
+                logger.error(f"[Mainnet30m] {error_log}")
+                from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                bitcoin_30m_mainnet_scanner.add_log(error_log, "ERROR", current_price=sell_price)
+                return
             
             # Ajustar cantidad según LOT_SIZE de Binance (stepSize = 0.00001000 para BTCUSDT)
             import math
@@ -477,7 +714,7 @@ class AutoTradingMainnet30mExecutor:
                 bitcoin_30m_mainnet_scanner.add_log(error_log, "ERROR", current_price=sell_price)
                 return
             
-            logger.info(f"💰 [Mainnet30m] Preparando venta: {sell_quantity:.8f} BTC @ ${sell_price:,.2f} (${order_value:.2f}) - {reason}{commission_info}")
+            logger.info(f"💰 [Mainnet30m] Preparando venta: {sell_quantity:.8f} BTC @ ${sell_price:,.2f} (${order_value:.2f}) - {reason}{commission_info}{bnb_info}")
             
             # Crear orden de venta
             sell_order_data = {
@@ -512,7 +749,7 @@ class AutoTradingMainnet30mExecutor:
             
             if binance_result and binance_result.get('success'):
                 # Preparar datos para la base de datos
-                from app.db.schemas import TradingOrderCreate
+                from app.schemas.trading_schema import TradingOrderCreate
                 
                 db_order_data = TradingOrderCreate(
                     api_key_id=sell_order_data['api_key_id'],
@@ -587,6 +824,262 @@ class AutoTradingMainnet30mExecutor:
                 
         except Exception as e:
             logger.error(f"Error ejecutando venta: {e}")
+    
+    async def _execute_sell_order_for_group(self, db: Session, grouped_orders: List[TradingOrder], sell_price: float, reason: str, profit_pct: float, pnl_usdt: float):
+        """
+        Ejecuta orden de venta para un grupo de órdenes separadas del mismo orderId
+        """
+        try:
+            if not grouped_orders:
+                return
+            
+            # Usar la primera orden como referencia
+            reference_order = grouped_orders[0]
+            api_key = db.query(TradingApiKey).filter(TradingApiKey.id == reference_order.api_key_id).first()
+            
+            if not api_key:
+                logger.error(f"❌ [Mainnet30m] No se encontró API key para grupo {reference_order.binance_order_id}")
+                return
+            
+            # Calcular cantidad total del grupo
+            total_quantity = sum(float(order.executed_quantity or order.quantity or 0) for order in grouped_orders)
+            
+            # Obtener balance real de BTC disponible
+            balance = await self._get_balance(api_key)
+            if not balance:
+                logger.error(f"❌ No se pudo obtener balance para API key {api_key.id}")
+                return
+            
+            # Usar la menor entre el balance real y la cantidad total del grupo
+            sell_quantity = min(balance.get('BTC', 0.0), total_quantity)
+            
+            # Verificar que tenemos suficiente BTC para vender
+            if sell_quantity < 0.00001:  # Mínimo para BTCUSDT
+                logger.warning(f"⚠️ Balance BTC insuficiente para vender grupo: {sell_quantity:.8f} BTC")
+                return
+            
+            # Ajustar cantidad según LOT_SIZE de Binance
+            import math
+            step_size = 0.00001  # 0.00001 BTC es el stepSize para BTCUSDT
+            sell_quantity = math.floor(sell_quantity / step_size) * step_size
+            
+            if sell_quantity < 0.00001:
+                logger.warning(f"⚠️ Cantidad ajustada insuficiente para vender: {sell_quantity:.8f} BTC")
+                return
+            
+            # Preparar datos de la orden de venta
+            sell_order_data = {
+                'user_id': api_key.user_id,
+                'api_key_id': api_key.id,
+                'symbol': 'BTCUSDT',
+                'side': 'SELL',
+                'type': 'MARKET',
+                'quantity': sell_quantity,
+                'price': sell_price,
+                'total_usdt': sell_quantity * sell_price,
+                'reason': f'GROUP_SELL_{reason}',
+                'metadata': {
+                    'group_order_id': reference_order.binance_order_id,
+                    'group_size': len(grouped_orders),
+                    'profit_pct': profit_pct,
+                    'pnl_usdt': pnl_usdt
+                }
+            }
+            
+            # Ejecutar venta en Binance
+            binance_result = await self._execute_binance_order(api_key, sell_order_data)
+            
+            if not binance_result or not binance_result.get('success'):
+                error_msg = binance_result.get('msg', 'Error desconocido') if binance_result else 'Sin respuesta de Binance'
+                error_code = binance_result.get('code', 'N/A') if binance_result else 'N/A'
+                error_log = f"❌ Error ejecutando venta de grupo en Binance: [{error_code}] {error_msg}"
+                logger.error(f"[Mainnet30m] {error_log}")
+                return
+            
+            if binance_result and binance_result.get('success'):
+                # Crear orden SELL en la base de datos
+                from app.schemas.trading_schema import TradingOrderCreate
+                sell_order = TradingOrderCreate(
+                    api_key_id=api_key.id,
+                    symbol='BTCUSDT',
+                    side='SELL',
+                    order_type='market',
+                    quantity=sell_quantity,
+                    price=sell_price,
+                    total_usdt=sell_quantity * sell_price,
+                    user_id=api_key.user_id,
+                    reason=f'GROUP_SELL_{reason}'
+                )
+                
+                db_sell_order = create_trading_order(db, sell_order, api_key.user_id)
+                
+                # Actualizar con datos de ejecución
+                db_sell_order.executed_price = binance_result.get('fills', [{}])[0].get('price') if binance_result.get('fills') else sell_price
+                db_sell_order.executed_quantity = sell_quantity
+                db_sell_order.status = 'FILLED'
+                db_sell_order.binance_order_id = str(binance_result.get('orderId', ''))
+                
+                # Extraer comisión de venta
+                sell_commission = 0
+                sell_commission_asset = ""
+                if binance_result.get('fills'):
+                    for fill in binance_result['fills']:
+                        if 'commission' in fill:
+                            sell_commission += float(fill.get('commission', 0))
+                            sell_commission_asset = fill.get('commissionAsset', '')
+                
+                db_sell_order.commission = sell_commission if sell_commission > 0 else None
+                db_sell_order.commission_asset = sell_commission_asset if sell_commission_asset else None
+                
+                # Marcar todas las órdenes del grupo como completed
+                for order in grouped_orders:
+                    order.status = 'completed'
+                    order.sell_order_id = db_sell_order.id
+                
+                db.commit()
+                
+                # Log de éxito
+                success_log = f"✅ VENTA DE GRUPO EJECUTADA: {sell_quantity:.6f} BTC a ${sell_price:.2f} | PnL: ${pnl_usdt:.2f} ({profit_pct*100:+.2f}%) | Grupo: {reference_order.binance_order_id}"
+                logger.info(f"[Mainnet30m] {success_log}")
+                
+                from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                bitcoin_30m_mainnet_scanner.add_log(success_log, "SUCCESS", current_price=sell_price)
+                
+        except Exception as e:
+            logger.error(f"Error ejecutando venta de grupo: {e}")
+
+    async def _reconcile_with_binance(self, db: Session):
+        """Sincroniza órdenes ejecutadas en Binance que no existen en la DB local.
+        - Crea órdenes SELL faltantes posteriores a un BUY si aparecen en el historial de trades de Binance.
+        - Marca el motivo como EXTERNAL_SELL para distinguirlas en UI.
+        """
+        try:
+            # Cargar API keys mainnet activas del usuario
+            api_keys = db.query(TradingApiKey).filter(
+                TradingApiKey.is_testnet == False,
+                TradingApiKey.is_active == True,
+                TradingApiKey.btc_30m_mainnet_enabled == True
+            ).all()
+            if not api_keys:
+                return
+            from urllib.parse import urlencode
+            import hmac, hashlib, time
+            base = "https://api.binance.com"
+            endpoint = "/api/v3/myTrades"
+            for api_key in api_keys:
+                try:
+                    creds = get_decrypted_api_credentials(db, api_key.id)
+                    if not creds:
+                        continue
+                    key, secret = creds
+                    # Consultar últimas 200 trades de BTCUSDT
+                    ts = int(time.time() * 1000)
+                    params = {
+                        'symbol': 'BTCUSDT',
+                        'limit': 200,
+                        'timestamp': ts,
+                        'recvWindow': 5000
+                    }
+                    query = urlencode(params)
+                    signature = hmac.new(secret.encode(), query.encode(), hashlib.sha256).hexdigest()
+                    headers = { 'X-MBX-APIKEY': key }
+                    resp = requests.get(f"{base}{endpoint}?{query}&signature={signature}", headers=headers, timeout=15)
+                    if resp.status_code != 200:
+                        logger.warning(f"[Reconcile] Binance myTrades {resp.status_code}: {resp.text}")
+                        continue
+                    trades = resp.json() or []
+                    # Construir mapa de ventas más recientes
+                    # Binance trades incluyen 'isBuyer' y 'orderId'; sumaremos fills por orderId
+                    order_id_to_sell_exec = {}
+                    for t in trades:
+                        try:
+                            if t.get('isBuyer') is False and t.get('symbol') == 'BTCUSDT':
+                                oid = str(t.get('orderId'))
+                                qty = float(t.get('qty', 0.0))
+                                price = float(t.get('price', 0.0))
+                                time_ms = int(t.get('time', 0))
+                                item = order_id_to_sell_exec.get(oid, {'qty':0.0, 'price':price, 'time':time_ms})
+                                item['qty'] += qty
+                                item['price'] = price  # último precio
+                                item['time'] = max(item['time'], time_ms)
+                                order_id_to_sell_exec[oid] = item
+                        except Exception:
+                            continue
+                    if not order_id_to_sell_exec:
+                        continue
+                    # Buscar BUY locales abiertas
+                    open_buys = db.query(TradingOrder).filter(
+                        TradingOrder.api_key_id == api_key.id,
+                        TradingOrder.symbol == 'BTCUSDT',
+                        TradingOrder.side == 'BUY',
+                        TradingOrder.status == 'FILLED'
+                    ).all()
+                    for buy in open_buys:
+                        # Ya tiene SELL local?
+                        has_sell = db.query(TradingOrder).filter(
+                            TradingOrder.api_key_id == api_key.id,
+                            TradingOrder.symbol == 'BTCUSDT',
+                            TradingOrder.side == 'SELL',
+                            TradingOrder.status == 'FILLED',
+                            TradingOrder.created_at > buy.created_at
+                        ).first()
+                        if has_sell:
+                            continue
+                        # Intentar encontrar cualquier trade SELL posterior a la BUY
+                        last_sell = None
+                        buy_time_ms = int((buy.created_at.timestamp()) * 1000) if buy.created_at else 0
+                        for t in trades:
+                            try:
+                                if t.get('isBuyer') is False and t.get('symbol') == 'BTCUSDT' and int(t.get('time',0)) > buy_time_ms:
+                                    if (last_sell is None) or (int(t.get('time',0)) > int(last_sell.get('time',0))):
+                                        last_sell = t
+                            except Exception:
+                                continue
+                        # Fallback adicional: si no encontramos trade posterior, usar balance casi cero como señal
+                        if not last_sell:
+                            balance = await self._get_balance(api_key)
+                            btc_bal = balance.get('BTC', 0.0) if balance else 0.0
+                            threshold = 0.00002  # tolerancia ligeramente superior al stepSize
+                            if btc_bal < threshold and len(trades) > 0:
+                                for t in trades:
+                                    if t.get('isBuyer') is False and t.get('symbol') == 'BTCUSDT':
+                                        if (last_sell is None) or (int(t.get('time',0)) > int(last_sell.get('time',0))):
+                                            last_sell = t
+                        if not last_sell:
+                            continue
+                        sell_qty = float(last_sell.get('qty', 0.0))
+                        sell_price = float(last_sell.get('price', 0.0))
+                        from app.schemas.trading_schema import TradingOrderCreate
+                        sell_order = TradingOrderCreate(
+                                api_key_id=api_key.id,
+                                symbol='BTCUSDT',
+                                side='sell',
+                                order_type='market',
+                                quantity=sell_qty,
+                                price=sell_price
+                            )
+                        new_sell = create_trading_order(db, sell_order, api_key.user_id)
+                        new_sell.status = 'FILLED'
+                        new_sell.binance_order_id = str(last_sell.get('orderId',''))
+                        new_sell.executed_price = sell_price
+                        new_sell.executed_quantity = sell_qty
+                        new_sell.reason = 'EXTERNAL_SELL'
+                        db.commit()
+                        # Cerrar BUY local
+                        buy.status = 'completed'
+                        buy.sell_order_id = new_sell.id
+                        db.commit()
+                        logger.info(f"[Reconcile] SELL externo sincronizado: buy_id={buy.id} sell_id={new_sell.id} qty={sell_qty} @ {sell_price}")
+                        from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                        bitcoin_30m_mainnet_scanner.add_log(
+                            f"🔄 Sincronizado SELL externo desde Binance: {sell_qty:.8f} BTC @ ${sell_price:,.2f}",
+                            "INFO",
+                            current_price=sell_price
+                        )
+                except Exception as inner:
+                    logger.error(f"[Reconcile] Error con API key {api_key.id}: {inner}")
+        except Exception as e:
+            logger.error(f"[Reconcile] Error general: {e}")
     
     async def _get_current_price(self) -> Optional[float]:
         """

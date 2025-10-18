@@ -470,18 +470,66 @@ def get_user_portfolio_summary(db: Session, user_id: int) -> dict:
                 if success and isinstance(account_info, dict):
                     balances = account_info.get('balances', [])
                     
-                    # Calcular balance total en USDT
+                    # Cache simple de precios en USDT para minimizar llamadas
+                    price_cache = {}
+                    import requests
+                    
+                    # Calcular balance total en USDT (mejora incremental: sumar también BTC/BNB/otros con conversión spot)
                     for balance in balances:
                         asset = balance.get('asset', '')
+                        if not asset:
+                            continue
                         free = float(balance.get('free', 0))
                         locked = float(balance.get('locked', 0))
-                        
+                        total_amount = free + locked
+                        if total_amount <= 0:
+                            continue
+                        env_key = "testnet" if api_key.is_testnet else "mainnet"
                         if asset == 'USDT':
-                            env_key = "testnet" if api_key.is_testnet else "mainnet"
-                            portfolio_summary["by_environment"][env_key]["balance_usdt"] += free + locked
-                            portfolio_summary["total_balance_usdt"] += free + locked
+                            portfolio_summary["by_environment"][env_key]["balance_usdt"] += total_amount
+                            portfolio_summary["total_balance_usdt"] += total_amount
                             portfolio_summary["available_balance_usdt"] += free
                             portfolio_summary["locked_balance_usdt"] += locked
+                        else:
+                            # Intentar convertir a USDT con ticker directo; si no existe, intentar vía BTC
+                            usdt_value = 0.0
+                            try:
+                                symbol_direct = f"{asset}USDT"
+                                if symbol_direct not in price_cache:
+                                    r = requests.get("https://api.binance.com/api/v3/ticker/price", params={"symbol": symbol_direct}, timeout=5)
+                                    if r.status_code == 200:
+                                        price_cache[symbol_direct] = float(r.json().get('price', 0))
+                                    else:
+                                        price_cache[symbol_direct] = 0.0
+                                price = price_cache.get(symbol_direct, 0.0)
+                                if price and price > 0:
+                                    usdt_value = total_amount * price
+                                else:
+                                    # Fallback vía BTC si hay par contra BTC
+                                    symbol_btc = f"{asset}BTC"
+                                    if symbol_btc not in price_cache:
+                                        r2 = requests.get("https://api.binance.com/api/v3/ticker/price", params={"symbol": symbol_btc}, timeout=5)
+                                        if r2.status_code == 200:
+                                            price_cache[symbol_btc] = float(r2.json().get('price', 0))
+                                        else:
+                                            price_cache[symbol_btc] = 0.0
+                                    price_ab = price_cache.get(symbol_btc, 0.0)
+                                    if price_ab and price_ab > 0:
+                                        # Obtener BTCUSDT
+                                        if 'BTCUSDT' not in price_cache:
+                                            r3 = requests.get("https://api.binance.com/api/v3/ticker/price", params={"symbol": "BTCUSDT"}, timeout=5)
+                                            if r3.status_code == 200:
+                                                price_cache['BTCUSDT'] = float(r3.json().get('price', 0))
+                                            else:
+                                                price_cache['BTCUSDT'] = 0.0
+                                        btc_usdt = price_cache.get('BTCUSDT', 0.0)
+                                        if btc_usdt and btc_usdt > 0:
+                                            usdt_value = total_amount * price_ab * btc_usdt
+                            except Exception:
+                                usdt_value = 0.0
+                            if usdt_value > 0:
+                                portfolio_summary["by_environment"][env_key]["balance_usdt"] += usdt_value
+                                portfolio_summary["total_balance_usdt"] += usdt_value
                         
             except Exception as e:
                 logger.warning(f"No se pudo obtener balance para API key {api_key.id}: {e}")

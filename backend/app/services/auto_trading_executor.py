@@ -27,6 +27,81 @@ class AutoTradingExecutor:
     
     def __init__(self):
         self.active_connections = {}  # Cache de conexiones por usuario
+        
+        # Estados del bot para separar lógica de compra y venta
+        self.current_states = {
+            'btc': "SEARCHING_BUY",    # SEARCHING_BUY, MONITORING_SELL, IDLE
+            'eth': "SEARCHING_BUY",
+            'paxg': "SEARCHING_BUY",
+            'bnb': "SEARCHING_BUY"
+        }
+        self.state_changed_at = {}
+        self.last_position_checks = {}
+    
+    async def _check_current_state(self, crypto: str) -> str:
+        """
+        Determina el estado actual del bot basado en posiciones abiertas para una crypto específica
+        """
+        try:
+            from app.db.database import get_db
+            from app.db.models import TradingOrder, TradingApiKey
+            
+            db = next(get_db())
+            
+            # Mapear crypto a símbolo y campo de habilitación
+            crypto_config = {
+                'btc': {'symbol': 'BTCUSDT', 'enabled_field': 'btc_4h_mainnet_enabled'},
+                'eth': {'symbol': 'ETHUSDT', 'enabled_field': 'eth_mainnet_enabled'},
+                'paxg': {'symbol': 'PAXGUSDT', 'enabled_field': 'paxg_4h_mainnet_enabled'},
+                'bnb': {'symbol': 'BNBUSDT', 'enabled_field': 'bnb_mainnet_enabled'}
+            }
+            
+            if crypto not in crypto_config:
+                return "IDLE"
+            
+            config = crypto_config[crypto]
+            
+            # Verificar si hay posiciones abiertas
+            api_keys = db.query(TradingApiKey).filter(
+                getattr(TradingApiKey, config['enabled_field']) == True,
+                TradingApiKey.is_active == True
+            ).all()
+            
+            has_open_positions = False
+            for api_key in api_keys:
+                open_orders = db.query(TradingOrder).filter(
+                    TradingOrder.api_key_id == api_key.id,
+                    TradingOrder.symbol == config['symbol'],
+                    TradingOrder.side == 'BUY',
+                    TradingOrder.status == 'FILLED'
+                ).all()
+                
+                if open_orders:
+                    has_open_positions = True
+                    break
+            
+            # Determinar estado
+            if has_open_positions:
+                new_state = "MONITORING_SELL"
+            else:
+                new_state = "SEARCHING_BUY"
+            
+            # Log cambio de estado
+            if new_state != self.current_states.get(crypto, "SEARCHING_BUY"):
+                old_state = self.current_states.get(crypto, "SEARCHING_BUY")
+                self.current_states[crypto] = new_state
+                self.state_changed_at[crypto] = datetime.now()
+                
+                state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
+                state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
+                
+                logger.info(f"{state_emoji} CAMBIO DE ESTADO {crypto.upper()}: {state_desc}")
+            
+            return self.current_states.get(crypto, "SEARCHING_BUY")
+            
+        except Exception as e:
+            logger.error(f"Error verificando estado {crypto}: {e}")
+            return "IDLE"
     
     def _get_open_position(self, db: Session, api_key_id: int, symbol: str) -> Optional[TradingOrder]:
         """
@@ -67,37 +142,74 @@ class AutoTradingExecutor:
         1. API keys MAINNET configuradas
         2. Auto trading habilitado
         3. La crypto específica habilitada
+        4. Estado SEARCHING_BUY (sin posiciones abiertas)
         
         Args:
-            crypto: 'btc', 'eth', 'bnb'
+            crypto: 'btc', 'eth', 'bnb', 'btc_4h', etc.
             signal_data: Datos de la señal del scanner (precio, nivel ruptura, etc.)
             alerta_id: ID de la alerta que disparó esta señal
         """
         try:
+            # Verificar estado actual del bot para esta crypto
+            current_state = await self._check_current_state(crypto)
+            
+            if current_state != "SEARCHING_BUY":
+                logger.info(f"🔍 [AUTO TRADING] {crypto.upper()} en estado {current_state} - No ejecutando compra")
+                return
+            
             db = SessionLocal()
             
-            # Obtener usuarios con auto-trading habilitado para esta crypto (solo MAINNET)
-            enabled_api_keys = crud_trading.get_users_with_auto_trading_enabled(db, crypto)
-            
-            # Filtrar solo API keys de MAINNET
-            mainnet_api_keys = [key for key in enabled_api_keys if not key.is_testnet]
-            
-            if not mainnet_api_keys:
-                logger.info(f"📊 No hay usuarios con auto-trading MAINNET habilitado para {crypto.upper()}")
-                return
+            # Para BTC 4h, usar lógica específica
+            if crypto == 'btc':
+                # Buscar usuarios con BTC 4h mainnet habilitado
+                mainnet_api_keys = db.query(TradingApiKey).filter(
+                    TradingApiKey.is_testnet == False,
+                    TradingApiKey.is_active == True,
+                    TradingApiKey.btc_4h_mainnet_enabled == True
+                ).all()
                 
-            logger.info(f"🚀 [AUTO TRADING MAINNET] Ejecutando señal de compra {crypto.upper()} para {len(mainnet_api_keys)} usuarios")
-            logger.info(f"📊 [AUTO TRADING MAINNET] Datos de la señal: {signal_data}")
-            
-            symbol = f"{crypto.upper()}USDT"
-            
-            for api_key_config in mainnet_api_keys:
-                try:
-                    await self._execute_user_buy_order(
-                        db, api_key_config, symbol, signal_data, alerta_id
-                    )
-                except Exception as e:
-                    logger.error(f"❌ Error ejecutando compra MAINNET para usuario {api_key_config.user_id}: {e}")
+                if not mainnet_api_keys:
+                    logger.info(f"📊 No hay usuarios con auto-trading MAINNET habilitado para BTC 4h")
+                    db.close()
+                    return
+                    
+                logger.info(f"🚀 [AUTO TRADING MAINNET] Ejecutando señal de compra BTC 4h para {len(mainnet_api_keys)} usuarios")
+                logger.info(f"📊 [AUTO TRADING MAINNET] Datos de la señal: {signal_data}")
+                
+                symbol = "BTCUSDT"
+                
+                for api_key_config in mainnet_api_keys:
+                    try:
+                        await self._execute_user_buy_order(
+                            db, api_key_config, symbol, signal_data, alerta_id
+                        )
+                    except Exception as e:
+                        logger.error(f"❌ Error ejecutando compra MAINNET para usuario {api_key_config.user_id}: {e}")
+                        
+            else:
+                # Para otras cryptos, usar la lógica original
+                enabled_api_keys = crud_trading.get_users_with_auto_trading_enabled(db, crypto)
+                
+                # Filtrar solo API keys de MAINNET
+                mainnet_api_keys = [key for key in enabled_api_keys if not key.is_testnet]
+                
+                if not mainnet_api_keys:
+                    logger.info(f"📊 No hay usuarios con auto-trading MAINNET habilitado para {crypto.upper()}")
+                    db.close()
+                    return
+                    
+                logger.info(f"🚀 [AUTO TRADING MAINNET] Ejecutando señal de compra {crypto.upper()} para {len(mainnet_api_keys)} usuarios")
+                logger.info(f"📊 [AUTO TRADING MAINNET] Datos de la señal: {signal_data}")
+                
+                symbol = f"{crypto.upper()}USDT"
+                
+                for api_key_config in mainnet_api_keys:
+                    try:
+                        await self._execute_user_buy_order(
+                            db, api_key_config, symbol, signal_data, alerta_id
+                        )
+                    except Exception as e:
+                        logger.error(f"❌ Error ejecutando compra MAINNET para usuario {api_key_config.user_id}: {e}")
                     
             db.close()
             
@@ -135,14 +247,33 @@ class AutoTradingExecutor:
             #     return
             
             # Calcular cantidad a comprar
-            # Usar campo específico de asignación si existe (ej: bnb_mainnet_allocated_usdt)
+            # Usar campo específico de asignación si existe (ej: btc_4h_mainnet_allocated_usdt)
             crypto_lower = symbol.replace('USDT', '').lower()
-            allocated_field = f"{crypto_lower}_mainnet_allocated_usdt"
             
-            if hasattr(api_key_config, allocated_field):
-                position_size_usdt = getattr(api_key_config, allocated_field, 0) or api_key_config.max_position_size_usdt
+            # Para BTC, verificar si es BTC 4h (por el contexto del scanner)
+            if crypto_lower == 'btc':
+                # Verificar si tiene asignación específica para BTC 4h
+                if hasattr(api_key_config, 'btc_4h_mainnet_allocated_usdt') and api_key_config.btc_4h_mainnet_allocated_usdt > 0:
+                    position_size_usdt = api_key_config.btc_4h_mainnet_allocated_usdt
+                else:
+                    position_size_usdt = api_key_config.max_position_size_usdt
             else:
-                position_size_usdt = api_key_config.max_position_size_usdt
+                # Para otras cryptos, usar la lógica original
+                allocated_field = f"{crypto_lower}_mainnet_allocated_usdt"
+                
+                if hasattr(api_key_config, allocated_field):
+                    position_size_usdt = getattr(api_key_config, allocated_field, 0) or api_key_config.max_position_size_usdt
+                else:
+                    position_size_usdt = api_key_config.max_position_size_usdt
+            
+            # Verificar balance de BNB para optimizar comisiones
+            balance = await self._get_balance_from_binance(api_key_config)
+            bnb_balance = balance.get('BNB', 0.0) if balance else 0.0
+            
+            if bnb_balance > 0.1:  # Al menos 0.1 BNB para comisiones
+                logger.info(f"✅ [AUTO TRADING] Usuario {user_id} tiene {bnb_balance:.3f} BNB - Comisiones optimizadas")
+            else:
+                logger.warning(f"⚠️ [AUTO TRADING] Usuario {user_id} tiene poco BNB ({bnb_balance:.3f}) - Considera agregar más para comisiones más baratas")
             
             logger.info(f"💰 [AUTO TRADING] Usuario {user_id} - Asignación {symbol}: ${position_size_usdt:.2f} USDT")
             
@@ -241,8 +372,16 @@ class AutoTradingExecutor:
         """
         Verifica condiciones de salida para todas las posiciones abiertas de una crypto
         Usa las mismas condiciones que los scanners: 8% TP, 3% SL, max hold time
+        Solo ejecuta si el bot está en estado MONITORING_SELL
         """
         try:
+            # Verificar estado actual del bot para esta crypto
+            current_state = await self._check_current_state(crypto)
+            
+            if current_state != "MONITORING_SELL":
+                logger.info(f"📊 [AUTO TRADING] {crypto.upper()} en estado {current_state} - No verificando ventas")
+                return
+            
             db = SessionLocal()
             
             # Obtener todas las posiciones activas para esta crypto
@@ -341,7 +480,7 @@ class AutoTradingExecutor:
             return None
     
     async def _execute_exit_order(self, db: Session, buy_order: TradingOrder, current_price: float, reason: str):
-        """Ejecuta orden de salida"""
+        """Ejecuta orden de salida usando balance real de Binance"""
         try:
             user_id = buy_order.user_id
             symbol = buy_order.symbol
@@ -351,14 +490,24 @@ class AutoTradingExecutor:
             if not api_key_config:
                 return
             
-            # Calcular cantidad a vender (restar comisión de compra si fue en el asset)
-            sell_quantity = buy_order.executed_quantity or buy_order.quantity
-            symbol_base = symbol.replace('USDT', '')  # Ej: BTC, BNB, ETH
+            # Obtener balance real de la crypto disponible (Binance ya maneja las comisiones automáticamente)
+            balance = await self._get_balance_from_binance(api_key_config)
+            if not balance:
+                logger.error(f"❌ No se pudo obtener balance para API key {api_key_config.id}")
+                return
             
-            if buy_order.commission and buy_order.commission > 0 and buy_order.commission_asset == symbol_base:
-                # La comisión de compra fue en el asset que estamos vendiendo
-                sell_quantity -= buy_order.commission
-                logger.info(f"📊 Ajustando cantidad por comisión de compra: {buy_order.executed_quantity:.8f} - {buy_order.commission:.8f} = {sell_quantity:.8f} {symbol_base}")
+            # Usar el balance real de la crypto disponible
+            symbol_base = symbol.replace('USDT', '').lower()  # Ej: btc, bnb, eth
+            sell_quantity = balance.get(symbol_base.upper(), 0.0)
+            original_quantity = buy_order.executed_quantity or buy_order.quantity
+            
+            # Verificar balance de BNB para comisiones optimizadas
+            bnb_balance = balance.get('BNB', 0.0)
+            bnb_info = f" (BNB: {bnb_balance:.3f})" if bnb_balance > 0 else " (sin BNB - comisiones estándar)"
+            
+            # Log de comisión de compra para referencia
+            if buy_order.commission and buy_order.commission > 0:
+                logger.info(f"📊 Comisión de compra pagada en {buy_order.commission_asset}: {buy_order.commission:.8f}")
             
             # Ajustar cantidad según LOT_SIZE de Binance
             import math
@@ -370,14 +519,16 @@ class AutoTradingExecutor:
             order_value = sell_quantity * current_price
             
             if sell_quantity < step_size:
-                logger.error(f"❌ Cantidad muy pequeña para vender: {sell_quantity:.8f} {symbol_base} (mínimo: {step_size:.8f})")
+                error_log = f"❌ Balance {symbol_base} insuficiente para vender: {sell_quantity:.8f} {symbol_base} (mínimo: {step_size:.8f})"
+                logger.error(error_log)
                 return
             
             if order_value < min_notional:
-                logger.error(f"❌ Valor de orden muy bajo: ${order_value:.2f} (mínimo: ${min_notional:.2f})")
+                error_log = f"❌ Valor de orden muy bajo: ${order_value:.2f} (mínimo: ${min_notional:.2f})"
+                logger.error(error_log)
                 return
             
-            logger.info(f"💰 Preparando venta: {sell_quantity:.8f} {symbol_base} @ ${current_price:,.2f} (${order_value:.2f}) - {reason}")
+            logger.info(f"💰 Preparando venta: {sell_quantity:.8f} {symbol_base} @ ${current_price:,.2f} (${order_value:.2f}) - {reason}{bnb_info}")
             
             # Crear orden SELL
             sell_order_data = TradingOrderCreate(
@@ -575,6 +726,41 @@ class AutoTradingExecutor:
             'SOLUSDT': 0.01,      # 0.01 SOL
         }
         return step_sizes.get(symbol, 0.00001)  # Default: 0.00001
+    
+    async def _get_balance_from_binance(self, api_key_config: TradingApiKey) -> Optional[Dict]:
+        """
+        Obtiene balance de la API key desde Binance (incluyendo BNB)
+        """
+        try:
+            # Obtener credenciales desencriptadas
+            credentials = crud_trading.get_decrypted_api_credentials(SessionLocal(), api_key_config.id)
+            if not credentials:
+                return None
+            key, secret = credentials
+
+            import hmac, hashlib, time
+            from urllib.parse import urlencode
+            url = "https://api.binance.com/api/v3/account"
+            ts = int(time.time() * 1000)
+            params = { 'timestamp': ts }
+            query = urlencode(params)
+            signature = hmac.new(secret.encode(), query.encode(), hashlib.sha256).hexdigest()
+            headers = { 'X-MBX-APIKEY': key }
+            resp = requests.get(f"{url}?{query}&signature={signature}", headers=headers, timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
+            balances = { b['asset']: float(b['free']) + float(b['locked']) for b in data.get('balances', []) }
+            return { 
+                'USDT': balances.get('USDT', 0.0), 
+                'BTC': balances.get('BTC', 0.0),
+                'ETH': balances.get('ETH', 0.0),
+                'BNB': balances.get('BNB', 0.0),
+                'SOL': balances.get('SOL', 0.0)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo balance: {e}")
+            return None
     
 
 # Instancia singleton

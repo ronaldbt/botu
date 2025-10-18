@@ -59,6 +59,71 @@ class BnbScannerService:
             'reasons': []
         }
         
+        # Estados del bot para separar lógica de compra y venta
+        self.current_state = "SEARCHING_BUY"  # SEARCHING_BUY, MONITORING_SELL, IDLE
+        self.state_changed_at = None
+        self.last_position_check = None
+        
+    async def _check_current_state(self) -> str:
+        """
+        Determina el estado actual del bot basado en posiciones abiertas
+        """
+        try:
+            from app.db.database import get_db
+            from app.db.models import TradingOrder, TradingApiKey
+            
+            db = next(get_db())
+            
+            # Verificar si hay posiciones abiertas de BNB
+            api_keys = db.query(TradingApiKey).filter(
+                TradingApiKey.bnb_mainnet_enabled == True,
+                TradingApiKey.is_active == True
+            ).all()
+            
+            has_open_positions = False
+            for api_key in api_keys:
+                open_orders = db.query(TradingOrder).filter(
+                    TradingOrder.api_key_id == api_key.id,
+                    TradingOrder.symbol == 'BNBUSDT',
+                    TradingOrder.side == 'BUY',
+                    TradingOrder.status == 'FILLED'
+                ).all()
+                
+                if open_orders:
+                    has_open_positions = True
+                    break
+            
+            # Determinar estado
+            if has_open_positions:
+                new_state = "MONITORING_SELL"
+            else:
+                new_state = "SEARCHING_BUY"
+            
+            # Log cambio de estado
+            if new_state != self.current_state:
+                old_state = self.current_state
+                self.current_state = new_state
+                self.state_changed_at = datetime.now()
+                
+                state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
+                state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
+                
+                self._add_log(
+                    "INFO",
+                    f"{state_emoji} CAMBIO DE ESTADO: {state_desc}",
+                    {
+                        'new_state': new_state,
+                        'previous_state': old_state,
+                        'timestamp': self.state_changed_at.isoformat()
+                    }
+                )
+            
+            return self.current_state
+            
+        except Exception as e:
+            logger.error(f"Error verificando estado BNB: {e}")
+            return "IDLE"
+    
     def update_config(self, new_config: Dict[str, Any]):
         """Actualiza la configuración del scanner (solo admin)"""
         self.config.update(new_config)

@@ -1,0 +1,801 @@
+Attaching to botu-backend
+botu-backend | INFO:     172.18.0.5:32844 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760641849799 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:42210 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:56272 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760642029999 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47864 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:52544 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,090.99
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=280
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=294
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,090.99
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,090.99
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:     172.18.0.5:52890 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760642210104 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:41592 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:41608 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760642329349 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:44766 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760642390892 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:59968 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:36550 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:38212 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760642571827 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:45980 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:54348 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760642752119 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:60550 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:43274 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:58672 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760642963974 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:56184 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:50844 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760643144505 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:36798 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57718 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:37874 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760643324741 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53354 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:60234 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760643505646 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:54832 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53776 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:51102 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760643686205 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46046 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $107,972.01
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $107,972.01
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $107,972.01
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.64 | PnL $-0.25 (-2.85%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $107,972.01] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 1.77s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,138.96
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,138.96
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,138.96
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 1.07s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,859.02
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,859.02
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,859.02
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.63s
+botu-backend | INFO:     172.18.0.5:55704 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760643866739 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47512 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $107,877.75
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=279
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=293
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $107,877.75
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $107,877.75
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:     172.18.0.5:33030 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:33044 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760644033342 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:58212 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760644047205 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47850 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:55678 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760644227233 HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,201.03
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=278
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=292
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,201.03
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,201.03
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $107,694.72
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $107,694.72
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $107,694.72
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.62 | PnL $-0.28 (-3.10%)
+botu-backend | WARNING:app.services.auto_trading_executor:🛑 STOP LOSS BTC ID 10: -3.10%
+botu-backend | INFO:app.services.auto_trading_executor:📊 Comisión de compra pagada en BNB: 0.00000564
+botu-backend | ERROR:app.services.auto_trading_executor:❌ Balance btc insuficiente para vender: 0.00000000 btc (mínimo: 0.00001000)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $107,694.72] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 1.38s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,143.31
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,143.31
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,143.31
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.55s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,840.37
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,840.37
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,840.37
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.56s
+botu-backend | WARNING:app.telegram.health_bot:⚠️ No hay administradores con Telegram configurado
+botu-backend | INFO:app.services.health_monitor_service:📤 Health Bot: 0/0 admins notificados
+botu-backend | WARNING:app.services.health_monitor_service:⚠️ Errores en Health Bot: No hay administradores
+botu-backend | INFO:app.services.health_monitor_service:📊 Reporte de salud programado enviado a administradores
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $107,890.00
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=277
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=291
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $107,890.00
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $107,890.00
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,180.75
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=290
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,180.75
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,180.75
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $108,238.26
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $108,238.26
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,238.26
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.66 | PnL $-0.23 (-2.61%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,238.26] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.90s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,159.59
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,159.59
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,159.59
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.59s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,873.17
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,873.17
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,873.17
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.97s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,262.69
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=289
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,262.69
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,262.69
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,101.59
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=288
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,101.59
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,101.59
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $107,916.63
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $107,916.63
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $107,916.63
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.63 | PnL $-0.26 (-2.90%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $107,916.63] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 1.08s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,155.39
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,155.39
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,155.39
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.57s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,868.94
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,868.94
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,868.94
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.55s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $107,908.76
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=287
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $107,908.76
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $107,908.76
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,030.00
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=286
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,030.00
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,030.00
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $108,000.11
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $108,000.11
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,000.11
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.64 | PnL $-0.25 (-2.83%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,000.11] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.77s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,145.42
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,145.42
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,145.42
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.54s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,885.95
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,885.95
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,885.95
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.59s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,150.74
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=285
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] ✅ Señal U aceptada - entry: $110128.03 (precio $108150.74)
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-TRADE] 🎯 Detectados 1 patrones U potenciales
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] 🚨 ALERTA: Patrón U detectado - Precio actual: $108150.74 | Precio entrada sugerido: $110128.03
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 📊 Análisis técnico: Profundidad 2.84% | Fuerza de señal: 955.495 | Potencial ganancia: +4.0%
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ [Mainnet30mExecutor] API key 1 tiene poco BNB (0.008) - Considera agregar más para comisiones más baratas
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:[Mainnet30mExecutor] Intentando comprar con API key 1 | alloc_usdt=10.0
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:API key 1 ya tiene una posición abierta (ID: 10) - Saltando nueva compra
+botu-backend | ERROR:app.services.bitcoin30m_mainnet:Error procesando señal Mainnet: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ERROR] ❌ Error procesando señal: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,150.74
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,226.30
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=284
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,226.30
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,226.30
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $108,673.71
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $108,673.71
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,673.71
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.69 | PnL $-0.20 (-2.22%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,673.71] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.75s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,149.52
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,149.52
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,149.52
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.63s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,920.76
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,920.76
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,920.76
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.55s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,627.40
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=283
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] ✅ Señal U aceptada - entry: $110128.03 (precio $108627.40)
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-TRADE] 🎯 Detectados 1 patrones U potenciales
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] 🚨 ALERTA: Patrón U detectado - Precio actual: $108627.40 | Precio entrada sugerido: $110128.03
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 📊 Análisis técnico: Profundidad 2.84% | Fuerza de señal: 955.495 | Potencial ganancia: +4.0%
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ [Mainnet30mExecutor] API key 1 tiene poco BNB (0.008) - Considera agregar más para comisiones más baratas
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:[Mainnet30mExecutor] Intentando comprar con API key 1 | alloc_usdt=10.0
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:API key 1 ya tiene una posición abierta (ID: 10) - Saltando nueva compra
+botu-backend | ERROR:app.services.bitcoin30m_mainnet:Error procesando señal Mainnet: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ERROR] ❌ Error procesando señal: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,627.40
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,973.12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 12
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=282
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] ✅ Señal U aceptada - entry: $110128.03 (precio $108973.12)
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-TRADE] 🎯 Detectados 1 patrones U potenciales
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] 🚨 ALERTA: Patrón U detectado - Precio actual: $108973.12 | Precio entrada sugerido: $110128.03
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 📊 Análisis técnico: Profundidad 2.84% | Fuerza de señal: 955.495 | Potencial ganancia: +4.0%
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ [Mainnet30mExecutor] API key 1 tiene poco BNB (0.008) - Considera agregar más para comisiones más baratas
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:[Mainnet30mExecutor] Intentando comprar con API key 1 | alloc_usdt=10.0
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:API key 1 ya tiene una posición abierta (ID: 10) - Saltando nueva compra
+botu-backend | ERROR:app.services.bitcoin30m_mainnet:Error procesando señal Mainnet: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ERROR] ❌ Error procesando señal: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,973.12
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $108,678.96
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $108,678.96
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,678.96
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.69 | PnL $-0.20 (-2.22%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,678.96] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.68s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,147.30
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,147.30
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,147.30
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.56s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,918.40
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,918.40
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,918.40
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.55s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,757.42
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=281
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,757.42
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,757.42
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,480.86
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=280
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,480.86
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,480.86
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $108,804.72
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $108,804.72
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,804.72
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.70 | PnL $-0.19 (-2.10%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,804.72] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.66s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,144.16
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,144.16
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,144.16
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.59s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,924.43
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,924.43
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,924.43
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 1.37s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,811.00
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=279
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,811.00
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,811.00
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $109,092.19
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=278
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] ✅ Señal U aceptada - entry: $110128.03 (precio $109092.19)
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-TRADE] 🎯 Detectados 1 patrones U potenciales
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] 🚨 ALERTA: Patrón U detectado - Precio actual: $109092.19 | Precio entrada sugerido: $110128.03
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 📊 Análisis técnico: Profundidad 2.84% | Fuerza de señal: 955.495 | Potencial ganancia: +4.0%
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ [Mainnet30mExecutor] API key 1 tiene poco BNB (0.008) - Considera agregar más para comisiones más baratas
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:[Mainnet30mExecutor] Intentando comprar con API key 1 | alloc_usdt=10.0
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:API key 1 ya tiene una posición abierta (ID: 10) - Saltando nueva compra
+botu-backend | ERROR:app.services.bitcoin30m_mainnet:Error procesando señal Mainnet: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ERROR] ❌ Error procesando señal: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $109,092.19
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $108,965.24
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $108,965.24
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,965.24
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.72 | PnL $-0.17 (-1.96%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,965.24] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.64s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,147.52
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,147.52
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,147.52
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 1.40s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,923.20
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,923.20
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,923.20
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.54s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $109,058.65
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=277
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] ✅ Señal U aceptada - entry: $110128.03 (precio $109058.65)
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-TRADE] 🎯 Detectados 1 patrones U potenciales
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ALERT] 🚨 ALERTA: Patrón U detectado - Precio actual: $109058.65 | Precio entrada sugerido: $110128.03
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 📊 Análisis técnico: Profundidad 2.84% | Fuerza de señal: 955.495 | Potencial ganancia: +4.0%
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ [Mainnet30mExecutor] API key 1 tiene poco BNB (0.008) - Considera agregar más para comisiones más baratas
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:[Mainnet30mExecutor] Intentando comprar con API key 1 | alloc_usdt=10.0
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:API key 1 ya tiene una posición abierta (ID: 10) - Saltando nueva compra
+botu-backend | ERROR:app.services.bitcoin30m_mainnet:Error procesando señal Mainnet: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-ERROR] ❌ Error procesando señal: 'NoneType' object has no attribute 'get'
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $109,058.65
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $109,084.01
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $109,084.01
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $109,084.01
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:     172.18.0.2:44548 - "GET / HTTP/1.1" 200 OK
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $108,960.01
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $108,960.01
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,960.01
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.72 | PnL $-0.17 (-1.96%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,960.01] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.67s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,146.10
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,146.10
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,146.10
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.61s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,922.07
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,922.07
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,922.07
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.55s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,949.08
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,949.08
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,949.08
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,742.98
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,742.98
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,742.98
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $108,557.97
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $108,557.97
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,557.97
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.68 | PnL $-0.21 (-2.33%)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,557.97] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.61s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,136.30
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,136.30
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,136.30
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.59s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,900.24
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,900.24
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,900.24
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.53s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,540.94
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,540.94
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,540.94
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $108,274.92
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 10
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $108,274.92
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $108,274.92
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $107,024.32
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $107,024.32
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $107,024.32
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.56 | PnL $-0.33 (-3.71%)
+botu-backend | WARNING:app.services.auto_trading_executor:🛑 STOP LOSS BTC ID 10: -3.71%
+botu-backend | INFO:app.services.auto_trading_executor:📊 Comisión de compra pagada en BNB: 0.00000564
+botu-backend | ERROR:app.services.auto_trading_executor:❌ Balance btc insuficiente para vender: 0.00000000 btc (mínimo: 0.00001000)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $107,024.32] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.99s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,107.52
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,107.52
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,107.52
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.53s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,832.46
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,832.46
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,832.46
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.54s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $107,092.81
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 10
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $107,092.81
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $107,092.81
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $106,383.35
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 10
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $106,383.35
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $106,383.35
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $105,754.98
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $105,754.98
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $105,754.98
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.46 | PnL $-0.43 (-4.85%)
+botu-backend | WARNING:app.services.auto_trading_executor:🛑 STOP LOSS BTC ID 10: -4.85%
+botu-backend | INFO:app.services.auto_trading_executor:📊 Comisión de compra pagada en BNB: 0.00000564
+botu-backend | ERROR:app.services.auto_trading_executor:❌ Balance btc insuficiente para vender: 0.00000000 btc (mínimo: 0.00001000)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $105,754.98] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 1.11s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,066.04
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,066.04
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,066.04
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.52s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,775.63
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,775.63
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,775.63
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.56s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $105,802.97
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 10
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $105,802.97
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $105,802.97
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $104,859.77
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 10
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $104,859.77
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $104,859.77
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $104,975.13
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $104,975.13
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $104,975.13
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.40 | PnL $-0.49 (-5.55%)
+botu-backend | WARNING:app.services.auto_trading_executor:🛑 STOP LOSS BTC ID 10: -5.55%
+botu-backend | INFO:app.services.auto_trading_executor:📊 Comisión de compra pagada en BNB: 0.00000564
+botu-backend | ERROR:app.services.auto_trading_executor:❌ Balance btc insuficiente para vender: 0.00000000 btc (mínimo: 0.00001000)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $104,975.13] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 1.02s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,042.68
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,042.68
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,042.68
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.55s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,726.19
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,726.19
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,726.19
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.64s
+botu-backend | WARNING:app.telegram.health_bot:⚠️ No hay administradores con Telegram configurado
+botu-backend | INFO:app.services.health_monitor_service:📤 Health Bot: 0/0 admins notificados
+botu-backend | WARNING:app.services.health_monitor_service:⚠️ Errores en Health Bot: No hay administradores
+botu-backend | INFO:app.services.health_monitor_service:📊 Reporte de salud programado enviado a administradores
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $105,042.01
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 10
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $105,042.01
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $105,042.01
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.api.v1.trading_routes:✅ Balance USDT obtenido para usuario 1: $68.64
+botu-backend | INFO:app.api.v1.trading_routes:📊 Status trading para usuario 1: Auto=True, Balance=$68.64
+botu-backend | INFO:     172.18.0.5:46482 - "GET /trading/orders?limit=20 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46486 - "GET /trading/api-keys HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46484 - "GET /trading/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46506 - "GET /bnb-bot/logs HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46488 - "GET /eth-bot/logs HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46504 - "GET /bitcoin-bot/logs HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46560 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46520 - "GET /trading/api-keys HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46528 - "GET /trading/orders?limit=20 HTTP/1.0" 200 OK
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Obteniendo posiciones Bitcoin 30m Mainnet para usuario 1
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Encontradas 1 API keys mainnet activas
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 API Key 1: 2 órdenes BUY ejecutadas
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Posición abierta encontrada: 0.000080 BTC @ $111142.17
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Total posiciones abiertas: 1
+botu-backend | INFO:     172.18.0.5:46550 - "GET /trading/scanner/bitcoin-30m-mainnet/positions HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46534 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46568 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760691348202 HTTP/1.0" 200 OK
+botu-backend | INFO:app.api.v1.trading_routes:✅ Balances obtenidos para usuario 1: 4 activos
+botu-backend | INFO:app.services.bitcoin_scanner_30m_service:📊 Datos 30m obtenidos: 1000 velas, último precio: $104,880.14
+botu-backend | INFO:app.api.v1.trading_routes:✅ Balances obtenidos para usuario 1: 4 activos
+botu-backend | INFO:app.services.bitcoin_scanner_30m_service:📊 Datos 30m obtenidos: 1000 velas, último precio: $104,880.14
+botu-backend | INFO:     172.18.0.5:46610 - "GET /trading/balances/1 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46580 - "GET /trading/scanner/bitcoin-30m/current-price HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46592 - "GET /trading/balances/1 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46596 - "GET /trading/scanner/bitcoin-30m/current-price HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46618 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760691348374 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:42698 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:35006 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:32972 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760691530460 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:41690 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:51778 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760691711263 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:45492 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:52078 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:33046 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760691891267 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:39104 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:40516 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760692072084 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:56482 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:49824 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46882 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760692252058 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:56818 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:39492 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760692432093 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:58330 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:51392 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:50120 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760692612946 HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $105,131.55
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 10
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $105,131.55
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $105,131.55
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:     172.18.0.5:45672 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:45676 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760692706354 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:34274 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760692793657 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57654 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:52056 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:56408 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760692974518 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:39318 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:55516 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760693154576 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57008 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:48746 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:33328 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760693335299 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:40942 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:48878 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760693515295 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:48592 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:60866 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:41384 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760693695814 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:55322 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46490 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760693875958 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53496 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47684 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:43840 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760694056005 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:52620 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $105,227.79
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $105,227.79
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $105,227.79
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.42 | PnL $-0.47 (-5.32%)
+botu-backend | WARNING:app.services.auto_trading_executor:🛑 STOP LOSS BTC ID 10: -5.32%
+botu-backend | INFO:app.services.auto_trading_executor:📊 Comisión de compra pagada en BNB: 0.00000564
+botu-backend | ERROR:app.services.auto_trading_executor:❌ Balance btc insuficiente para vender: 0.00000000 btc (mínimo: 0.00001000)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $105,227.79] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.94s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,050.72
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,050.72
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,050.72
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.54s
+botu-backend | INFO:     172.18.0.5:48896 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760694236040 HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,749.23
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,749.23
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,749.23
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.55s
+botu-backend | INFO:     172.18.0.5:37442 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53054 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:58476 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760694416037 HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $105,149.76
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=296
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $105,149.76
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $105,149.76
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:     172.18.0.5:34346 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:34348 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760694514626 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:50314 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760694596033 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:45662 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:49024 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:38298 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760694776305 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:52952 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:38774 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760694956602 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:43176 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:54554 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:36312 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760695137328 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47166 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:41838 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760695317592 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:50204 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:34944 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:49604 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760695497590 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:35322 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:44426 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760695678473 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:45442 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46254 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:50390 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760695858634 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57784 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:33720 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760696039314 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:40984 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57470 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:43932 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760696219579 HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $104,410.08
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=295
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $104,410.08
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $104,410.08
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:     172.18.0.5:53262 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53264 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760696321235 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:41904 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760696399574 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:60446 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47274 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:50430 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760696579874 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:43696 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:50414 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760696760368 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:44176 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:38064 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:35000 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760696941158 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:46598 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:43590 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760697121712 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47956 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:51918 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:35904 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760697302316 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47878 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:58054 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760697482312 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:59110 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:47830 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57652 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760697662310 HTTP/1.0" 200 OK
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Obteniendo posiciones Bitcoin 30m Mainnet para usuario 1
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Encontradas 1 API keys mainnet activas
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 API Key 1: 2 órdenes BUY ejecutadas
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Posición abierta encontrada: 0.000080 BTC @ $111142.17
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Total posiciones abiertas: 1
+botu-backend | INFO:     172.18.0.5:57654 - "GET /trading/scanner/bitcoin-30m-mainnet/positions HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57670 - "GET /trading/api-keys HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57698 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57688 - "GET /trading/orders?limit=20 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57684 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:app.api.v1.trading_routes:✅ Balances obtenidos para usuario 1: 4 activos
+botu-backend | INFO:app.services.bitcoin_scanner_30m_service:📊 Datos 30m obtenidos: 1000 velas, último precio: $104,296.94
+botu-backend | INFO:app.services.bitcoin_scanner_30m_service:📊 Datos 30m obtenidos: 1000 velas, último precio: $104,296.95
+botu-backend | INFO:app.api.v1.trading_routes:✅ Balances obtenidos para usuario 1: 4 activos
+botu-backend | INFO:     172.18.0.5:57738 - "GET /trading/balances/1 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57722 - "GET /trading/balances/1 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57716 - "GET /trading/scanner/bitcoin-30m/current-price HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57712 - "GET /trading/scanner/bitcoin-30m/current-price HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:57748 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760697665037 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:49746 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] Iniciando escaneo de BTCUSDT
+botu-backend | INFO:app.services.bitcoin_scanner_service:📊 Datos obtenidos: 1000 velas, último precio: $104,357.50
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🟢 Escaneo BTC 4h - Velas: 1000 | Precio: $104,357.50
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $104,357.50
+botu-backend | INFO:app.services.auto_trading_executor:💰 Posición BTC ID 10: Invertido $8.89 | Valor actual $8.35 | PnL $-0.54 (-6.10%)
+botu-backend | WARNING:app.services.auto_trading_executor:🛑 STOP LOSS BTC ID 10: -6.10%
+botu-backend | INFO:app.services.auto_trading_executor:📊 Comisión de compra pagada en BNB: 0.00000564
+botu-backend | ERROR:app.services.auto_trading_executor:❌ Balance btc insuficiente para vender: 0.00000000 btc (mínimo: 0.00001000)
+botu-backend | INFO:app.services.bitcoin_scanner_service:[Bitcoin4h-Mainnet-🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $104,357.50] INFO
+botu-backend | INFO:app.services.bitcoin_scanner_service:✅ Escaneo completado en 0.96s
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Iniciando escaneo de BNBUSDT
+botu-backend | INFO:app.services.bnb_scanner_service:📊 BNB Datos obtenidos: 1000 velas, último precio: $1,039.71
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB 🟢 Escaneo BNB 4h - Velas: 1000 | Precio: $1,039.71
+botu-backend | INFO:app.services.bnb_scanner_service:🔵 BNB Escaneo completado - No se detectaron patrones de compra | Precio: $1,039.71
+botu-backend | INFO:app.services.bnb_scanner_service:✅ BNB Escaneo completado en 0.55s
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Iniciando escaneo de ETHUSDT
+botu-backend | INFO:app.services.eth_scanner_service:📊 ETH Datos obtenidos: 1000 velas, último precio: $3,695.31
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH 🟢 Escaneo ETH 4h - Velas: 1000 | Precio: $3,695.31
+botu-backend | INFO:app.services.eth_scanner_service:🔵 ETH Escaneo completado - No se detectaron patrones de compra | Precio: $3,695.31
+botu-backend | INFO:app.services.eth_scanner_service:✅ ETH Escaneo completado en 0.52s
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🟢 Inicio de escaneo 30m - Velas: 300 | Precio BTC: $104,530.28
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔎 Diagnóstico: mínimos significativos detectados: 11
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🧪 Evaluación de mínimo idx=294
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: $104,530.28
+botu-backend | INFO:app.services.bitcoin30m_mainnet:[Bitcoin30m-Mainnet-INFO] 🔍 Monitoreando posiciones activas para venta | Precio BTC: $104,530.28
+botu-backend | INFO:app.services.auto_trading_mainnet30m_executor:🔍 [Mainnet30m] Monitoreando 2 posición(es) activa(s) para venta
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | WARNING:app.services.auto_trading_mainnet30m_executor:⚠️ Balance BTC insuficiente para vender: 0.00000975 BTC
+botu-backend | INFO:app.api.v1.trading_routes:✅ Balance USDT obtenido para usuario 1: $68.64
+botu-backend | INFO:app.api.v1.trading_routes:📊 Status trading para usuario 1: Auto=True, Balance=$68.64
+botu-backend | INFO:     172.18.0.5:53368 - "GET /trading/api-keys HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53352 - "GET /trading/orders?limit=20 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53372 - "GET /trading/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53384 - "GET /eth-bot/logs HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53396 - "GET /bitcoin-bot/logs HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53406 - "GET /bnb-bot/logs HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53420 - "GET /trading/api-keys HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53468 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53452 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53428 - "GET /trading/orders?limit=20 HTTP/1.0" 200 OK
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Obteniendo posiciones Bitcoin 30m Mainnet para usuario 1
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Encontradas 1 API keys mainnet activas
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 API Key 1: 2 órdenes BUY ejecutadas
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Posición abierta encontrada: 0.000080 BTC @ $111142.17
+botu-backend | INFO:app.api.v1.bitcoin30m_mainnet_routes:📊 Total posiciones abiertas: 1
+botu-backend | INFO:     172.18.0.5:53438 - "GET /trading/scanner/bitcoin-30m-mainnet/positions HTTP/1.0" 200 OK
+botu-backend | INFO:app.api.v1.trading_routes:✅ Balances obtenidos para usuario 1: 4 activos
+botu-backend | INFO:app.api.v1.trading_routes:✅ Balances obtenidos para usuario 1: 4 activos
+botu-backend | INFO:app.services.bitcoin_scanner_30m_service:📊 Datos 30m obtenidos: 1000 velas, último precio: $104,671.03
+botu-backend | INFO:app.services.bitcoin_scanner_30m_service:📊 Datos 30m obtenidos: 1000 velas, último precio: $104,671.03
+botu-backend | INFO:     172.18.0.5:53482 - "GET /trading/balances/1 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53500 - "GET /trading/balances/1 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53496 - "GET /trading/scanner/bitcoin-30m/current-price HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53480 - "GET /trading/scanner/bitcoin-30m/current-price HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:53514 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760698211856 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:51098 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:41956 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:35230 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760698393517 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:48414 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:37846 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760698573516 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:54488 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:48350 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:42222 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760698753608 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:54578 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:39996 - "GET /trading/scanner/bitcoin-30m-mainnet/logs?_ts=1760698933659 HTTP/1.0" 200 OK
+botu-backend | INFO:     172.18.0.5:33880 - "GET /trading/scanner/bitcoin-30m-mainnet/status HTTP/1.0" 200 OK

@@ -244,6 +244,23 @@ class TradingApiKey(Base):
     
     # BNB Mainnet (4h scanner - solo mainnet, no testnet)
     bnb_mainnet_enabled = Column(Boolean, default=False)
+    # BNB Mainnet - Asignación
+    bnb_mainnet_allocated_usdt = Column(Float, default=0.0)
+    
+    # ETH Mainnet (4h scanner - solo mainnet, no testnet)
+    eth_mainnet_enabled = Column(Boolean, default=False)
+    # ETH Mainnet - Asignación
+    eth_mainnet_allocated_usdt = Column(Float, default=0.0)
+    
+    # BTC 4h Mainnet (4h scanner - solo mainnet, no testnet)
+    btc_4h_mainnet_enabled = Column(Boolean, default=False)
+    # BTC 4h Mainnet - Asignación
+    btc_4h_mainnet_allocated_usdt = Column(Float, default=0.0)
+    
+    # PAXG 4h Mainnet (4h scanner - solo mainnet, no testnet)
+    paxg_4h_mainnet_enabled = Column(Boolean, default=False)
+    # PAXG 4h Mainnet - Asignación
+    paxg_4h_mainnet_allocated_usdt = Column(Float, default=0.0)
     
     # Asignación de balance por crypto (en USDT)
     btc_allocated_usdt = Column(Float, default=0.0)

@@ -44,12 +44,17 @@ class Bitcoin30mMainnetScanner:
         self._stop_event: _asyncio.Event = _asyncio.Event()
         self._task: Optional[_asyncio.Task] = None
         
+        # Estados del bot para separar lógica de compra y venta
+        self.current_state = "SEARCHING_BUY"  # SEARCHING_BUY, MONITORING_SELL, IDLE
+        self.state_changed_at = None
+        self.last_position_check = None
+        
         # Configuración específica para Mainnet (más conservadora)
         self.config = {
             'scan_interval': 1800,  # 30 minutos
             'profit_target': 0.04,  # 4% objetivo
             'stop_loss': 0.015,     # 1.5% stop loss
-            'max_hold_periods': 48, # Máximo 24 horas
+            'max_hold_periods': 80, # Máximo 40 horas (80 períodos de 30m)
             'environment': 'mainnet'
         }
         
@@ -64,6 +69,66 @@ class Bitcoin30mMainnetScanner:
         }
         
         self.executor = AutoTradingMainnet30mExecutor()
+    
+    async def _check_current_state(self) -> str:
+        """
+        Determina el estado actual del bot basado en posiciones abiertas
+        """
+        try:
+            from app.db.database import get_db
+            from app.db.models import TradingOrder, TradingApiKey
+            
+            db = next(get_db())
+            
+            # Verificar si hay posiciones abiertas
+            api_keys = db.query(TradingApiKey).filter(
+                TradingApiKey.btc_30m_mainnet_enabled == True,
+                TradingApiKey.is_active == True
+            ).all()
+            
+            has_open_positions = False
+            for api_key in api_keys:
+                open_orders = db.query(TradingOrder).filter(
+                    TradingOrder.api_key_id == api_key.id,
+                    TradingOrder.symbol == 'BTCUSDT',
+                    TradingOrder.side == 'BUY',
+                    TradingOrder.status == 'FILLED'
+                ).all()
+                
+                if open_orders:
+                    has_open_positions = True
+                    break
+            
+            # Determinar estado
+            if has_open_positions:
+                new_state = "MONITORING_SELL"
+            else:
+                new_state = "SEARCHING_BUY"
+            
+            # Log cambio de estado
+            if new_state != self.current_state:
+                old_state = self.current_state
+                self.current_state = new_state
+                self.state_changed_at = datetime.now()
+                
+                state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
+                state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
+                
+                self.add_log(
+                    f"{state_emoji} CAMBIO DE ESTADO: {state_desc}",
+                    "INFO",
+                    {
+                        'new_state': new_state,
+                        'previous_state': old_state,
+                        'timestamp': self.state_changed_at.isoformat()
+                    }
+                )
+            
+            return self.current_state
+            
+        except Exception as e:
+            logger.error(f"Error verificando estado: {e}")
+            return "IDLE"
         
     async def start_scanner(self):
         """Inicia el scanner de Bitcoin 30m para Mainnet (loop cancelable)."""
@@ -114,7 +179,7 @@ class Bitcoin30mMainnetScanner:
             self._task = None
     
     async def _scan_cycle(self):
-        """Ciclo principal de escaneo"""
+        """Ciclo principal de escaneo con lógica de estados"""
         try:
             self.last_scan_time = datetime.now()
             
@@ -128,7 +193,7 @@ class Bitcoin30mMainnetScanner:
                     current_price=self.last_scan_price or 0.0
                 )
 
-            # Obtener datos históricos de 30 minutos (más velas para mejor contexto)
+            # Obtener datos históricos de 30 minutos
             df = await self._get_historical_data_30min()
             if df is None or df.empty:
                 self.add_log("⚠️ No se pudieron obtener datos históricos")
@@ -138,14 +203,36 @@ class Bitcoin30mMainnetScanner:
             current_price = float(df.iloc[-1]['close'])
             self.last_scan_price = current_price
             
-            # Log de inicio de escaneo con precio actual y metadata
+            # Determinar estado actual del bot
+            current_state = await self._check_current_state()
+            
+            # Log de inicio de escaneo con estado y precio
+            state_emoji = "🔍" if current_state == "SEARCHING_BUY" else "📊"
             self.add_log(
-                f"🟢 Inicio de escaneo 30m - Velas: {len(df)} | Precio BTC: ${current_price:,.2f}",
+                f"{state_emoji} Escaneo 30m - Estado: {current_state} | Velas: {len(df)} | Precio BTC: ${current_price:,.2f}",
                 "INFO",
-                {"candles": len(df)},
+                {"candles": len(df), "state": current_state},
                 current_price=current_price
             )
             
+            # Ejecutar lógica según el estado
+            if current_state == "SEARCHING_BUY":
+                await self._handle_searching_buy_state(df, current_price)
+            elif current_state == "MONITORING_SELL":
+                await self._handle_monitoring_sell_state(current_price)
+            else:
+                self.add_log("⚠️ Estado desconocido, saltando ciclo", "WARNING")
+                
+        except Exception as e:
+            logger.error(f"Error en ciclo de escaneo Mainnet: {e}")
+            self.add_log(f"❌ Error en escaneo: {e}")
+    
+    async def _handle_searching_buy_state(self, df: pd.DataFrame, current_price: float):
+        """
+        Maneja el estado de búsqueda de compras
+        Solo se enfoca en detectar patrones U y ejecutar compras
+        """
+        try:
             # Detectar patrones U usando lógica del backtest
             signals = self._detect_u_patterns_30min(df)
             
@@ -155,24 +242,34 @@ class Bitcoin30mMainnetScanner:
                 for signal in signals:
                     await self._process_signal(signal)
             else:
-                # Incluir precio del escaneo (de la vela más reciente)
                 self.add_log(
-                    f"🔍 Escaneo completado - No se detectaron patrones de compra | Precio BTC: ${current_price:,.2f}",
+                    f"🔍 Búsqueda de compra - No se detectaron patrones U | Precio BTC: ${current_price:,.2f}",
                     "INFO",
                     current_price=current_price
                 )
-            
-            # Siempre verificar si hay posiciones que vender (cada escaneo)
+                
+        except Exception as e:
+            logger.error(f"Error en estado de búsqueda de compra: {e}")
+            self.add_log(f"❌ Error buscando compras: {e}")
+    
+    async def _handle_monitoring_sell_state(self, current_price: float):
+        """
+        Maneja el estado de monitoreo de ventas
+        Solo se enfoca en verificar condiciones de venta (TP, SL, Max Hold)
+        """
+        try:
             self.add_log(
-                f"🔍 Monitoreando posiciones activas para venta | Precio BTC: ${current_price:,.2f}",
+                f"📊 Monitoreo de ventas - Verificando condiciones de salida | Precio BTC: ${current_price:,.2f}",
                 "INFO",
                 current_price=current_price
             )
+            
+            # Solo verificar condiciones de venta
             await self.executor.check_and_execute_sell_orders()
-                
+            
         except Exception as e:
-            logger.error(f"Error en ciclo de escaneo Mainnet: {e}")
-            self.add_log(f"❌ Error en escaneo: {e}")
+            logger.error(f"Error en estado de monitoreo de ventas: {e}")
+            self.add_log(f"❌ Error monitoreando ventas: {e}")
     
     async def _get_historical_data_30min(self) -> Optional[pd.DataFrame]:
         """Obtiene datos históricos de 30 minutos para análisis"""
@@ -418,6 +515,10 @@ class Bitcoin30mMainnetScanner:
     async def _process_signal(self, signal: Dict):
         """Procesa una señal de compra detectada"""
         try:
+            # Guardas tempranas por señal nula
+            if signal is None:
+                self.add_log("🛑 Señal nula recibida - no se procesa (probable posición abierta)", "WARNING")
+                return
             # Verificar cooldown
             if self.last_alert_sent:
                 time_since_last = (datetime.now() - self.last_alert_sent).total_seconds()
@@ -464,30 +565,21 @@ class Bitcoin30mMainnetScanner:
                     }
                 )
             else:
-                self.add_log(f"❌ Error ejecutando compra automática: {trade_result.get('error', 'Error desconocido')}", "ERROR")
+                # Si el ejecutor devolvió None o un dict sin success, puede ser por posición abierta
+                msg = None
+                if trade_result is None:
+                    msg = "Compra omitida por ejecutor (sin respuesta)"
+                elif isinstance(trade_result, dict) and not trade_result.get('success') and 'position_open' in trade_result.get('msg','').lower():
+                    msg = "Compra omitida: ya existe una posición abierta"
+                else:
+                    # Mensaje genérico de error
+                    err = trade_result.get('error') if isinstance(trade_result, dict) else 'Error desconocido'
+                    msg = f"❌ Error ejecutando compra automática: {err}"
+                self.add_log(msg, "WARNING")
             
-            # También verificar si hay posiciones que vender
-            sell_results = await self.executor.check_and_execute_sell_orders()
-            
-            # Log de ventas ejecutadas
-            for sell_result in sell_results:
-                if sell_result.get('success'):
-                    pnl = sell_result.get('pnl', 0)
-                    pnl_pct = sell_result.get('pnl_percentage', 0)
-                    pnl_emoji = "📈" if pnl > 0 else "📉" if pnl < 0 else "➖"
-                    
-                    self.add_log(
-                        f"{pnl_emoji} VENTA EJECUTADA: {sell_result.get('quantity', 0):.6f} BTC a ${sell_result.get('price', 0):.2f} | PnL: ${pnl:.2f} ({pnl_pct:+.2f}%)",
-                        "TRADE",
-                        {
-                            'trade_type': 'SELL',
-                            'quantity': sell_result.get('quantity', 0),
-                            'price': sell_result.get('price', 0),
-                            'pnl': pnl,
-                            'pnl_percentage': pnl_pct,
-                            'binance_order_id': sell_result.get('binance_order_id')
-                        }
-                    )
+            # NO verificar ventas inmediatamente después de una compra
+            # Las ventas se verifican en el siguiente ciclo de escaneo para evitar ventas instantáneas
+            # El cooldown de 5 minutos en el ejecutor previene ventas inmediatas
             
         except Exception as e:
             logger.error(f"Error procesando señal Mainnet: {e}")
@@ -598,7 +690,10 @@ class Bitcoin30mMainnetScanner:
             "environment": "mainnet",
             # Último precio conocido del último escaneo
             "btc_price": self.last_scan_price,
-            "auto_trading_readiness": self.readiness_cache
+            "auto_trading_readiness": self.readiness_cache,
+            # Estados del bot
+            "current_state": self.current_state,
+            "state_changed_at": self.state_changed_at.isoformat() if self.state_changed_at else None
         }
 
     def _evaluate_readiness(self):

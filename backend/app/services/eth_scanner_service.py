@@ -41,7 +41,8 @@ class EthScannerService:
             "window_size": 120,        # 120 velas ventana análisis (igual que backtest 2023)
             "scan_interval": 60 * 60,   # 1 hora (3600 segundos)
             "symbol": "ETHUSDT",
-            "data_limit": 1000         # 1000 velas como backtest 2023
+            "data_limit": 1000,        # 1000 velas como backtest 2023
+            "environment": "mainnet"   # Solo mainnet
         }
         self.last_scan_time = None
         self.alerts_count = 0
@@ -49,19 +50,94 @@ class EthScannerService:
         self.cooldown_period = 60 * 60  # 1 hora de cooldown entre alertas
         self.scanner_logs = []  # Lista de logs para mostrar en el frontend
         self.max_logs = 50  # Máximo número de logs a mantener
+        self.last_scan_price = None  # Último precio escaneado
+        self.readiness_cache = {
+            'auto_ready': False,
+            'enabled_keys': 0,
+            'allocated_ok': False,
+            'balance_ok': False,
+            'reasons': []
+        }
         
+        # Estados del bot para separar lógica de compra y venta
+        self.current_state = "SEARCHING_BUY"  # SEARCHING_BUY, MONITORING_SELL, IDLE
+        self.state_changed_at = None
+        self.last_position_check = None
+        
+    async def _check_current_state(self) -> str:
+        """
+        Determina el estado actual del bot basado en posiciones abiertas
+        """
+        try:
+            from app.db.database import get_db
+            from app.db.models import TradingOrder, TradingApiKey
+            
+            db = next(get_db())
+            
+            # Verificar si hay posiciones abiertas de ETH
+            api_keys = db.query(TradingApiKey).filter(
+                TradingApiKey.eth_mainnet_enabled == True,
+                TradingApiKey.is_active == True
+            ).all()
+            
+            has_open_positions = False
+            for api_key in api_keys:
+                open_orders = db.query(TradingOrder).filter(
+                    TradingOrder.api_key_id == api_key.id,
+                    TradingOrder.symbol == 'ETHUSDT',
+                    TradingOrder.side == 'BUY',
+                    TradingOrder.status == 'FILLED'
+                ).all()
+                
+                if open_orders:
+                    has_open_positions = True
+                    break
+            
+            # Determinar estado
+            if has_open_positions:
+                new_state = "MONITORING_SELL"
+            else:
+                new_state = "SEARCHING_BUY"
+            
+            # Log cambio de estado
+            if new_state != self.current_state:
+                old_state = self.current_state
+                self.current_state = new_state
+                self.state_changed_at = datetime.now()
+                
+                state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
+                state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
+                
+                self._add_log(
+                    "INFO",
+                    f"{state_emoji} CAMBIO DE ESTADO: {state_desc}",
+                    {
+                        'new_state': new_state,
+                        'previous_state': old_state,
+                        'timestamp': self.state_changed_at.isoformat()
+                    }
+                )
+            
+            return self.current_state
+            
+        except Exception as e:
+            logger.error(f"Error verificando estado ETH: {e}")
+            return "IDLE"
+    
     def update_config(self, new_config: Dict[str, Any]):
         """Actualiza la configuración del scanner (solo admin)"""
         self.config.update(new_config)
         logger.info(f"✅ Configuración ETH actualizada: {self.config}")
     
-    def _add_log(self, level: str, message: str, details: dict = None):
+    def _add_log(self, level: str, message: str, details: dict = None, current_price: Optional[float] = None):
         """Agrega un log personalizado para el frontend"""
         log_entry = {
             "timestamp": datetime.now().isoformat(),
             "level": level,  # INFO, SUCCESS, WARNING, ERROR
             "message": message,
-            "details": details or {}
+            "details": details or {},
+            "eth_price": current_price if current_price is not None else None,
+            "environment": "mainnet"
         }
         
         self.scanner_logs.append(log_entry)
@@ -143,6 +219,13 @@ class EthScannerService:
         """Realiza un escaneo completo de Ethereum"""
         try:
             scan_start = datetime.now()
+            
+            # Evaluar readiness antes de escanear
+            self._evaluate_readiness()
+            if not self.readiness_cache.get('auto_ready'):
+                reasons = ", ".join(self.readiness_cache.get('reasons', []))
+                self._add_log("WARNING", f"⚠️ Auto-trading NO LISTO: {reasons}. No se ejecutarán compras.")
+            
             self._add_log("INFO", f"Iniciando escaneo de {self.config['symbol']}", {
                 "timestamp": scan_start.strftime('%H:%M:%S')
             })
@@ -154,6 +237,11 @@ class EthScannerService:
                 return
             
             current_price = df['close'].iloc[-1]
+            self.last_scan_price = current_price
+            
+            # Log con precio
+            self._add_log("INFO", f"🟢 Escaneo ETH 4h - Velas: {len(df)} | Precio: ${current_price:,.2f}", 
+                         {"candles": len(df)}, current_price=current_price)
             
             # 1.5. 🤖 MONITOREAR POSICIONES AUTOMÁTICAS ETH (Nueva funcionalidad)
             # Verificar condiciones de salida para trading automático usando las mismas estrategias
@@ -187,10 +275,9 @@ class EthScannerService:
                         })
                         break  # Solo una alerta por escaneo
             else:
-                self._add_log("INFO", f"Escaneo completado - No se detectaron patrones de compra", {
-                    "current_price": f"${current_price:,.2f}",
+                self._add_log("INFO", f"Escaneo completado - No se detectaron patrones de compra | Precio: ${current_price:,.2f}", {
                     "candles_analyzed": len(df)
-                })
+                }, current_price=current_price)
             
             self.last_scan_time = scan_start
             scan_duration = (datetime.now() - scan_start).total_seconds()
@@ -720,6 +807,40 @@ class EthScannerService:
                 "pattern_description": f"Error: {str(e)}"
             }
     
+    def _evaluate_readiness(self):
+        """Evalúa si hay condiciones para operar automáticamente ETH en mainnet."""
+        try:
+            from app.db.database import get_db
+            from app.db.models import TradingApiKey
+            db = next(get_db())
+            keys = db.query(TradingApiKey).filter(
+                TradingApiKey.is_testnet == False,
+                TradingApiKey.is_active == True
+            ).all()
+            enabled = [k for k in keys if getattr(k, 'eth_mainnet_enabled', False)]
+            allocated_ok = any((k.eth_mainnet_allocated_usdt or 0) > 0 for k in enabled)
+            reasons = []
+            if len(enabled) == 0:
+                reasons.append('sin claves mainnet habilitadas para ETH')
+            if not allocated_ok:
+                reasons.append('asignación ETH USDT=0')
+            auto_ready = len(enabled) > 0 and allocated_ok
+            self.readiness_cache = {
+                'auto_ready': auto_ready,
+                'enabled_keys': len(enabled),
+                'allocated_ok': allocated_ok,
+                'balance_ok': allocated_ok,  # proxy
+                'reasons': reasons
+            }
+        except Exception:
+            self.readiness_cache = {
+                'auto_ready': False,
+                'enabled_keys': 0,
+                'allocated_ok': False,
+                'balance_ok': False,
+                'reasons': ['error evaluando readiness']
+            }
+    
     def get_status(self) -> Dict[str, Any]:
         """Obtiene el estado actual del scanner"""
         return {
@@ -729,7 +850,9 @@ class EthScannerService:
             "alerts_count": self.alerts_count,
             "next_scan_in_seconds": self.config['scan_interval'] if self.is_running else None,
             "logs": self.scanner_logs[-1000:],  # Últimos 1000 logs para el frontend
-            "cooldown_remaining": None if not self.last_alert_sent else max(0, self.cooldown_period - (datetime.now() - self.last_alert_sent).total_seconds())
+            "cooldown_remaining": None if not self.last_alert_sent else max(0, self.cooldown_period - (datetime.now() - self.last_alert_sent).total_seconds()),
+            "eth_price": self.last_scan_price,
+            "auto_trading_readiness": self.readiness_cache
         }
     
 

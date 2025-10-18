@@ -637,13 +637,16 @@ async def get_bitcoin_30m_positions(
         
         logger.debug(f"📊 Posiciones Bitcoin 30m solicitadas por usuario {current_user.id}")
         
-        # Obtener todas las órdenes BUY ejecutadas para BTCUSDT
+        # Obtener todas las órdenes BUY ejecutadas para BTCUSDT (solo las que NO están completed)
         buy_orders = db.query(TradingOrder).filter(
             TradingOrder.user_id == current_user.id,
             TradingOrder.symbol == 'BTCUSDT',
             TradingOrder.side == 'BUY',
             TradingOrder.status == 'FILLED'
         ).order_by(TradingOrder.created_at.desc()).all()
+        
+        # Filtrar solo las que NO están marcadas como completed (ya vendidas)
+        buy_orders = [buy for buy in buy_orders if buy.status != 'completed']
         
         logger.info(f"📊 Encontradas {len(buy_orders)} órdenes BUY ejecutadas para usuario {current_user.id}")
         
