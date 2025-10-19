@@ -1049,8 +1049,8 @@ class AutoTradingMainnet30mExecutor:
                             new_sell.reason = 'EXTERNAL_SELL'
                             db.commit()
                             
-                            # Cerrar BUY local
-                            buy.status = 'completed'
+                            # Cerrar BUY local - usar estado consistente con Binance
+                            buy.status = 'CLOSED'  # Posición cerrada (compra + venta completadas)
                             db.commit()
                             
                             logger.info(f"[Reconcile] SELL externo sincronizado: buy_id={buy.id} sell_id={new_sell.id} qty={sell_qty} @ {sell_price}")
