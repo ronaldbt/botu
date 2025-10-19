@@ -88,12 +88,12 @@ class Bitcoin30mMainnetScanner:
             
             has_open_positions = False
             for api_key in api_keys:
-                # Buscar órdenes de compra ejecutadas (solo las que no están cerradas)
+                # Buscar órdenes de compra ejecutadas (solo las que no están completadas)
                 buy_orders = db.query(TradingOrder).filter(
                     TradingOrder.api_key_id == api_key.id,
                     TradingOrder.symbol == 'BTCUSDT',
                     TradingOrder.side == 'BUY',
-                    TradingOrder.status == 'FILLED'  # Solo órdenes ejecutadas que no están cerradas
+                    TradingOrder.status == 'FILLED'  # Solo órdenes ejecutadas que no están completadas
                 ).all()
                 
                 # Verificar si alguna de estas órdenes NO tiene venta asociada

@@ -113,8 +113,9 @@ class AutoTradingMainnet30mExecutor:
             
             if not api_keys:
                 logger.warning("No hay API keys de Mainnet habilitadas para BTC 30m")
-                return
+                return {'success': False, 'error': 'No hay API keys habilitadas'}
             
+            results = []
             for api_key in api_keys:
                 try:
                     # Verificar balance de BNB para optimizar comisiones
@@ -127,12 +128,22 @@ class AutoTradingMainnet30mExecutor:
                         logger.warning(f"⚠️ [Mainnet30mExecutor] API key {api_key.id} tiene poco BNB ({bnb_balance:.3f}) - Considera agregar más para comisiones más baratas")
                     
                     logger.info(f"[Mainnet30mExecutor] Intentando comprar con API key {api_key.id} | alloc_usdt={api_key.btc_30m_mainnet_allocated_usdt}")
-                    await self._execute_buy_for_api_key(db, api_key, signal)
+                    result = await self._execute_buy_for_api_key(db, api_key, signal)
+                    if result:
+                        results.append(result)
                 except Exception as e:
                     logger.error(f"Error ejecutando compra para API key {api_key.id}: {e}")
+                    results.append({'success': False, 'error': str(e)})
+            
+            # Retornar el primer resultado exitoso o el último resultado
+            if results:
+                return results[0] if results else {'success': False, 'error': 'No se pudo ejecutar compra'}
+            else:
+                return {'success': False, 'error': 'No se ejecutaron compras'}
                     
         except Exception as e:
             logger.error(f"Error en execute_buy_order Mainnet: {e}")
+            return {'success': False, 'error': str(e)}
         finally:
             db.close()
     
@@ -145,7 +156,7 @@ class AutoTradingMainnet30mExecutor:
             allocated_usdt = api_key.btc_30m_mainnet_allocated_usdt or 0
             if allocated_usdt <= 0:
                 logger.warning(f"API key {api_key.id} no tiene USDT asignado para BTC 30m Mainnet")
-                return
+                return {'success': False, 'error': 'No hay USDT asignado'}
             
             # VERIFICAR SI YA TIENE UNA POSICIÓN ABIERTA
             open_position = self._get_open_position(db, api_key.id)
@@ -158,7 +169,7 @@ class AutoTradingMainnet30mExecutor:
             balance = await self._get_balance(api_key)
             if not balance or balance.get('USDT', 0) < allocated_usdt:
                 logger.warning(f"Balance insuficiente para API key {api_key.id}: {balance}")
-                return
+                return {'success': False, 'error': 'Balance insuficiente'}
             
             # Monto a invertir en USDT (usaremos quoteOrderQty en MARKET)
             entry_price = signal['entry_price']
@@ -253,12 +264,30 @@ class AutoTradingMainnet30mExecutor:
                 }, binance_result)
                 logger.info(f"✅ BUY FILLED db_id={new_order.id} binance_id={order_id} qty={executed_qty:.8f} @ {exec_price:.2f}")
                 
+                # Retornar resultado exitoso
+                return {
+                    'success': True,
+                    'order_id': new_order.id,
+                    'binance_order_id': order_id,
+                    'quantity': executed_qty,
+                    'price': exec_price,
+                    'total_usdt': quote_usdt
+                }
+                
             else:
                 update_trading_order_status(db, order_id=new_order.id, status=binance_result.get('status','REJECTED'), reason=binance_result.get('msg','BINANCE_ORDER_FAILED'))
                 logger.error(f"❌ Error ejecutando orden en Binance para API key {api_key.id}: {binance_result}")
+                return {
+                    'success': False,
+                    'error': binance_result.get('msg', 'Error ejecutando orden en Binance')
+                }
                 
         except Exception as e:
             logger.error(f"Error en _execute_buy_for_api_key: {e}")
+            return {
+                'success': False,
+                'error': str(e)
+            }
     
     async def _get_balance(self, api_key: TradingApiKey) -> Optional[Dict]:
         """
@@ -1050,7 +1079,7 @@ class AutoTradingMainnet30mExecutor:
                             db.commit()
                             
                             # Cerrar BUY local - usar estado consistente con Binance
-                            buy.status = 'CLOSED'  # Posición cerrada (compra + venta completadas)
+                            buy.status = 'COMPLETED'  # Posición cerrada (compra + venta completadas)
                             db.commit()
                             
                             logger.info(f"[Reconcile] SELL externo sincronizado: buy_id={buy.id} sell_id={new_sell.id} qty={sell_qty} @ {sell_price}")

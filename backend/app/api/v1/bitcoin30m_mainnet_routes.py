@@ -384,12 +384,12 @@ async def get_bitcoin_30m_mainnet_positions(
         
         positions = []
         for api_key in api_keys:
-            # Buscar órdenes de compra ejecutadas para BTCUSDT (solo las que NO están cerradas)
+            # Buscar órdenes de compra ejecutadas para BTCUSDT (solo las que NO están completadas)
             buy_orders = db.query(TradingOrder).filter(
                 TradingOrder.api_key_id == api_key.id,
                 TradingOrder.symbol == 'BTCUSDT',
                 TradingOrder.side == 'BUY',
-                TradingOrder.status == 'FILLED'  # Solo órdenes ejecutadas que no están cerradas
+                TradingOrder.status == 'FILLED'  # Solo órdenes ejecutadas que no están completadas
             ).order_by(TradingOrder.created_at.desc()).all()
             
             logger.info(f"📊 API Key {api_key.id}: {len(buy_orders)} órdenes BUY ejecutadas")
