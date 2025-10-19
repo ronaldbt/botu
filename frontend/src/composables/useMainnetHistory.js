@@ -9,6 +9,7 @@ export function useMainnetHistory() {
   const hasMore = ref(false)
   const currentOffset = ref(0)
   const limit = ref(20)
+  const systemOnly = ref(false)
 
   // Computed
   const isEmpty = computed(() => orders.value.length === 0)
@@ -25,7 +26,8 @@ export function useMainnetHistory() {
       const response = await apiClient.get('/mainnet/history', {
         params: {
           limit: limit.value,
-          offset: offset
+          offset: offset,
+          system_only: systemOnly.value
         }
       })
 
@@ -57,6 +59,11 @@ export function useMainnetHistory() {
   }
 
   const refresh = async () => {
+    await loadHistory(true)
+  }
+
+  const toggleSystemOnly = async () => {
+    systemOnly.value = !systemOnly.value
     await loadHistory(true)
   }
 
@@ -132,6 +139,7 @@ export function useMainnetHistory() {
     loadHistory,
     loadMore,
     refresh,
+    toggleSystemOnly,
     formatDate,
     getStatusColor,
     getStatusText,

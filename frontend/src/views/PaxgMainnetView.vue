@@ -207,11 +207,7 @@
         />
         
         <!-- Orders History -->
-        <OrdersHistory
-          :orders="mainnetOrders"
-          environment="mainnet"
-          @refresh="loadData"
-        />
+        <MainnetHistory />
         
         <!-- Scanner Logs -->
         <CryptoScannerLogs
@@ -260,7 +256,7 @@ import apiClient from '@/config/api'
 // Components
 import ApiKeyModal from '@/components/trading/ApiKeyModal.vue'
 import ApiHelpModal from '@/components/trading/ApiHelpModal.vue'
-import OrdersHistory from '@/components/trading/OrdersHistory.vue'
+import MainnetHistory from '@/components/trading/MainnetHistory.vue'
 import CryptoScannerLogs from '@/components/trading/CryptoScannerLogs.vue'
 import CryptoStatusCards from '@/components/trading/CryptoStatusCards.vue'
 import OpenPositionsCard from '@/components/trading/OpenPositionsCard.vue'

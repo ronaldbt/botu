@@ -12,6 +12,21 @@
         <span v-if="total > 0" class="text-sm text-slate-500">
           {{ orders.length }} de {{ total }} órdenes
         </span>
+        
+        <!-- Filtro de sistema -->
+        <button 
+          @click="toggleSystemOnly" 
+          :disabled="loading"
+          :class="[
+            'px-3 py-1 rounded-lg text-sm font-medium transition-colors',
+            systemOnly 
+              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+          ]"
+        >
+          {{ systemOnly ? 'Solo Sistema' : 'Todas las Órdenes' }}
+        </button>
+        
         <button 
           @click="refresh" 
           :disabled="loading"
@@ -55,13 +70,19 @@
             <th class="text-right py-3 px-2 font-medium text-slate-700">Cantidad</th>
             <th class="text-right py-3 px-2 font-medium text-slate-700">Precio</th>
             <th class="text-right py-3 px-2 font-medium text-slate-700">PnL</th>
+            <th class="text-left py-3 px-2 font-medium text-slate-700">Origen</th>
             <th class="text-left py-3 px-2 font-medium text-slate-700">Estado</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="order in orders" :key="order.id" class="border-b border-slate-100 hover:bg-slate-50">
             <td class="py-3 px-2">{{ formatDate(order.date) }}</td>
-            <td class="py-3 px-2 font-mono">{{ order.symbol }}</td>
+            <td class="py-3 px-2 font-mono">
+              <span class="flex items-center space-x-1">
+                <span class="text-lg">{{ getCryptoIcon(order.symbol) }}</span>
+                <span>{{ order.symbol }}</span>
+              </span>
+            </td>
             <td class="py-3 px-2">
               <span :class="getTypeColor(order.type)" class="px-2 py-1 rounded text-xs font-medium">
                 {{ getTypeText(order.type) }}
@@ -74,6 +95,12 @@
                 {{ formatPnL(order.pnl) }}
               </span>
               <span v-else class="text-slate-400">-</span>
+            </td>
+            <td class="py-3 px-2">
+              <span :class="order.is_system_order ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'" 
+                    class="px-2 py-1 rounded text-xs font-medium">
+                {{ order.source }}
+              </span>
             </td>
             <td class="py-3 px-2">
               <span :class="getStatusColor(order.status)" class="px-2 py-1 rounded text-xs font-medium">
@@ -131,8 +158,21 @@ const {
   getTypeText,
   getTypeColor,
   formatPnL,
-  getPnLColor
+  getPnLColor,
+  systemOnly,
+  toggleSystemOnly
 } = useMainnetHistory()
+
+// Función para obtener el icono de la criptomoneda
+const getCryptoIcon = (symbol) => {
+  const icons = {
+    'BTCUSDT': '₿',
+    'ETHUSDT': 'Ξ',
+    'BNBUSDT': '🟡',
+    'PAXGUSDT': '🥇'
+  }
+  return icons[symbol] || '💰'
+}
 
 // Infinite scroll
 const handleScroll = () => {

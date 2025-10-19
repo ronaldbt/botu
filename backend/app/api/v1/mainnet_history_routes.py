@@ -19,7 +19,8 @@ router = APIRouter()
 async def get_mainnet_history(
     db: Session = Depends(get_db),
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    system_only: bool = False
 ):
     """
     Obtiene el historial de órdenes mainnet para el usuario actual
@@ -40,11 +41,19 @@ async def get_mainnet_history(
         
         api_key_ids = [api_key.id for api_key in api_keys]
         
-        # Obtener órdenes con paginación
+        # Obtener órdenes con paginación (todas las criptomonedas mainnet)
         orders_query = db.query(TradingOrder).filter(
             TradingOrder.api_key_id.in_(api_key_ids),
-            TradingOrder.symbol == 'BTCUSDT'
-        ).order_by(TradingOrder.created_at.desc())
+            TradingOrder.symbol.in_(['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'PAXGUSDT'])
+        )
+        
+        # Filtrar solo órdenes del sistema si se solicita
+        if system_only:
+            orders_query = orders_query.filter(
+                TradingOrder.reason.in_(['U_PATTERN', 'MANUAL_TRADE', 'EXTERNAL_SELL'])
+            )
+        
+        orders_query = orders_query.order_by(TradingOrder.created_at.desc())
         
         total_orders = orders_query.count()
         orders = orders_query.offset(offset).limit(limit).all()
@@ -57,10 +66,10 @@ async def get_mainnet_history(
             pnl_percent = None
             
             if order.side == 'SELL' and order.status == 'FILLED':
-                # Buscar la orden de compra asociada
+                # Buscar la orden de compra asociada (mismo símbolo)
                 buy_order = db.query(TradingOrder).filter(
                     TradingOrder.api_key_id == order.api_key_id,
-                    TradingOrder.symbol == 'BTCUSDT',
+                    TradingOrder.symbol == order.symbol,  # Mismo símbolo
                     TradingOrder.side == 'BUY',
                     TradingOrder.status.in_(['FILLED', 'COMPLETED']),
                     TradingOrder.created_at < order.created_at
@@ -83,6 +92,9 @@ async def get_mainnet_history(
                         pnl_percent = (net_pnl / buy_value * 100) if buy_value > 0 else 0
                         pnl = net_pnl
             
+            # Determinar si es una orden del sistema o externa
+            is_system_order = order.reason in ['U_PATTERN', 'MANUAL_TRADE', 'EXTERNAL_SELL']
+            
             formatted_orders.append({
                 "id": order.id,
                 "date": order.created_at.isoformat() if order.created_at else None,
@@ -94,7 +106,9 @@ async def get_mainnet_history(
                 "pnl_percent": pnl_percent,
                 "status": order.status,
                 "binance_order_id": order.binance_order_id,
-                "reason": order.reason
+                "reason": order.reason,
+                "is_system_order": is_system_order,
+                "source": "Sistema" if is_system_order else "Externa"
             })
         
         logger.info(f"📊 Historial mainnet obtenido: {len(formatted_orders)} órdenes")
@@ -135,19 +149,19 @@ async def get_mainnet_positions(
         
         positions = []
         for api_key in api_keys:
-            # Buscar órdenes de compra ejecutadas que no están completadas
+            # Buscar órdenes de compra ejecutadas que no están completadas (todas las criptomonedas)
             buy_orders = db.query(TradingOrder).filter(
                 TradingOrder.api_key_id == api_key.id,
-                TradingOrder.symbol == 'BTCUSDT',
+                TradingOrder.symbol.in_(['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'PAXGUSDT']),
                 TradingOrder.side == 'BUY',
                 TradingOrder.status == 'FILLED'
             ).order_by(TradingOrder.created_at.desc()).all()
             
             for buy_order in buy_orders:
-                # Verificar si ya tiene orden de venta posterior
+                # Verificar si ya tiene orden de venta posterior (mismo símbolo)
                 sell_order = db.query(TradingOrder).filter(
                     TradingOrder.api_key_id == api_key.id,
-                    TradingOrder.symbol == 'BTCUSDT',
+                    TradingOrder.symbol == buy_order.symbol,  # Mismo símbolo
                     TradingOrder.side == 'SELL',
                     TradingOrder.status == 'FILLED',
                     TradingOrder.created_at > buy_order.created_at
