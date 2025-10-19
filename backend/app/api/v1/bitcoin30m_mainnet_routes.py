@@ -389,7 +389,7 @@ async def get_bitcoin_30m_mainnet_positions(
                 TradingOrder.api_key_id == api_key.id,
                 TradingOrder.symbol == 'BTCUSDT',
                 TradingOrder.side == 'BUY',
-                TradingOrder.status == 'FILLED'
+                TradingOrder.status.in_(['FILLED', 'completed'])
             ).order_by(TradingOrder.created_at.desc()).all()
             
             # Filtrar solo las que NO están marcadas como completed (ya vendidas)

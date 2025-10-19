@@ -952,10 +952,120 @@ class AutoTradingMainnet30mExecutor:
         """Sincroniza órdenes ejecutadas en Binance que no existen en la DB local.
         - Crea órdenes SELL faltantes posteriores a un BUY si aparecen en el historial de trades de Binance.
         - Marca el motivo como EXTERNAL_SELL para distinguirlas en UI.
-        TEMPORALMENTE DESHABILITADO para evitar asociaciones incorrectas
         """
-        logger.info("[Reconcile] Sistema de reconciliación temporalmente deshabilitado")
-        return
+        try:
+            # Cargar API keys mainnet activas del usuario
+            api_keys = db.query(TradingApiKey).filter(
+                TradingApiKey.is_testnet == False,
+                TradingApiKey.is_active == True,
+                TradingApiKey.btc_30m_mainnet_enabled == True
+            ).all()
+            
+            if not api_keys:
+                return
+                
+            from urllib.parse import urlencode
+            import hmac, hashlib, time
+            base = "https://api.binance.com"
+            endpoint = "/api/v3/myTrades"
+            
+            for api_key in api_keys:
+                try:
+                    creds = get_decrypted_api_credentials(db, api_key.id)
+                    if not creds:
+                        continue
+                    key, secret = creds
+                    
+                    # Consultar últimas 200 trades de BTCUSDT
+                    ts = int(time.time() * 1000)
+                    params = {
+                        'symbol': 'BTCUSDT',
+                        'limit': 200,
+                        'timestamp': ts,
+                        'recvWindow': 5000
+                    }
+                    query = urlencode(params)
+                    signature = hmac.new(secret.encode(), query.encode(), hashlib.sha256).hexdigest()
+                    headers = { 'X-MBX-APIKEY': key }
+                    resp = requests.get(f"{base}{endpoint}?{query}&signature={signature}", headers=headers, timeout=15)
+                    if resp.status_code != 200:
+                        logger.warning(f"[Reconcile] Binance myTrades {resp.status_code}: {resp.text}")
+                        continue
+                    trades = resp.json() or []
+                    
+                    # Buscar BUY locales abiertas
+                    open_buys = db.query(TradingOrder).filter(
+                        TradingOrder.api_key_id == api_key.id,
+                        TradingOrder.symbol == 'BTCUSDT',
+                        TradingOrder.side == 'BUY',
+                        TradingOrder.status == 'FILLED'
+                    ).all()
+                    
+                    for buy in open_buys:
+                        # Ya tiene SELL local?
+                        has_sell = db.query(TradingOrder).filter(
+                            TradingOrder.api_key_id == api_key.id,
+                            TradingOrder.symbol == 'BTCUSDT',
+                            TradingOrder.side == 'SELL',
+                            TradingOrder.status == 'FILLED',
+                            TradingOrder.created_at > buy.created_at
+                        ).first()
+                        if has_sell:
+                            continue
+                            
+                        # Buscar trade SELL posterior a la BUY
+                        buy_time_ms = int((buy.created_at.timestamp()) * 1000) if buy.created_at else 0
+                        matching_sell_trade = None
+                        
+                        for t in trades:
+                            try:
+                                if (t.get('isBuyer') is False and 
+                                    t.get('symbol') == 'BTCUSDT' and 
+                                    int(t.get('time',0)) > buy_time_ms):
+                                    matching_sell_trade = t
+                                    break
+                            except Exception:
+                                continue
+                        
+                        if matching_sell_trade:
+                            # Crear orden SELL en la DB
+                            sell_qty = float(matching_sell_trade.get('qty', 0.0))
+                            sell_price = float(matching_sell_trade.get('price', 0.0))
+                            
+                            from app.schemas.trading_schema import TradingOrderCreate
+                            sell_order = TradingOrderCreate(
+                                api_key_id=api_key.id,
+                                symbol='BTCUSDT',
+                                side='sell',
+                                order_type='market',
+                                quantity=sell_qty,
+                                price=sell_price
+                            )
+                            new_sell = create_trading_order(db, sell_order, api_key.user_id)
+                            new_sell.status = 'FILLED'
+                            new_sell.binance_order_id = str(matching_sell_trade.get('orderId',''))
+                            new_sell.executed_price = sell_price
+                            new_sell.executed_quantity = sell_qty
+                            new_sell.reason = 'EXTERNAL_SELL'
+                            db.commit()
+                            
+                            # Cerrar BUY local
+                            buy.status = 'completed'
+                            db.commit()
+                            
+                            logger.info(f"[Reconcile] SELL externo sincronizado: buy_id={buy.id} sell_id={new_sell.id} qty={sell_qty} @ {sell_price}")
+                            from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
+                            bitcoin_30m_mainnet_scanner.add_log(
+                                f"🔄 Sincronizado SELL externo desde Binance: {sell_qty:.8f} BTC @ ${sell_price:,.2f}",
+                                "INFO",
+                                current_price=sell_price
+                            )
+                            
+                except Exception as inner:
+                    logger.error(f"[Reconcile] Error con API key {api_key.id}: {inner}")
+                    
+        except Exception as e:
+            logger.error(f"[Reconcile] Error general: {e}")
     
     async def _get_current_price(self) -> Optional[float]:
         """
