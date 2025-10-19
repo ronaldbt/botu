@@ -661,8 +661,8 @@ class AutoTradingMainnet30mExecutor:
                 return
             
             # Usar la menor entre el balance real y la cantidad original de la orden
-            original_quantity = buy_order.executed_quantity or buy_order.quantity
-            sell_quantity = min(balance.get('BTC', 0.0), original_quantity)
+            original_quantity = float(buy_order.executed_quantity or buy_order.quantity or 0)
+            sell_quantity = float(min(balance.get('BTC', 0.0), original_quantity))
             
             # Verificar balance de BNB para comisiones optimizadas
             bnb_balance = balance.get('BNB', 0.0)
@@ -842,7 +842,7 @@ class AutoTradingMainnet30mExecutor:
                 return
             
             # Calcular cantidad total del grupo
-            total_quantity = sum(float(order.executed_quantity or order.quantity or 0) for order in grouped_orders)
+            total_quantity = float(sum(float(order.executed_quantity or order.quantity or 0) for order in grouped_orders))
             
             # Obtener balance real de BTC disponible
             balance = await self._get_balance(api_key)
@@ -851,7 +851,7 @@ class AutoTradingMainnet30mExecutor:
                 return
             
             # Usar la menor entre el balance real y la cantidad total del grupo
-            sell_quantity = min(balance.get('BTC', 0.0), total_quantity)
+            sell_quantity = float(min(balance.get('BTC', 0.0), total_quantity))
             
             # Verificar que tenemos suficiente BTC para vender
             if sell_quantity < 0.00001:  # Mínimo para BTCUSDT
@@ -952,134 +952,10 @@ class AutoTradingMainnet30mExecutor:
         """Sincroniza órdenes ejecutadas en Binance que no existen en la DB local.
         - Crea órdenes SELL faltantes posteriores a un BUY si aparecen en el historial de trades de Binance.
         - Marca el motivo como EXTERNAL_SELL para distinguirlas en UI.
+        TEMPORALMENTE DESHABILITADO para evitar asociaciones incorrectas
         """
-        try:
-            # Cargar API keys mainnet activas del usuario
-            api_keys = db.query(TradingApiKey).filter(
-                TradingApiKey.is_testnet == False,
-                TradingApiKey.is_active == True,
-                TradingApiKey.btc_30m_mainnet_enabled == True
-            ).all()
-            if not api_keys:
-                return
-            from urllib.parse import urlencode
-            import hmac, hashlib, time
-            base = "https://api.binance.com"
-            endpoint = "/api/v3/myTrades"
-            for api_key in api_keys:
-                try:
-                    creds = get_decrypted_api_credentials(db, api_key.id)
-                    if not creds:
-                        continue
-                    key, secret = creds
-                    # Consultar últimas 200 trades de BTCUSDT
-                    ts = int(time.time() * 1000)
-                    params = {
-                        'symbol': 'BTCUSDT',
-                        'limit': 200,
-                        'timestamp': ts,
-                        'recvWindow': 5000
-                    }
-                    query = urlencode(params)
-                    signature = hmac.new(secret.encode(), query.encode(), hashlib.sha256).hexdigest()
-                    headers = { 'X-MBX-APIKEY': key }
-                    resp = requests.get(f"{base}{endpoint}?{query}&signature={signature}", headers=headers, timeout=15)
-                    if resp.status_code != 200:
-                        logger.warning(f"[Reconcile] Binance myTrades {resp.status_code}: {resp.text}")
-                        continue
-                    trades = resp.json() or []
-                    # Construir mapa de ventas más recientes
-                    # Binance trades incluyen 'isBuyer' y 'orderId'; sumaremos fills por orderId
-                    order_id_to_sell_exec = {}
-                    for t in trades:
-                        try:
-                            if t.get('isBuyer') is False and t.get('symbol') == 'BTCUSDT':
-                                oid = str(t.get('orderId'))
-                                qty = float(t.get('qty', 0.0))
-                                price = float(t.get('price', 0.0))
-                                time_ms = int(t.get('time', 0))
-                                item = order_id_to_sell_exec.get(oid, {'qty':0.0, 'price':price, 'time':time_ms})
-                                item['qty'] += qty
-                                item['price'] = price  # último precio
-                                item['time'] = max(item['time'], time_ms)
-                                order_id_to_sell_exec[oid] = item
-                        except Exception:
-                            continue
-                    if not order_id_to_sell_exec:
-                        continue
-                    # Buscar BUY locales abiertas
-                    open_buys = db.query(TradingOrder).filter(
-                        TradingOrder.api_key_id == api_key.id,
-                        TradingOrder.symbol == 'BTCUSDT',
-                        TradingOrder.side == 'BUY',
-                        TradingOrder.status == 'FILLED'
-                    ).all()
-                    for buy in open_buys:
-                        # Ya tiene SELL local?
-                        has_sell = db.query(TradingOrder).filter(
-                            TradingOrder.api_key_id == api_key.id,
-                            TradingOrder.symbol == 'BTCUSDT',
-                            TradingOrder.side == 'SELL',
-                            TradingOrder.status == 'FILLED',
-                            TradingOrder.created_at > buy.created_at
-                        ).first()
-                        if has_sell:
-                            continue
-                        # Intentar encontrar cualquier trade SELL posterior a la BUY
-                        last_sell = None
-                        buy_time_ms = int((buy.created_at.timestamp()) * 1000) if buy.created_at else 0
-                        for t in trades:
-                            try:
-                                if t.get('isBuyer') is False and t.get('symbol') == 'BTCUSDT' and int(t.get('time',0)) > buy_time_ms:
-                                    if (last_sell is None) or (int(t.get('time',0)) > int(last_sell.get('time',0))):
-                                        last_sell = t
-                            except Exception:
-                                continue
-                        # Fallback adicional: si no encontramos trade posterior, usar balance casi cero como señal
-                        if not last_sell:
-                            balance = await self._get_balance(api_key)
-                            btc_bal = balance.get('BTC', 0.0) if balance else 0.0
-                            threshold = 0.00002  # tolerancia ligeramente superior al stepSize
-                            if btc_bal < threshold and len(trades) > 0:
-                                for t in trades:
-                                    if t.get('isBuyer') is False and t.get('symbol') == 'BTCUSDT':
-                                        if (last_sell is None) or (int(t.get('time',0)) > int(last_sell.get('time',0))):
-                                            last_sell = t
-                        if not last_sell:
-                            continue
-                        sell_qty = float(last_sell.get('qty', 0.0))
-                        sell_price = float(last_sell.get('price', 0.0))
-                        from app.schemas.trading_schema import TradingOrderCreate
-                        sell_order = TradingOrderCreate(
-                                api_key_id=api_key.id,
-                                symbol='BTCUSDT',
-                                side='sell',
-                                order_type='market',
-                                quantity=sell_qty,
-                                price=sell_price
-                            )
-                        new_sell = create_trading_order(db, sell_order, api_key.user_id)
-                        new_sell.status = 'FILLED'
-                        new_sell.binance_order_id = str(last_sell.get('orderId',''))
-                        new_sell.executed_price = sell_price
-                        new_sell.executed_quantity = sell_qty
-                        new_sell.reason = 'EXTERNAL_SELL'
-                        db.commit()
-                        # Cerrar BUY local
-                        buy.status = 'completed'
-                        buy.sell_order_id = new_sell.id
-                        db.commit()
-                        logger.info(f"[Reconcile] SELL externo sincronizado: buy_id={buy.id} sell_id={new_sell.id} qty={sell_qty} @ {sell_price}")
-                        from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
-                        bitcoin_30m_mainnet_scanner.add_log(
-                            f"🔄 Sincronizado SELL externo desde Binance: {sell_qty:.8f} BTC @ ${sell_price:,.2f}",
-                            "INFO",
-                            current_price=sell_price
-                        )
-                except Exception as inner:
-                    logger.error(f"[Reconcile] Error con API key {api_key.id}: {inner}")
-        except Exception as e:
-            logger.error(f"[Reconcile] Error general: {e}")
+        logger.info("[Reconcile] Sistema de reconciliación temporalmente deshabilitado")
+        return
     
     async def _get_current_price(self) -> Optional[float]:
         """

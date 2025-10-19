@@ -88,15 +88,31 @@ class Bitcoin30mMainnetScanner:
             
             has_open_positions = False
             for api_key in api_keys:
-                open_orders = db.query(TradingOrder).filter(
+                # Buscar órdenes de compra ejecutadas
+                buy_orders = db.query(TradingOrder).filter(
                     TradingOrder.api_key_id == api_key.id,
                     TradingOrder.symbol == 'BTCUSDT',
                     TradingOrder.side == 'BUY',
                     TradingOrder.status == 'FILLED'
                 ).all()
                 
-                if open_orders:
-                    has_open_positions = True
+                # Verificar si alguna de estas órdenes NO tiene venta asociada
+                for buy_order in buy_orders:
+                    # Verificar si ya tiene orden de venta posterior
+                    sell_order = db.query(TradingOrder).filter(
+                        TradingOrder.api_key_id == api_key.id,
+                        TradingOrder.symbol == 'BTCUSDT',
+                        TradingOrder.side == 'SELL',
+                        TradingOrder.status == 'FILLED',
+                        TradingOrder.created_at > buy_order.created_at
+                    ).order_by(TradingOrder.created_at.asc()).first()
+                    
+                    # Si no hay venta, es una posición abierta
+                    if not sell_order:
+                        has_open_positions = True
+                        break
+                
+                if has_open_positions:
                     break
             
             # Determinar estado
