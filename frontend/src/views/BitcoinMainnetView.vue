@@ -199,11 +199,7 @@
         />
         
         <!-- Orders History -->
-        <OrdersHistory
-          :orders="mainnetOrders"
-          environment="mainnet"
-          @refresh="loadData"
-        />
+        <MainnetHistory />
         
         <!-- Scanner Logs -->
         <Bitcoin30mScannerLogs
@@ -248,7 +244,7 @@ import apiClient from '@/config/api'
 // Components
 import ApiKeyModal from '@/components/trading/ApiKeyModal.vue'
 import ApiHelpModal from '@/components/trading/ApiHelpModal.vue'
-import OrdersHistory from '@/components/trading/OrdersHistory.vue'
+import MainnetHistory from '@/components/trading/MainnetHistory.vue'
 import Bitcoin30mScannerLogs from '@/components/trading/Bitcoin30mScannerLogs.vue'
 import Bitcoin30mStatusCards from '@/components/trading/Bitcoin30mStatusCards.vue'
 import OpenPositionsCard from '@/components/trading/OpenPositionsCard.vue'
