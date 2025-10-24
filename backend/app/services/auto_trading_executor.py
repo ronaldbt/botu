@@ -29,19 +29,61 @@ class AutoTradingExecutor:
     def __init__(self):
         self.active_connections = {}  # Cache de conexiones por usuario
         
-        # Estados del bot para separar lógica de compra y venta
-        self.current_states = {
-            'btc': "SEARCHING_BUY",    # SEARCHING_BUY, MONITORING_SELL, IDLE
-            'eth': "SEARCHING_BUY",
-            'paxg': "SEARCHING_BUY",
-            'bnb': "SEARCHING_BUY"
-        }
-        self.state_changed_at = {}
-        self.last_position_checks = {}
+        # Sistema de reinversión de ganancias
+        self.profit_tracking = {}  # Tracking de ganancias por usuario
+        self.reinvestment_enabled = True  # Habilitar reinversión automática
     
-    async def _check_current_state(self, crypto: str) -> str:
+    async def _calculate_reinvestment_amount(self, api_key_id: int, user_id: int) -> float:
         """
-        Determina el estado actual del bot basado en posiciones abiertas para una crypto específica
+        Calcula cuánto USDT adicional usar de ganancias acumuladas
+        """
+        try:
+            db = SessionLocal()
+            
+            # Obtener ganancias acumuladas del usuario
+            total_profits = 0.0
+            
+            # Buscar todas las operaciones cerradas con ganancia
+            closed_orders = db.query(TradingOrder).filter(
+                TradingOrder.api_key_id == api_key_id,
+                TradingOrder.side == 'SELL',
+                TradingOrder.status == 'FILLED',
+                TradingOrder.pnl_usdt > 0  # Solo ganancias
+            ).all()
+            
+            for order in closed_orders:
+                if order.pnl_usdt:
+                    total_profits += order.pnl_usdt
+            
+            # Usar máximo 50% de las ganancias acumuladas para reinversión
+            reinvestment_amount = total_profits * 0.5
+            
+            if reinvestment_amount > 0:
+                logger.info(f"💰 [REINVERSIÓN] Usuario {user_id}: ${reinvestment_amount:.2f} de ganancias acumuladas disponibles")
+                return reinvestment_amount
+            
+            return 0.0
+            
+        except Exception as e:
+            logger.error(f"Error calculando reinversión: {e}")
+            return 0.0
+        finally:
+            db.close()
+    
+    async def _log_reinvestment(self, amount: float, user_id: int, crypto: str):
+        """
+        Log de reinversión de ganancias
+        """
+        if amount > 0:
+            logger.info(f"💰 [REINVERSIÓN] Usuario {user_id} - Usando ${amount:.2f} de ganancias acumuladas para {crypto.upper()}")
+            return f"💰 Reinversión: Usando ${amount:.2f} de ganancias acumuladas para nueva compra {crypto.upper()}"
+        return None
+    
+    async def _check_has_open_positions(self, crypto: str, user_id: Optional[int] = None) -> bool:
+        """
+        Verifica si hay posiciones abiertas para una crypto específica
+        Si se especifica user_id, solo verifica para ese usuario
+        Si no se especifica, verifica para todos los usuarios
         """
         try:
             from app.db.database import get_db
@@ -58,17 +100,22 @@ class AutoTradingExecutor:
             }
             
             if crypto not in crypto_config:
-                return "IDLE"
+                return False
             
             config = crypto_config[crypto]
             
             # Verificar si hay posiciones abiertas
-            api_keys = db.query(TradingApiKey).filter(
+            query = db.query(TradingApiKey).filter(
                 getattr(TradingApiKey, config['enabled_field']) == True,
                 TradingApiKey.is_active == True
-            ).all()
+            )
             
-            has_open_positions = False
+            # Si se especifica user_id, filtrar por usuario
+            if user_id is not None:
+                query = query.filter(TradingApiKey.user_id == user_id)
+            
+            api_keys = query.all()
+            
             for api_key in api_keys:
                 open_orders = db.query(TradingOrder).filter(
                     TradingOrder.api_key_id == api_key.id,
@@ -78,31 +125,15 @@ class AutoTradingExecutor:
                 ).all()
                 
                 if open_orders:
-                    has_open_positions = True
-                    break
+                    return True
             
-            # Determinar estado
-            if has_open_positions:
-                new_state = "MONITORING_SELL"
-            else:
-                new_state = "SEARCHING_BUY"
-            
-            # Log cambio de estado
-            if new_state != self.current_states.get(crypto, "SEARCHING_BUY"):
-                old_state = self.current_states.get(crypto, "SEARCHING_BUY")
-                self.current_states[crypto] = new_state
-                self.state_changed_at[crypto] = datetime.now()
-                
-                state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
-                state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
-                
-                logger.info(f"{state_emoji} CAMBIO DE ESTADO {crypto.upper()}: {state_desc}")
-            
-            return self.current_states.get(crypto, "SEARCHING_BUY")
+            return False
             
         except Exception as e:
-            logger.error(f"Error verificando estado {crypto}: {e}")
-            return "IDLE"
+            logger.error(f"Error verificando posiciones {crypto}: {e}")
+            return False
+        finally:
+            db.close()
     
     def _get_open_position(self, db: Session, api_key_id: int, symbol: str) -> Optional[TradingOrder]:
         """
@@ -143,20 +174,17 @@ class AutoTradingExecutor:
         1. API keys MAINNET configuradas
         2. Auto trading habilitado
         3. La crypto específica habilitada
-        4. Estado SEARCHING_BUY (sin posiciones abiertas)
+        4. Sin posiciones abiertas
         
         Args:
-            crypto: 'btc', 'eth', 'bnb', 'btc_4h', etc.
+            crypto: 'btc', 'eth', 'bnb', 'paxg'
             signal_data: Datos de la señal del scanner (precio, nivel ruptura, etc.)
             alerta_id: ID de la alerta que disparó esta señal
         """
         try:
-            # Verificar estado actual del bot para esta crypto
-            current_state = await self._check_current_state(crypto)
-            
-            if current_state != "SEARCHING_BUY":
-                logger.info(f"🔍 [AUTO TRADING] {crypto.upper()} en estado {current_state} - No ejecutando compra")
-                return
+            # NO verificar posiciones globalmente aquí
+            # Cada usuario se verificará individualmente en _execute_user_buy_order
+            logger.info(f"🔍 [AUTO TRADING] {crypto.upper()} - Iniciando verificación de compra por usuario")
             
             db = SessionLocal()
             
@@ -276,9 +304,25 @@ class AutoTradingExecutor:
             else:
                 logger.warning(f"⚠️ [AUTO TRADING] Usuario {user_id} tiene poco BNB ({bnb_balance:.3f}) - Considera agregar más para comisiones más baratas")
             
-            logger.info(f"💰 [AUTO TRADING] Usuario {user_id} - Asignación {symbol}: ${position_size_usdt:.2f} USDT")
+            # Calcular reinversión de ganancias si está habilitada
+            reinvestment_amount = 0.0
+            if self.reinvestment_enabled:
+                reinvestment_amount = await self._calculate_reinvestment_amount(api_key_config.id, user_id)
+                
+                if reinvestment_amount > 0:
+                    # Añadir ganancias a la asignación base
+                    total_investment = position_size_usdt + reinvestment_amount
+                    reinvestment_log = await self._log_reinvestment(reinvestment_amount, user_id, crypto_lower)
+                    if reinvestment_log:
+                        logger.info(f"💰 [REINVERSIÓN] {reinvestment_log}")
+                else:
+                    total_investment = position_size_usdt
+            else:
+                total_investment = position_size_usdt
             
-            if position_size_usdt <= 0:
+            logger.info(f"💰 [AUTO TRADING] Usuario {user_id} - Asignación {symbol}: ${position_size_usdt:.2f} USDT + Reinversión: ${reinvestment_amount:.2f} USDT = Total: ${total_investment:.2f} USDT")
+            
+            if total_investment <= 0:
                 logger.warning(f"⚠️ Usuario {user_id}: Sin asignación USDT para {symbol}")
                 return
             
@@ -290,7 +334,7 @@ class AutoTradingExecutor:
             
             # Usar quoteOrderQty (valor en USDT) en vez de calcular quantity
             # Esto permite a Binance calcular la cantidad exacta y evita problemas de LOT_SIZE
-            quote_usdt = float(position_size_usdt)
+            quote_usdt = float(total_investment)
             
             logger.info(f"💰 [AUTO TRADING] Preparando compra {symbol}: ${quote_usdt:.2f} USDT a precio ~${current_price:.2f}")
             
@@ -386,14 +430,14 @@ class AutoTradingExecutor:
         """
         Verifica condiciones de salida para todas las posiciones abiertas de una crypto
         Usa las mismas condiciones que los scanners: 8% TP, 3% SL, max hold time
-        Solo ejecuta si el bot está en estado MONITORING_SELL
+        Simplificado: solo verifica si hay posiciones abiertas
         """
         try:
-            # Verificar estado actual del bot para esta crypto
-            current_state = await self._check_current_state(crypto)
+            # Verificar si hay posiciones abiertas para esta crypto específica
+            has_positions = await self._check_has_open_positions(crypto)
             
-            if current_state != "MONITORING_SELL":
-                logger.info(f"📊 [AUTO TRADING] {crypto.upper()} en estado {current_state} - No verificando ventas")
+            if not has_positions:
+                logger.info(f"📊 [AUTO TRADING] {crypto.upper()} sin posiciones abiertas - No verificando ventas")
                 return
             
             db = SessionLocal()

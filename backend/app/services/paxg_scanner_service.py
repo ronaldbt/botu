@@ -64,15 +64,25 @@ class PaxgScannerService:
         self.state_changed_at = None
         self.last_position_check = None
         
+        # Inicializar executor genérico para 4h
+        self.executor = auto_trading_executor
+        
+        # Control de ciclo y parada inmediata (como Bitcoin30m)
+        import asyncio as _asyncio
+        self._stop_event: _asyncio.Event = _asyncio.Event()
+        self._task: Optional[_asyncio.Task] = None
+        
     async def _check_current_state(self) -> str:
         """
         Determina el estado actual del bot basado en posiciones abiertas
         """
-        try:
-            from app.db.database import get_db
-            from app.db.models import TradingOrder, TradingApiKey
-            
-            db = next(get_db())
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                from app.db.database import get_db
+                from app.db.models import TradingOrder, TradingApiKey
+                
+                db = next(get_db())
             
             # Verificar si hay posiciones abiertas de PAXG
             api_keys = db.query(TradingApiKey).filter(
@@ -118,11 +128,45 @@ class PaxgScannerService:
                     }
                 )
             
-            return self.current_state
+                return self.current_state
+                
+            except Exception as e:
+                logger.error(f"Error verificando estado PAXG (intento {attempt + 1}/{max_retries}): {e}")
+                
+                if attempt < max_retries - 1:
+                    # Backoff exponencial: 2, 4, 8 segundos
+                    wait_time = 2 ** attempt
+                    logger.warning(f"🔄 Reintentando en {wait_time} segundos...")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    # Último intento falló, mantener estado anterior
+                    logger.warning(f"🔄 Falló después de {max_retries} intentos. Manteniendo estado anterior: {self.current_state}")
+                    return self.current_state
+    
+    async def _recover_state(self):
+        """
+        Intenta recuperar el estado correcto tras un error
+        """
+        try:
+            self.add_log("🔄 Intentando recuperar estado...", "INFO")
             
+            # Reintentar verificación de estado con timeout
+            recovered_state = await asyncio.wait_for(
+                self._check_current_state(), 
+                timeout=10.0
+            )
+            
+            if recovered_state != "IDLE":
+                self.current_state = recovered_state
+                self.add_log(f"✅ Estado recuperado: {recovered_state}", "INFO")
+            else:
+                self.add_log("⚠️ No se pudo recuperar estado, manteniendo IDLE", "WARNING")
+                
+        except asyncio.TimeoutError:
+            self.add_log("⏱️ Timeout en recuperación de estado", "WARNING")
         except Exception as e:
-            logger.error(f"Error verificando estado PAXG: {e}")
-            return "IDLE"
+            self.add_log(f"❌ Error en recuperación: {e}", "ERROR")
     
     def update_config(self, new_config: Dict[str, Any]):
         """Actualiza la configuración del scanner (solo admin)"""
