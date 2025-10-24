@@ -336,3 +336,56 @@ class TradingOrder(Base):
     user = relationship("User")
     api_key = relationship("TradingApiKey")
     alerta = relationship("Alerta")
+
+# --------------------------
+# Tabla Trading Events (para alertas desacopladas)
+# --------------------------
+
+class TradingEvent(Base):
+    __tablename__ = "trading_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # ORDER_FILLED_BUY, ORDER_FILLED_SELL, ORDER_PARTIAL, etc.
+    event_type = Column(String, nullable=False, index=True)
+    order_id = Column(Integer, ForeignKey("trading_orders.id"), nullable=True)
+    api_key_id = Column(Integer, ForeignKey("trading_api_keys.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    symbol = Column(String, nullable=False, index=True)  # BTCUSDT, ETHUSDT, etc.
+    side = Column(String, nullable=True)  # BUY/SELL
+    quantity = Column(Float, nullable=True)
+    price = Column(Float, nullable=True)
+    total_usdt = Column(Float, nullable=True)
+    pnl_usdt = Column(Float, nullable=True)
+    pnl_percentage = Column(Float, nullable=True)
+    source = Column(String, nullable=True)  # executor, reconciliation, manual
+    payload = Column(String, nullable=True)  # JSON extra
+    created_at = Column(DateTime, default=func.now())
+    processed_at = Column(DateTime, nullable=True)
+    status = Column(String, default='PENDING')  # PENDING, SENT, FAILED
+    error_message = Column(String, nullable=True)
+
+    # Relaciones
+    order = relationship("TradingOrder")
+    api_key = relationship("TradingApiKey")
+    user = relationship("User")
+
+# --------------------------
+# Tabla Telegram Connections (un solo bot/chat por usuario)
+# --------------------------
+
+class TelegramConnection(Base):
+    __tablename__ = "telegram_connections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    chat_id = Column(String, nullable=True, index=True)
+    token = Column(String, unique=True, nullable=True, index=True)
+    token_expires_at = Column(DateTime, nullable=True)
+    connected = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=func.now())
+    connected_at = Column(DateTime, nullable=True)
+    revoked_at = Column(DateTime, nullable=True)
+    revoked_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    user = relationship("User", foreign_keys=[user_id])
+    revoked_by = relationship("User", foreign_keys=[revoked_by_user_id])

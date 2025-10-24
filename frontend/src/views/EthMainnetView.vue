@@ -192,6 +192,7 @@
           @refresh-status="handleRefreshStatus"
         />
         
+
         <!-- Open Positions -->
         <OpenPositionsCard
           environment="mainnet"

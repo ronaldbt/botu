@@ -9,12 +9,16 @@ import qrcode
 from io import BytesIO
 import base64
 import requests
+import os
 from app.db.database import get_db
 from app.core.auth import get_current_user
-from app.db.models import User
+from app.db.models import User, TradingEvent
 from app.db import crud_users
 from app.schemas.user_schema import TelegramSubscription, TelegramStatusUpdate
 from app.telegram.telegram_bot import telegram_bot
+from app.db.models import TelegramConnection
+from datetime import datetime, timedelta
+import uuid
 
 router = APIRouter(prefix="/telegram", tags=["telegram"])
 
@@ -46,6 +50,325 @@ class SendAlertRequest(BaseModel):
 class WebhookUpdate(BaseModel):
     """Modelo para recibir updates del webhook de Telegram"""
     pass  # Acepta cualquier estructura de datos
+
+# -----------------------------
+# Endpoints unificados (single bot)
+# -----------------------------
+
+class UnifiedStatusResponse(BaseModel):
+    connected: bool
+    chat_id: Optional[str]
+    bot_configured: bool
+    connection_id: Optional[int]
+    token_expires_at: Optional[str]
+
+@router.get("/status-main", response_model=UnifiedStatusResponse)
+async def get_status_main(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        bot_configured = True if os.getenv('TELEGRAM_BOT_TOKEN') else False
+        conn = db.query(TelegramConnection).filter(TelegramConnection.user_id == current_user.id).order_by(TelegramConnection.connected_at.desc().nullslast(), TelegramConnection.created_at.desc()).first()
+        connected = bool(conn and conn.connected and conn.chat_id)
+        return UnifiedStatusResponse(
+            connected=connected,
+            chat_id=conn.chat_id if conn else None,
+            bot_configured=bot_configured,
+            connection_id=conn.id if conn else None,
+            token_expires_at=conn.token_expires_at.isoformat() if conn and conn.token_expires_at else None
+        )
+    except Exception as e:
+        logger.error(f"Error status-main: {e}")
+        raise HTTPException(status_code=500, detail="Error obteniendo estado")
+
+class UnifiedConnectResponse(BaseModel):
+    token: str
+    qr_code_base64: str
+    telegram_link: str
+    expires_in_seconds: int
+
+@router.post("/connect-main", response_model=UnifiedConnectResponse)
+async def connect_main(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        if not os.getenv('TELEGRAM_BOT_TOKEN'):
+            raise HTTPException(status_code=503, detail="Bot de Telegram no configurado")
+
+        # Generar/actualizar conexión y token (expira en 3 minutos)
+        token = uuid.uuid4().hex
+        expires_at = datetime.utcnow() + timedelta(minutes=3)
+
+        conn = db.query(TelegramConnection).filter(TelegramConnection.user_id == current_user.id).first()
+        if not conn:
+            conn = TelegramConnection(user_id=current_user.id)
+            db.add(conn)
+        conn.token = token
+        conn.token_expires_at = expires_at
+        conn.connected = bool(conn.chat_id)
+        db.commit()
+        db.refresh(conn)
+
+        # Construir link
+        bot_username = os.getenv('TELEGRAM_BOT_USERNAME', '').replace('@','')
+        telegram_link = f"https://t.me/{bot_username}?start={token}" if bot_username else f"tg://resolve?domain=&start={token}"
+
+        # QR
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(telegram_link)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buf = BytesIO()
+        img.save(buf, format='PNG')
+        qr_base64 = base64.b64encode(buf.getvalue()).decode()
+
+        return UnifiedConnectResponse(
+            token=token,
+            qr_code_base64=qr_base64,
+            telegram_link=telegram_link,
+            expires_in_seconds=int((expires_at - datetime.utcnow()).total_seconds())
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error connect-main: {e}")
+        raise HTTPException(status_code=500, detail="Error generando conexión")
+
+class ValidateMainRequest(BaseModel):
+    token: str
+    chat_id: str
+
+@router.post("/validate-main")
+async def validate_main(req: ValidateMainRequest, db: Session = Depends(get_db)):
+    try:
+        conn = db.query(TelegramConnection).filter(
+            TelegramConnection.token == req.token
+        ).first()
+        if not conn:
+            return {"valid": False, "message": "Token inválido"}
+        if conn.token_expires_at and datetime.utcnow() > conn.token_expires_at:
+            return {"valid": False, "message": "Token expirado"}
+
+        conn.chat_id = req.chat_id
+        conn.connected = True
+        conn.connected_at = datetime.utcnow()
+        # invalidar token tras usarlo
+        conn.token = None
+        conn.token_expires_at = None
+        db.commit()
+
+        return {"valid": True, "user_id": conn.user_id, "message": "Conexión verificada"}
+    except Exception as e:
+        logger.error(f"Error validate-main: {e}")
+        raise HTTPException(status_code=500, detail="Error validando token")
+
+class RevokeRequest(BaseModel):
+    user_id: int
+
+@router.post("/admin/revoke")
+async def admin_revoke(req: RevokeRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    try:
+        conn = db.query(TelegramConnection).filter(TelegramConnection.user_id == req.user_id).first()
+        if not conn:
+            return {"message": "No existe conexión"}
+        conn.connected = False
+        conn.revoked_at = datetime.utcnow()
+        conn.revoked_by_user_id = current_user.id
+        conn.chat_id = None
+        db.commit()
+        return {"message": "Conexión revocada"}
+    except Exception as e:
+        logger.error(f"Error admin_revoke: {e}")
+        raise HTTPException(status_code=500, detail="Error revocando conexión")
+
+@router.get("/admin/connections")
+async def admin_list_connections(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    try:
+        conns = db.query(TelegramConnection).order_by(TelegramConnection.connected.desc(), TelegramConnection.created_at.desc()).all()
+        return {
+            "total": len(conns),
+            "connections": [
+                {
+                    "id": c.id,
+                    "user_id": c.user_id,
+                    "chat_id": c.chat_id,
+                    "connected": c.connected,
+                    "connected_at": c.connected_at.isoformat() if c.connected_at else None,
+                    "token_expires_at": c.token_expires_at.isoformat() if c.token_expires_at else None,
+                    "revoked_at": c.revoked_at.isoformat() if c.revoked_at else None,
+                } for c in conns
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error list connections: {e}")
+        raise HTTPException(status_code=500, detail="Error listando conexiones")
+
+@router.post("/admin/force-disconnect")
+async def admin_force_disconnect(req: RevokeRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    try:
+        conn = db.query(TelegramConnection).filter(TelegramConnection.user_id == req.user_id).first()
+        if not conn:
+            return {"message": "No existe conexión"}
+        # Intento opcional de notificación
+        try:
+            if os.getenv('TELEGRAM_BOT_TOKEN') and conn.chat_id:
+                requests.post(
+                    f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}/sendMessage",
+                    json={"chat_id": conn.chat_id, "text": "🔌 Tu conexión ha sido desconectada por el administrador."},
+                    timeout=5
+                )
+        except Exception:
+            pass
+        conn.connected = False
+        conn.chat_id = None
+        conn.revoked_at = datetime.utcnow()
+        conn.revoked_by_user_id = current_user.id
+        db.commit()
+        return {"message": "Usuario desconectado"}
+    except Exception as e:
+        logger.error(f"Error force-disconnect: {e}")
+        raise HTTPException(status_code=500, detail="Error forzando desconexión")
+
+@router.get("/alert-sender-status")
+async def get_alert_sender_status(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        from app.telegram.alert_sender import alert_sender
+        
+        # Obtener métricas básicas
+        pending_events = db.query(TradingEvent).filter(TradingEvent.status == 'PENDING').count()
+        sent_today = db.query(TradingEvent).filter(
+            TradingEvent.status == 'SENT',
+            TradingEvent.processed_at >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        ).count()
+        
+        # Obtener usuarios conectados
+        connected_users = db.query(TelegramConnection).filter(
+            TelegramConnection.connected == True,
+            TelegramConnection.chat_id.isnot(None)
+        ).count()
+        
+        # Solo mostrar errores si es admin
+        errors = []
+        if current_user.is_admin:
+            recent_errors = db.query(TradingEvent).filter(
+                TradingEvent.status == 'FAILED',
+                TradingEvent.processed_at >= datetime.now() - timedelta(hours=24)
+            ).order_by(TradingEvent.processed_at.desc()).limit(10).all()
+            
+            errors = [{"id": e.id, "message": e.error_message, "created_at": e.created_at.isoformat()} for e in recent_errors]
+        
+        return {
+            "is_running": alert_sender.is_running,
+            "last_check": alert_sender.last_check.isoformat() if alert_sender.last_check else None,
+            "pending_events": pending_events,
+            "sent_today": sent_today,
+            "connected_users": connected_users,
+            "errors": errors
+        }
+    except Exception as e:
+        logger.error(f"Error obteniendo estado AlertSender: {e}")
+        raise HTTPException(status_code=500, detail="Error obteniendo estado")
+
+@router.get("/admin/alert-sender-status")
+async def get_alert_sender_status_admin(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    try:
+        from app.telegram.alert_sender import alert_sender
+        
+        # Obtener métricas básicas
+        pending_events = db.query(TradingEvent).filter(TradingEvent.status == 'PENDING').count()
+        sent_today = db.query(TradingEvent).filter(
+            TradingEvent.status == 'SENT',
+            TradingEvent.processed_at >= datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        ).count()
+        
+        # Últimos errores
+        recent_errors = db.query(TradingEvent).filter(
+            TradingEvent.status == 'FAILED',
+            TradingEvent.processed_at >= datetime.now() - timedelta(hours=24)
+        ).order_by(TradingEvent.processed_at.desc()).limit(10).all()
+        
+        errors = [{"id": e.id, "message": e.error_message, "created_at": e.created_at.isoformat()} for e in recent_errors]
+        
+        # Obtener usuarios conectados
+        connected_users = db.query(TelegramConnection).filter(
+            TelegramConnection.connected == True,
+            TelegramConnection.chat_id.isnot(None)
+        ).count()
+        
+        return {
+            "is_running": alert_sender.is_running,
+            "last_check": alert_sender.last_check.isoformat() if alert_sender.last_check else None,
+            "pending_events": pending_events,
+            "sent_today": sent_today,
+            "connected_users": connected_users,
+            "errors": errors
+        }
+    except Exception as e:
+        logger.error(f"Error obteniendo estado AlertSender: {e}")
+        raise HTTPException(status_code=500, detail="Error obteniendo estado")
+
+@router.post("/disconnect-main")
+async def disconnect_main(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    try:
+        conn = db.query(TelegramConnection).filter(TelegramConnection.user_id == current_user.id).first()
+        if conn:
+            conn.connected = False
+            conn.chat_id = None
+            conn.revoked_at = datetime.utcnow()
+            db.commit()
+        return {"message": "Desconectado correctamente"}
+    except Exception as e:
+        logger.error(f"Error disconnect-main: {e}")
+        raise HTTPException(status_code=500, detail="Error desconectando")
+
+@router.post("/send-test-alert")
+async def send_test_alert(
+    alert_data: SendAlertRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    try:
+        # Verificar feature flag
+        if not os.getenv('TELEGRAM_ALERTS_ENABLED', 'false').lower() in ('true', '1', 'yes'):
+            raise HTTPException(status_code=503, detail="Alertas de Telegram deshabilitadas")
+            
+        if not os.getenv('TELEGRAM_BOT_TOKEN'):
+            raise HTTPException(status_code=503, detail="Bot de Telegram no configurado")
+        
+        # Buscar conexión del usuario
+        conn = db.query(TelegramConnection).filter(
+            TelegramConnection.user_id == current_user.id,
+            TelegramConnection.connected == True,
+            TelegramConnection.chat_id.isnot(None)
+        ).first()
+        
+        if not conn:
+            raise HTTPException(status_code=400, detail="Usuario no conectado a Telegram")
+        
+        # Enviar mensaje de prueba
+        import requests
+        url = f"https://api.telegram.org/bot{os.getenv('TELEGRAM_BOT_TOKEN')}/sendMessage"
+        payload = {
+            'chat_id': conn.chat_id,
+            'text': f"🧪 **Alerta de Prueba**\n\n{alert_data.message}\n\n📊 Símbolo: {alert_data.symbol}\n💰 Precio: ${alert_data.price or 'N/A'}\n🕒 {datetime.now().strftime('%H:%M:%S')}",
+            'parse_mode': 'Markdown'
+        }
+        
+        resp = requests.post(url, json=payload, timeout=10)
+        if resp.status_code == 200:
+            return {"message": "Alerta de prueba enviada correctamente"}
+        else:
+            raise HTTPException(status_code=500, detail="Error enviando mensaje")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error send-test-alert: {e}")
+        raise HTTPException(status_code=500, detail="Error enviando alerta de prueba")
 
 @router.get("/status", response_model=TelegramStatusResponse)
 async def get_telegram_status(
@@ -82,9 +405,8 @@ async def get_telegram_status(
         elif crypto_for_bot == "eth":
             crypto_for_bot = "ethereum"
         
-        from app.telegram.crypto_bots import crypto_bots
-        crypto_bot = crypto_bots.get_bot(crypto_for_bot)
-        bot_configured = crypto_bot and crypto_bot.is_configured
+        # Con un solo bot, leemos de env TELEGRAM_BOT_TOKEN
+        bot_configured = True if os.getenv('TELEGRAM_BOT_TOKEN') else False
         
         # Usuario está conectado si está subscrito Y tiene chat_id
         connected = bool(subscribed and chat_id)
@@ -122,13 +444,11 @@ async def generate_telegram_connection(
         crypto = crypto.lower()
         
         # Verificar si el bot específico está configurado
-        from app.telegram.crypto_bots import crypto_bots
-        crypto_bot = crypto_bots.get_bot(crypto_for_bot)
-        
-        if not crypto_bot or not crypto_bot.is_configured:
+        # Validar que el único bot está configurado
+        if not os.getenv('TELEGRAM_BOT_TOKEN'):
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"El bot de {crypto.upper()} no está configurado en el servidor"
+                detail=f"Bot de Telegram no configurado en el servidor"
             )
         
         # Obtener o generar token único para esta crypto
@@ -148,14 +468,9 @@ async def generate_telegram_connection(
             )
         
         # Crear link de Telegram con el bot específico
-        bot_username = crypto_bot.bot_username.replace('@', '')
-        if not bot_username:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="No se pudo obtener información del bot"
-            )
-            
-        telegram_link = f"https://t.me/{bot_username}?start={telegram_token}"
+        # En modo single bot no conocemos username por API; usamos link genérico si se configuró TELEGRAM_BOT_USERNAME opcional
+        bot_username = os.getenv('TELEGRAM_BOT_USERNAME', '').replace('@','')
+        telegram_link = f"https://t.me/{bot_username}?start={telegram_token}" if bot_username else f"tg://resolve?domain=&start={telegram_token}"
         
         # Generar QR
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
@@ -206,13 +521,10 @@ async def regenerate_telegram_token(
         crypto = crypto.lower()
         
         # Verificar si el bot específico está configurado
-        from app.telegram.crypto_bots import crypto_bots
-        crypto_bot = crypto_bots.get_bot(crypto_for_bot)
-        
-        if not crypto_bot or not crypto_bot.is_configured:
+        if not os.getenv('TELEGRAM_BOT_TOKEN'):
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"El bot de {crypto.upper()} no está configurado en el servidor"
+                detail=f"Bot de Telegram no configurado en el servidor"
             )
         
         # Regenerar token para esta crypto
@@ -232,14 +544,8 @@ async def regenerate_telegram_token(
             )
         
         # Crear link de Telegram con el bot específico
-        bot_username = crypto_bot.bot_username.replace('@', '')
-        if not bot_username:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="No se pudo obtener información del bot"
-            )
-            
-        telegram_link = f"https://t.me/{bot_username}?start={telegram_token}"
+        bot_username = os.getenv('TELEGRAM_BOT_USERNAME', '').replace('@','')
+        telegram_link = f"https://t.me/{bot_username}?start={telegram_token}" if bot_username else f"tg://resolve?domain=&start={telegram_token}"
         
         # Generar QR
         qr = qrcode.QRCode(version=1, box_size=10, border=5)

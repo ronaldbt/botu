@@ -1,5 +1,10 @@
 <template>
   <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+    <!-- Debug Info -->
+    <div class="p-2 bg-yellow-100 text-xs text-yellow-800 mb-4 rounded">
+      DEBUG: MainnetHistory component rendered - orders: {{ orders.length }}, loading: {{ loading }}, total: {{ total }}
+    </div>
+    
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center space-x-2">
         <h2 class="text-xl font-semibold text-slate-900 flex items-center">
@@ -57,6 +62,7 @@
     <div v-else-if="isEmpty && !loading" class="text-center py-8">
       <span class="text-4xl text-slate-300 mb-4 block">📝</span>
       <p class="text-slate-500">No hay órdenes de Mainnet registradas</p>
+      <p class="text-xs text-slate-400 mt-2">Debug: orders={{ orders.length }}, total={{ total }}, loading={{ loading }}</p>
     </div>
 
     <!-- Orders Table -->
@@ -116,9 +122,9 @@
     <div v-if="hasMore && !loading" class="mt-6 text-center">
       <button 
         @click="loadMore"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
       >
-        Cargar más órdenes
+        📄 Cargar más órdenes ({{ total - orders.length }} restantes)
       </button>
     </div>
 
@@ -132,7 +138,11 @@
 
     <!-- End of List -->
     <div v-if="!hasMore && orders.length > 0" class="mt-6 text-center">
-      <p class="text-slate-500 text-sm">No hay más órdenes para mostrar</p>
+      <div class="flex items-center justify-center space-x-2 text-slate-500">
+        <div class="w-8 h-px bg-slate-300"></div>
+        <span class="text-sm">✅ Todas las órdenes cargadas</span>
+        <div class="w-8 h-px bg-slate-300"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -163,6 +173,16 @@ const {
   toggleSystemOnly
 } = useMainnetHistory()
 
+// Debug logs
+console.log('[MainnetHistory] Componente inicializado:', {
+  orders: orders.value,
+  loading: loading.value,
+  error: error.value,
+  total: total.value,
+  hasMore: hasMore.value,
+  isEmpty: isEmpty.value
+})
+
 // Función para obtener el icono de la criptomoneda
 const getCryptoIcon = (symbol) => {
   const icons = {
@@ -190,7 +210,19 @@ const handleScroll = () => {
 
 // Lifecycle
 onMounted(async () => {
-  await loadHistory(true)
+  console.log('[MainnetHistory] Componente montado, cargando historial...')
+  console.log('[MainnetHistory] Estado inicial:', {
+    orders: orders.value,
+    loading: loading.value,
+    error: error.value,
+    total: total.value
+  })
+  try {
+    await loadHistory(true)
+    console.log('[MainnetHistory] loadHistory completado')
+  } catch (error) {
+    console.error('[MainnetHistory] Error en loadHistory:', error)
+  }
   window.addEventListener('scroll', handleScroll)
 })
 

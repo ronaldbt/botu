@@ -14,6 +14,7 @@ from app.db.database import SessionLocal
 from app.db import crud_trading
 from app.db.models import TradingApiKey, TradingOrder
 from app.schemas.trading_schema import TradingOrderCreate
+from app.services import trading_events
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -354,6 +355,19 @@ class AutoTradingExecutor:
                     )
                     
                     logger.info(f"✅ MAINNET - Usuario {user_id}: Compra ejecutada {symbol} ${executed_price * executed_quantity:.2f}")
+                    # Publicar evento BUY_FILLED desacoplado
+                    try:
+                        trading_events.publish_order_filled_buy(
+                            order=db.query(TradingOrder).filter(TradingOrder.id == db_order.id).first(),
+                            symbol=symbol,
+                            quantity=executed_quantity,
+                            price=executed_price,
+                            total_usdt=executed_price * executed_quantity,
+                            source="executor",
+                            extra={"binance_order_id": binance_order.get('orderId')}
+                        )
+                    except Exception as pub_err:
+                        logger.error(f"⚠️ Error publicando evento BUY_FILLED: {pub_err}")
                     
                 else:
                     # Error en la orden
@@ -618,6 +632,20 @@ class AutoTradingExecutor:
                     db.commit()
                     
                     logger.info(f"✅ MAINNET - Usuario {user_id}: {reason} ejecutado - PnL: ${pnl_final_usdt:+.2f} ({pnl_final_pct:+.2f}%)")
+                    # Publicar evento SELL_FILLED desacoplado
+                    try:
+                        trading_events.publish_order_filled_sell(
+                            order=db.query(TradingOrder).filter(TradingOrder.id == db_sell_order.id).first(),
+                            symbol=symbol,
+                            quantity=executed_quantity,
+                            price=executed_price,
+                            pnl_usdt=pnl_final_usdt,
+                            pnl_percentage=pnl_final_pct,
+                            source="executor",
+                            extra={"reason": reason, "buy_order_id": buy_order.id}
+                        )
+                    except Exception as pub_err:
+                        logger.error(f"⚠️ Error publicando evento SELL_FILLED: {pub_err}")
                     
                 else:
                     # Error en la orden

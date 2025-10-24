@@ -182,6 +182,7 @@
           @refresh-status="handleRefreshStatus"
         />
         
+
         <!-- Open Positions -->
         <OpenPositionsCard
           environment="mainnet"
@@ -228,6 +229,8 @@
       :show="showApiHelpModal"
       @close="showApiHelpModal = false"
     />
+
+    <!-- Telegram QR Modal -->
   </div>
 </template>
 
@@ -265,6 +268,7 @@ const showApiHelpModal = ref(false)
 const portfolioRef = ref(null)
 // const manualTradingRef = ref(null) // removido
 const currentBtcPrice = ref(122000)
+
 
 // Formulario específico para mainnet
 const apiKeyForm = reactive({
@@ -431,6 +435,7 @@ const handleForceBuy = async () => {
   alert(ok ? '✅ Compra simulada disparada' : '❌ Error forzando compra')
   await loadData()
 }
+
 
 // Proxy methods
 const testConnection = apiKeys.testConnection

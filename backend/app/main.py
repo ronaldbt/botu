@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 from app.db import models
 from app.db.database import engine
-from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, health_telegram_routes, trading_routes, debug_routes, bitcoin30m_scanner_routes, bitcoin30m_mainnet_routes, bnb_mainnet_routes, eth_mainnet_routes, btc_4h_mainnet_routes, paxg_mainnet_routes, mainnet_history_routes
+from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, trading_routes, debug_routes, bitcoin30m_scanner_routes, bitcoin30m_mainnet_routes, bnb_mainnet_routes, eth_mainnet_routes, btc_4h_mainnet_routes, paxg_mainnet_routes, mainnet_history_routes
 from app.services.health_monitor_service import health_monitor
 
 # Cargar variables de entorno
@@ -29,12 +29,7 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("🚀 BOTU SERVER STARTING UP...")
         
-        # Inicializar crypto bots
-        try:
-            from app.telegram.crypto_bots import crypto_bots
-            logger.info("🤖 Crypto Bots inicializados correctamente")
-        except Exception as e:
-            logger.error(f"❌ Error inicializando crypto bots: {e}")
+        # Lógica antigua de crypto bots eliminada (usamos un solo bot ahora)
         
         # Iniciar Health Monitor automáticamente
         success = await health_monitor.start_monitoring()
@@ -134,5 +129,4 @@ app.include_router(btc_4h_mainnet_routes.router, tags=["btc-4h-mainnet-scanner"]
 app.include_router(paxg_mainnet_routes.router, tags=["paxg-mainnet-scanner"])  # PAXG Mainnet Scanner endpoints
 app.include_router(mainnet_history_routes.router, tags=["mainnet-history"])  # Mainnet History endpoints
 app.include_router(health_routes.router, tags=["health"])        # Health Monitor endpoints
-app.include_router(health_telegram_routes.router, tags=["health-telegram"])  # Health Telegram Bot endpoints
 app.include_router(debug_routes.router, tags=["debug"])                   # Debug endpoints

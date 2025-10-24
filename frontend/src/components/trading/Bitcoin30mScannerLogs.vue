@@ -1,8 +1,64 @@
 <template>
   <div class="bg-gray-900 rounded-xl shadow-lg border border-gray-700 mb-8">
     <!-- Terminal Header -->
-    <div class="px-6 py-4 border-b border-gray-700 bg-gray-800">
-      <div class="flex items-center justify-between">
+    <div class="px-4 md:px-6 py-4 border-b border-gray-700 bg-gray-800">
+      <!-- Mobile Layout -->
+      <div class="md:hidden space-y-3">
+        <!-- Title Row -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <div class="flex space-x-2 mr-3">
+              <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+              <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+            </div>
+            <div>
+              <h3 class="text-base font-semibold text-white">Bitcoin 30m Scanner</h3>
+              <p class="text-xs text-gray-400">Actividad en tiempo real</p>
+            </div>
+          </div>
+          <button 
+            @click="$emit('refresh')"
+            :disabled="refreshing"
+            class="inline-flex items-center px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs font-medium rounded transition-colors disabled:opacity-50"
+          >
+            <span class="mr-1" :class="{ 'animate-spin': refreshing }">🔄</span>
+            {{ refreshing ? '...' : '↻' }}
+          </button>
+        </div>
+        
+        <!-- Status Row -->
+        <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <div :class="[
+              'w-2 h-2 rounded-full',
+              scannerStatus.is_running ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+            ]"></div>
+            <span class="text-gray-300">
+              {{ scannerStatus.is_running ? 'ACTIVO' : 'INACTIVO' }}
+            </span>
+          </div>
+          
+          <div class="text-gray-400 font-mono">
+            <span v-if="countdownText">{{ countdownText }}</span>
+            <span v-else>...</span>
+          </div>
+          
+          <div class="text-xs" :class="readiness.auto_ready ? 'text-green-400' : 'text-red-400'">
+            {{ readiness.auto_ready ? 'LISTO' : 'NO LISTO' }}
+          </div>
+        </div>
+        
+        <!-- BTC Price Row -->
+        <div class="text-center">
+          <div class="text-sm text-green-400 font-mono">
+            BTC: ${{ currentBtcPrice.toLocaleString() }}
+          </div>
+        </div>
+      </div>
+      
+      <!-- Desktop Layout -->
+      <div class="hidden md:flex items-center justify-between">
         <div class="flex items-center">
           <div class="flex space-x-2 mr-4">
             <div class="w-3 h-3 bg-red-500 rounded-full"></div>
@@ -54,7 +110,7 @@
     </div>
 
     <!-- Terminal Body -->
-    <div class="bg-black p-4 font-mono text-sm">
+    <div class="bg-black p-2 md:p-4 font-mono text-xs md:text-sm">
       <!-- Terminal Prompt -->
       <div class="mb-2 text-green-400">
         <span class="text-yellow-400">user@botu-scanner</span>:<span class="text-blue-400">~/bitcoin-30m</span>$ 
@@ -62,7 +118,7 @@
       </div>
       
       <!-- Logs Container -->
-      <div class="max-h-96 overflow-y-auto space-y-1">
+      <div class="max-h-64 md:max-h-96 overflow-y-auto overflow-x-auto space-y-1">
         <div v-if="filteredLogs.length === 0" class="text-gray-500 text-center py-8">
           <div class="text-gray-600">No hay logs disponibles</div>
           <div class="text-gray-700 text-xs mt-1">El scanner aún no ha generado actividad</div>
@@ -71,16 +127,16 @@
         <div 
           v-for="log in filteredLogs" 
           :key="`${log.timestamp}-${log.message}`"
-          class="flex items-start gap-2 py-1"
+          class="flex items-start gap-1 md:gap-2 py-1 min-w-max"
         >
           <!-- Timestamp -->
-          <span class="text-gray-500 text-xs flex-shrink-0">
+          <span class="text-gray-500 text-xs flex-shrink-0 whitespace-nowrap">
             {{ formatLogTime(log.timestamp) }}
           </span>
           
           <!-- Log Level Badge -->
           <span 
-            class="text-xs font-bold px-2 py-0.5 rounded flex-shrink-0"
+            class="text-xs font-bold px-1 md:px-2 py-0.5 rounded flex-shrink-0 whitespace-nowrap"
             :class="getTerminalLogLevelClass(log.level)"
           >
             {{ log.level }}
@@ -88,7 +144,7 @@
           
           <!-- Log Message -->
           <span 
-            class="flex-1 break-words"
+            class="flex-1 break-words whitespace-pre-wrap"
             :class="getTerminalLogTextClass(log.level)"
           >
             {{ log.message }}
@@ -103,8 +159,26 @@
     </div>
 
     <!-- Terminal Stats Footer -->
-    <div v-if="logs.length > 0" class="bg-gray-800 px-4 py-3 border-t border-gray-700">
-      <div class="flex items-center justify-between text-xs text-gray-300">
+    <div v-if="logs.length > 0" class="bg-gray-800 px-2 md:px-4 py-2 md:py-3 border-t border-gray-700">
+      <!-- Mobile Layout -->
+      <div class="md:hidden">
+        <div class="grid grid-cols-2 gap-2 text-xs text-gray-300 mb-2">
+          <div class="flex items-center justify-between">
+            <span class="text-green-400">✅ {{ successCount }}</span>
+            <span class="text-red-400">❌ {{ errorCount }}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-yellow-400">⚠️ {{ warningCount }}</span>
+            <span class="text-blue-400">ℹ️ {{ infoCount }}</span>
+          </div>
+        </div>
+        <div class="text-center text-gray-500 text-xs">
+          Total: {{ logs.length }} logs
+        </div>
+      </div>
+      
+      <!-- Desktop Layout -->
+      <div class="hidden md:flex items-center justify-between text-xs text-gray-300">
         <div class="flex items-center gap-6">
           <span class="text-green-400">✅ {{ successCount }} éxitos</span>
           <span class="text-red-400">❌ {{ errorCount }} errores</span>

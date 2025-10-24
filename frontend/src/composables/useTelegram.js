@@ -112,6 +112,7 @@ export function useTelegram(crypto = 'btc') {
       
       qrConnection.value = response.data
       showQRModal.value = true
+      console.log(`[Telegram ${crypto}] generateTelegramConnection: set showQRModal=true`)
       console.log(`[Telegram ${crypto}] generateTelegramConnection: qrConnection.value:`, qrConnection.value)
       console.log(`[Telegram ${crypto}] generateTelegramConnection: showQRModal.value:`, showQRModal.value)
       
@@ -222,7 +223,9 @@ export function useTelegram(crypto = 'btc') {
   }
 
   const closeQRModal = () => {
+    console.log(`[Telegram ${crypto}] closeQRModal()`)
     showQRModal.value = false
+    console.log(`[Telegram ${crypto}] closeQRModal -> showQRModal=`, showQRModal.value)
     qrConnection.value = null
     stopTokenCountdown()
     

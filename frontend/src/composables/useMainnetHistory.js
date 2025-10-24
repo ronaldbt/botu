@@ -8,7 +8,7 @@ export function useMainnetHistory() {
   const total = ref(0)
   const hasMore = ref(false)
   const currentOffset = ref(0)
-  const limit = ref(20)
+  const limit = ref(5)
   const systemOnly = ref(false)
 
   // Computed
@@ -23,16 +23,36 @@ export function useMainnetHistory() {
 
       const offset = reset ? 0 : currentOffset.value
       
-      const response = await apiClient.get('/mainnet/history', {
-        params: {
-          limit: limit.value,
-          offset: offset,
-          system_only: systemOnly.value
-        }
+      console.log('[useMainnetHistory] Cargando historial:', {
+        limit: limit.value,
+        offset: offset,
+        system_only: systemOnly.value
+      })
+      
+      const url = '/mainnet/history'
+      const params = {
+        limit: limit.value,
+        offset: offset,
+        system_only: systemOnly.value
+      }
+      
+      console.log('[useMainnetHistory] URL y parámetros:', { url, params })
+      
+      const response = await apiClient.get(url, { params })
+      
+      console.log('[useMainnetHistory] Respuesta recibida:', {
+        status: response.status,
+        data: response.data
       })
 
       if (response.data) {
         const newOrders = response.data.orders || []
+        
+        console.log('[useMainnetHistory] Procesando órdenes:', {
+          newOrdersCount: newOrders.length,
+          reset: reset,
+          currentOrdersCount: orders.value.length
+        })
         
         if (reset) {
           orders.value = newOrders
@@ -44,12 +64,26 @@ export function useMainnetHistory() {
         
         total.value = response.data.total || 0
         hasMore.value = response.data.has_more || false
+        
+        console.log('[useMainnetHistory] Estado actualizado:', {
+          totalOrders: orders.value.length,
+          total: total.value,
+          hasMore: hasMore.value
+        })
       }
     } catch (err) {
-      console.error('Error cargando historial mainnet:', err)
+      console.error('[useMainnetHistory] Error cargando historial mainnet:', err)
+      console.error('[useMainnetHistory] Error details:', {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url
+      })
       error.value = err.response?.data?.detail || err.message || 'Error cargando historial'
     } finally {
       loading.value = false
+      console.log('[useMainnetHistory] Carga completada, loading:', loading.value)
     }
   }
 
@@ -59,10 +93,12 @@ export function useMainnetHistory() {
   }
 
   const refresh = async () => {
+    console.log('[useMainnetHistory] Refrescando historial...')
     await loadHistory(true)
   }
 
   const toggleSystemOnly = async () => {
+    console.log('[useMainnetHistory] Cambiando filtro systemOnly:', !systemOnly.value)
     systemOnly.value = !systemOnly.value
     await loadHistory(true)
   }

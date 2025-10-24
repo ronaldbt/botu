@@ -21,6 +21,8 @@ import BnbMainnetView from '../views/BnbMainnetView.vue';
 import EthMainnetView from '../views/EthMainnetView.vue';
 import Btc4hMainnetView from '../views/Btc4hMainnetView.vue';
 import PaxgMainnetView from '../views/PaxgMainnetView.vue';
+import TestView from '../views/TestView.vue';
+import IntegracionesView from '../views/IntegracionesView.vue';
 
 const routes = [
   {
@@ -117,6 +119,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/test',
+    name: 'Test',
+    component: TestView,
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/bnb-mainnet',
     name: 'BnbMainnet',
     component: BnbMainnetView,
@@ -138,6 +146,12 @@ const routes = [
     path: '/paxg-mainnet',
     name: 'PaxgMainnet',
     component: PaxgMainnetView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/integraciones',
+    name: 'Integraciones',
+    component: IntegracionesView,
     meta: { requiresAuth: true },
   },
 ];

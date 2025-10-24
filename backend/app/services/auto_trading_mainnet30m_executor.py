@@ -12,6 +12,7 @@ from app.db.database import get_db
 from app.db.models import TradingApiKey, TradingOrder
 from app.db.crud_trading import create_trading_order, update_trading_order_status, get_decrypted_api_credentials
 from app.schemas.trading_schema import TradingOrderCreate
+from app.services import trading_events
 # from app.services.telegram_service import send_telegram_message
 
 logger = logging.getLogger(__name__)
@@ -263,6 +264,19 @@ class AutoTradingMainnet30mExecutor:
                     }
                 }, binance_result)
                 logger.info(f"✅ BUY FILLED db_id={new_order.id} binance_id={order_id} qty={executed_qty:.8f} @ {exec_price:.2f}")
+                # Publicar evento BUY_FILLED
+                try:
+                    trading_events.publish_order_filled_buy(
+                        order=db.query(TradingOrder).filter(TradingOrder.id == new_order.id).first(),
+                        symbol='BTCUSDT',
+                        quantity=executed_qty,
+                        price=exec_price,
+                        total_usdt=quote_usdt,
+                        source='executor',
+                        extra={'binance_order_id': order_id}
+                    )
+                except Exception as pub_err:
+                    logger.error(f"⚠️ Error publicando evento BUY_FILLED: {pub_err}")
                 
                 # Retornar resultado exitoso
                 return {
@@ -845,6 +859,22 @@ class AutoTradingMainnet30mExecutor:
                 
                 # Enviar notificación con PnL preciso
                 await self._send_sell_notification(api_key, buy_order, sell_order_data, pnl_final_pct / 100, reason, pnl_final_usdt)
+                # Publicar evento SELL_FILLED
+                try:
+                    trading_events.publish_order_filled_sell(
+                        order=db.query(TradingOrder).filter(TradingOrder.id == sell_order.id).first() if 'sell_order' in locals() else None,
+                        user_id=sell_order_data['user_id'],
+                        api_key_id=sell_order_data['api_key_id'],
+                        symbol='BTCUSDT',
+                        quantity=sell_order_data['quantity'],
+                        price=sell_order_data['price'],
+                        pnl_usdt=pnl_final_usdt,
+                        pnl_percentage=pnl_final_pct,
+                        source='executor',
+                        extra={'reason': reason, 'buy_order_id': buy_order.id}
+                    )
+                except Exception as pub_err:
+                    logger.error(f"⚠️ Error publicando evento SELL_FILLED: {pub_err}")
                 
                 success_log = f"✅ Venta ejecutada: {sell_order_data['quantity']:.8f} BTC @ ${sell_price:,.2f} | PnL: ${pnl_final_usdt:+.2f} ({pnl_final_pct:+.2f}%) - {reason}"
                 logger.info(f"[Mainnet30m] {success_log}")
@@ -1083,6 +1113,20 @@ class AutoTradingMainnet30mExecutor:
                             db.commit()
                             
                             logger.info(f"[Reconcile] SELL externo sincronizado: buy_id={buy.id} sell_id={new_sell.id} qty={sell_qty} @ {sell_price}")
+                            # Publicar evento SELL_FILLED por reconciliación
+                            try:
+                                trading_events.publish_order_filled_sell(
+                                    order=db.query(TradingOrder).filter(TradingOrder.id == new_sell.id).first(),
+                                    symbol='BTCUSDT',
+                                    quantity=sell_qty,
+                                    price=sell_price,
+                                    pnl_usdt=None,
+                                    pnl_percentage=None,
+                                    source='reconciliation',
+                                    extra={'external': True, 'buy_order_id': buy.id}
+                                )
+                            except Exception as pub_err:
+                                logger.error(f"⚠️ Error publicando evento SELL_FILLED (reconcile): {pub_err}")
                             from app.services.bitcoin30m_mainnet import bitcoin_30m_mainnet_scanner
                             bitcoin_30m_mainnet_scanner.add_log(
                                 f"🔄 Sincronizado SELL externo desde Binance: {sell_qty:.8f} BTC @ ${sell_price:,.2f}",

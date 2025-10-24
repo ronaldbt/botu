@@ -20,14 +20,16 @@ async def get_mainnet_history(
     db: Session = Depends(get_db),
     limit: int = 50,
     offset: int = 0,
-    system_only: bool = False
+    system_only: bool = False,
+    current_user: User = Depends(get_current_user)
 ):
     """
     Obtiene el historial de órdenes mainnet para el usuario actual
     """
     try:
-        # Obtener API keys del usuario (temporalmente sin autenticación para pruebas)
+        # Obtener API keys del usuario
         api_keys = db.query(TradingApiKey).filter(
+            TradingApiKey.user_id == current_user.id,
             TradingApiKey.is_testnet == False,
             TradingApiKey.is_active == True
         ).all()

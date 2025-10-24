@@ -1,6 +1,7 @@
 <template>
   <!-- QR Code Modal -->
-  <div v-if="show" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <teleport to="body">
+  <div v-if="show" ref="rootEl" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="handleBackdrop">
     <div class="bg-white rounded-lg w-full max-w-md max-h-screen overflow-y-auto">
       <!-- Header fijo -->
       <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 rounded-t-lg">
@@ -12,7 +13,7 @@
             @click="handleClose"
             class="text-slate-400 hover:text-slate-600 transition-colors duration-200"
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-6 h-6 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
@@ -110,6 +111,9 @@
         <div v-else class="text-center py-8">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p class="text-slate-600">Generando código QR...</p>
+          <div class="mt-3">
+            <button @click="handleClose" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium">Cerrar</button>
+          </div>
         </div>
       </div>
 
@@ -126,9 +130,12 @@
       </div>
     </div>
   </div>
+  </teleport>
 </template>
 
 <script setup>
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+const rootEl = ref(null)
 
 // Props
 const props = defineProps({
@@ -166,11 +173,50 @@ const formatTimeLeft = (seconds) => {
 
 // Handlers
 const handleClose = () => {
+  console.log('[TelegramQRModal] handleClose emit')
+  emit('close')
+}
+
+const handleBackdrop = () => {
+  console.log('[TelegramQRModal] backdrop clicked -> close')
   emit('close')
 }
 
 const handleRegenerate = () => {
+  console.log('[TelegramQRModal] handleRegenerate emit')
   emit('regenerate')
+}
+
+// Lifecycle & watchers
+onMounted(() => {
+  console.log('[TelegramQRModal] mounted', { show: !!props.show, hasConn: !!props.connection })
+  if (rootEl.value) {
+    rootEl.value.style.display = props.show ? 'flex' : 'none'
+  }
+})
+
+watch(() => props.show, (val) => {
+  console.log('[TelegramQRModal] show changed ->', val)
+  if (rootEl.value) {
+    rootEl.value.style.display = val ? 'flex' : 'none'
+    console.log('[TelegramQRModal] root style display ->', rootEl.value.style.display)
+  }
+})
+
+onUnmounted(() => {
+  console.log('[TelegramQRModal] unmounted')
+})
+
+// Close on ESC
+const onKeydown = (e) => {
+  if (e.key === 'Escape' && props.show) {
+    console.log('[TelegramQRModal] ESC pressed -> close')
+    emit('close')
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', onKeydown)
 }
 </script>
 

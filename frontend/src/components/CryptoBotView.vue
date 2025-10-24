@@ -81,15 +81,7 @@
     </div>
 
     <!-- Telegram QR Modal -->
-    <TelegramQRModal
-      :show="unref(telegram.showQRModal)"
-      :connection="unref(telegram.qrConnection)"
-      :time-left="unref(telegram.tokenTimeLeft)"
-      :regenerating-token="unref(telegram.regeneratingToken)"
-      :crypto-name="cryptoBot.config.displayName"
-      @close="telegram.closeQRModal"
-      @regenerate="telegram.regenerateToken"
-    />
+    
   </div>
 </template>
 
@@ -97,7 +89,6 @@
 import { onMounted, watch, unref } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useCryptoBot } from '@/composables/useCryptoBot'
-import { useTelegram } from '@/composables/useTelegram'
 
 // Components
 import CryptoBotHeader from '@/components/CryptoBotHeader.vue'
@@ -107,7 +98,6 @@ import CurrentAnalysis from '@/components/CurrentAnalysis.vue'
 import ScannerLogs from '@/components/ScannerLogs.vue'
 import AlertsPanel from '@/components/AlertsPanel.vue'
 import StatisticsPanel from '@/components/StatisticsPanel.vue'
-import TelegramQRModal from '@/components/TelegramQRModal.vue'
 
 // Props
 const props = defineProps({
@@ -121,7 +111,6 @@ const props = defineProps({
 // Stores and composables
 const authStore = useAuthStore()
 const cryptoBot = useCryptoBot(props.crypto)
-const telegram = useTelegram(props.crypto)
 
 // Lifecycle
 onMounted(async () => {

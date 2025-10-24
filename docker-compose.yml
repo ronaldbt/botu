@@ -41,10 +41,9 @@ services:
       - botu-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.botut.net`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.rule=Host(`api.botut.net`) || Host(`localhost`)"
+      - "traefik.http.routers.backend.entrypoints=web,websecure"
       - "traefik.http.routers.backend.tls=true"
-      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   # Frontend
@@ -65,7 +64,6 @@ services:
       - "traefik.http.routers.frontend.rule=Host(`botut.net`) || Host(`www.botut.net`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls=true"
-      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
       - "traefik.docker.network=botu_botu-network"
 
