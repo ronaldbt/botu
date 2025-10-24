@@ -6,26 +6,30 @@ export function useMainnetHistory() {
   const loading = ref(false)
   const error = ref(null)
   const total = ref(0)
-  const hasMore = ref(false)
-  const currentOffset = ref(0)
-  const limit = ref(5)
+  const currentPage = ref(1)
+  const limit = ref(10) // Máximo 10 órdenes por página
   const systemOnly = ref(false)
+  const totalPages = ref(0)
 
   // Computed
   const isEmpty = computed(() => orders.value.length === 0)
   const isLoading = computed(() => loading.value)
+  const hasNextPage = computed(() => currentPage.value < totalPages.value)
+  const hasPrevPage = computed(() => currentPage.value > 1)
 
   // Methods
-  const loadHistory = async (reset = false) => {
+  const loadHistory = async (page = 1) => {
     try {
       loading.value = true
       error.value = null
+      currentPage.value = page
 
-      const offset = reset ? 0 : currentOffset.value
+      const offset = (page - 1) * limit.value
       
       console.log('[useMainnetHistory] Cargando historial:', {
         limit: limit.value,
         offset: offset,
+        page: page,
         system_only: systemOnly.value
       })
       
@@ -46,29 +50,15 @@ export function useMainnetHistory() {
       })
 
       if (response.data) {
-        const newOrders = response.data.orders || []
-        
-        console.log('[useMainnetHistory] Procesando órdenes:', {
-          newOrdersCount: newOrders.length,
-          reset: reset,
-          currentOrdersCount: orders.value.length
-        })
-        
-        if (reset) {
-          orders.value = newOrders
-          currentOffset.value = newOrders.length
-        } else {
-          orders.value = [...orders.value, ...newOrders]
-          currentOffset.value += newOrders.length
-        }
-        
+        orders.value = response.data.orders || []
         total.value = response.data.total || 0
-        hasMore.value = response.data.has_more || false
+        totalPages.value = Math.ceil(total.value / limit.value)
         
         console.log('[useMainnetHistory] Estado actualizado:', {
-          totalOrders: orders.value.length,
+          ordersCount: orders.value.length,
           total: total.value,
-          hasMore: hasMore.value
+          currentPage: currentPage.value,
+          totalPages: totalPages.value
         })
       }
     } catch (err) {
@@ -87,20 +77,33 @@ export function useMainnetHistory() {
     }
   }
 
-  const loadMore = async () => {
-    if (!hasMore.value || loading.value) return
-    await loadHistory(false)
+  const nextPage = async () => {
+    if (hasNextPage.value && !loading.value) {
+      await loadHistory(currentPage.value + 1)
+    }
+  }
+
+  const prevPage = async () => {
+    if (hasPrevPage.value && !loading.value) {
+      await loadHistory(currentPage.value - 1)
+    }
+  }
+
+  const goToPage = async (page) => {
+    if (page >= 1 && page <= totalPages.value && !loading.value) {
+      await loadHistory(page)
+    }
   }
 
   const refresh = async () => {
     console.log('[useMainnetHistory] Refrescando historial...')
-    await loadHistory(true)
+    await loadHistory(currentPage.value)
   }
 
   const toggleSystemOnly = async () => {
     console.log('[useMainnetHistory] Cambiando filtro systemOnly:', !systemOnly.value)
     systemOnly.value = !systemOnly.value
-    await loadHistory(true)
+    await loadHistory(1) // Volver a la primera página
   }
 
   const formatDate = (dateString) => {
@@ -163,17 +166,22 @@ export function useMainnetHistory() {
     loading,
     error,
     total,
-    hasMore,
-    currentOffset,
+    currentPage,
+    totalPages,
+    systemOnly,
     limit,
     
     // Computed
     isEmpty,
     isLoading,
+    hasNextPage,
+    hasPrevPage,
     
     // Methods
     loadHistory,
-    loadMore,
+    nextPage,
+    prevPage,
+    goToPage,
     refresh,
     toggleSystemOnly,
     formatDate,

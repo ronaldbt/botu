@@ -118,30 +118,68 @@
       </table>
     </div>
 
-    <!-- Load More Button -->
-    <div v-if="hasMore && !loading" class="mt-6 text-center">
-      <button 
-        @click="loadMore"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
-      >
-        📄 Cargar más órdenes ({{ total - orders.length }} restantes)
-      </button>
-    </div>
-
-    <!-- Loading More Indicator -->
-    <div v-if="loading && orders.length > 0" class="mt-6 text-center">
-      <div class="flex items-center justify-center space-x-2 text-slate-600">
-        <div class="animate-spin">⟳</div>
-        <span>Cargando más órdenes...</span>
+    <!-- Pagination Controls -->
+    <div v-if="totalPages > 1" class="mt-6 flex items-center justify-between">
+      <!-- Page Info -->
+      <div class="text-sm text-slate-600">
+        Página {{ currentPage }} de {{ totalPages }} ({{ total }} órdenes total)
+      </div>
+      
+      <!-- Navigation Controls -->
+      <div class="flex items-center space-x-2">
+        <!-- Previous Button -->
+        <button 
+          @click="prevPage"
+          :disabled="!hasPrevPage || loading"
+          :class="[
+            'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+            hasPrevPage && !loading
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+          ]"
+        >
+          ← Anterior
+        </button>
+        
+        <!-- Page Numbers -->
+        <div class="flex items-center space-x-1">
+          <button 
+            v-for="page in getVisiblePages()" 
+            :key="page"
+            @click="goToPage(page)"
+            :disabled="loading"
+            :class="[
+              'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+              page === currentPage
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+            ]"
+          >
+            {{ page }}
+          </button>
+        </div>
+        
+        <!-- Next Button -->
+        <button 
+          @click="nextPage"
+          :disabled="!hasNextPage || loading"
+          :class="[
+            'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+            hasNextPage && !loading
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+          ]"
+        >
+          Siguiente →
+        </button>
       </div>
     </div>
 
-    <!-- End of List -->
-    <div v-if="!hasMore && orders.length > 0" class="mt-6 text-center">
-      <div class="flex items-center justify-center space-x-2 text-slate-500">
-        <div class="w-8 h-px bg-slate-300"></div>
-        <span class="text-sm">✅ Todas las órdenes cargadas</span>
-        <div class="w-8 h-px bg-slate-300"></div>
+    <!-- Loading Indicator -->
+    <div v-if="loading" class="mt-6 text-center">
+      <div class="flex items-center justify-center space-x-2 text-slate-600">
+        <div class="animate-spin">⟳</div>
+        <span>Cargando órdenes...</span>
       </div>
     </div>
   </div>
@@ -157,10 +195,15 @@ const {
   loading,
   error,
   total,
-  hasMore,
+  currentPage,
+  totalPages,
+  hasNextPage,
+  hasPrevPage,
   isEmpty,
   loadHistory,
-  loadMore,
+  nextPage,
+  prevPage,
+  goToPage,
   refresh,
   formatDate,
   getStatusColor,
@@ -194,19 +237,30 @@ const getCryptoIcon = (symbol) => {
   return icons[symbol] || '💰'
 }
 
-// Infinite scroll
-const handleScroll = () => {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-  const windowHeight = window.innerHeight
-  const documentHeight = document.documentElement.scrollHeight
+// Función para obtener páginas visibles en la paginación
+const getVisiblePages = () => {
+  const pages = []
+  const maxVisible = 5 // Máximo 5 números de página visibles
   
-  // Load more when user is near bottom (100px from bottom)
-  if (scrollTop + windowHeight >= documentHeight - 100) {
-    if (hasMore.value && !loading.value) {
-      loadMore()
+  if (totalPages.value <= maxVisible) {
+    // Si hay pocas páginas, mostrar todas
+    for (let i = 1; i <= totalPages.value; i++) {
+      pages.push(i)
+    }
+  } else {
+    // Lógica para mostrar páginas con elipsis
+    const start = Math.max(1, currentPage.value - 2)
+    const end = Math.min(totalPages.value, start + maxVisible - 1)
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
     }
   }
+  
+  return pages
 }
+
+// Removed infinite scroll - now using pagination
 
 // Lifecycle
 onMounted(async () => {
@@ -218,15 +272,16 @@ onMounted(async () => {
     total: total.value
   })
   try {
-    await loadHistory(true)
+    await loadHistory(1) // Cargar primera página
     console.log('[MainnetHistory] loadHistory completado')
   } catch (error) {
     console.error('[MainnetHistory] Error en loadHistory:', error)
   }
-  window.addEventListener('scroll', handleScroll)
+  // Remover infinite scroll ya que usamos paginación
+  // window.addEventListener('scroll', handleScroll)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
+  // No need to remove scroll listener since we're not using infinite scroll
 })
 </script>
