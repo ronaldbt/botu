@@ -222,7 +222,8 @@ console.log('[MainnetHistory] Componente inicializado:', {
   loading: loading.value,
   error: error.value,
   total: total.value,
-  hasMore: hasMore.value,
+  hasNextPage: hasNextPage.value,
+  hasPrevPage: hasPrevPage.value,
   isEmpty: isEmpty.value
 })
 
