@@ -179,7 +179,7 @@ class BnbScannerService:
                 self._add_log("INFO", f"🎯 Detectados {len(signals)} patrones U potenciales")
                 
                 for signal in signals:
-                    await self._process_signal(signal)
+                    await self._process_signal(signal, df)
             else:
                 self._add_log(
                     "INFO",

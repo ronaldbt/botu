@@ -179,7 +179,7 @@ class PaxgScannerService:
                 self._add_log("INFO", f"🎯 Detectados {len(signals)} patrones U potenciales")
                 
                 for signal in signals:
-                    await self._process_signal(signal)
+                    await self._process_signal(signal, df)
             else:
                 self._add_log(
                     "INFO",
@@ -884,6 +884,74 @@ class PaxgScannerService:
         except Exception as e:
             logger.error(f"Error obteniendo precio PAXG: {e}")
             return self.last_scan_price or 0.0
+
+    async def _process_signal(self, signal: Dict, df: pd.DataFrame):
+        """Procesa una señal detectada y envía alertas"""
+        try:
+            # Crear mensaje de alerta
+            current_price = signal['entry_price']
+            rupture_level = signal['rupture_level']
+            profit_target = current_price * (1 + self.config['profit_target'])
+            stop_loss = current_price * (1 - self.config['stop_loss'])
+            
+            alert_message = (
+                f"🚀 PATRÓN U DETECTADO EN PAXG\n\n"
+                f"📊 Análisis:\n"
+                f"   • Precio actual: ${current_price:,.2f}\n"
+                f"   • Nivel ruptura: ${rupture_level:,.2f} (+{((rupture_level/current_price-1)*100):.1f}%)\n"
+                f"   • Profundidad: {signal['depth']*100:.1f}%\n"
+                f"   • Fuerza señal: {signal['signal_strength']:.1f}/10\n\n"
+                f"🎯 Objetivos de trading:\n"
+                f"   • 🟢 Take Profit: ${profit_target:,.2f} (+{self.config['profit_target']*100:.0f}%)\n"
+                f"   • 🔴 Stop Loss: ${stop_loss:,.2f} (-{self.config['stop_loss']*100:.0f}%)\n\n"
+                f"⏰ Detectado: {signal['timestamp'].strftime('%d/%m/%Y %H:%M')} UTC"
+            )
+            
+            # Preparar datos para Telegram
+            alert_data = {
+                'type': 'BUY',
+                'symbol': signal['symbol'],
+                'price': current_price,
+                'message': alert_message,
+                'crypto_type': 'paxg'  # Identificador para routing de telegram
+            }
+            
+            # Obtener usuarios activos de Telegram y guardar en DB
+            db = SessionLocal()
+            try:
+                # 1. Guardar alerta en base de datos PRIMERO
+                alerta_create = AlertaCreate(
+                    tipo_alerta='U_PATTERN',
+                    ticker='PAXGUSDT',
+                    mensaje=alert_message,
+                    precio=current_price,
+                    timestamp=signal['timestamp']
+                )
+                
+                # Guardar en DB
+                crud_alertas.create_alerta(db, alerta_create)
+                db.commit()
+                
+                # 2. Enviar a usuarios de Telegram
+                telegram_bot.send_alert_to_users(alert_data)
+                
+                self._add_log("SUCCESS", f"🚨 ALERTA PAXG ENVIADA - Patrón U confirmado", {
+                    'signal_type': 'U_PATTERN',
+                    'current_price': current_price,
+                    'entry_price': rupture_level,
+                    'depth_percentage': signal['depth'] * 100,
+                    'signal_strength': signal['signal_strength']
+                }, current_price=current_price)
+                
+            except Exception as e:
+                self._add_log("ERROR", f"❌ Error procesando señal PAXG: {e}")
+                logger.error(f"Error procesando señal PAXG: {e}")
+            finally:
+                db.close()
+                
+        except Exception as e:
+            self._add_log("ERROR", f"❌ Error en _process_signal PAXG: {e}")
+            logger.error(f"Error en _process_signal PAXG: {e}")
 
 # Instancia global del scanner
 paxg_scanner = PaxgScannerService()
