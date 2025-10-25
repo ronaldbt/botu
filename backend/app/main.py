@@ -9,7 +9,7 @@ import os
 from dotenv import load_dotenv
 from app.db import models
 from app.db.database import engine
-from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, trading_routes, debug_routes, bitcoin30m_scanner_routes, bitcoin30m_mainnet_routes, bnb_mainnet_routes, eth_mainnet_routes, btc_4h_mainnet_routes, paxg_mainnet_routes, mainnet_history_routes
+from app.api.v1 import u_routes, auth_routes, ordenes_routes, alertas_routes, users_routes, bitcoin_bot_routes, telegram_routes, eth_bot_routes, bnb_bot_routes, profile_routes, health_routes, trading_routes, debug_routes, bitcoin30m_scanner_routes, bitcoin30m_mainnet_routes, bnb_mainnet_routes, eth_mainnet_routes, btc_4h_mainnet_routes, paxg_mainnet_routes, mainnet_history_routes, bnb_4h_mainnet_routes, eth_4h_mainnet_routes, paxg_4h_mainnet_routes
 from app.services.health_monitor_service import health_monitor
 
 # Cargar variables de entorno
@@ -127,6 +127,9 @@ app.include_router(bnb_mainnet_routes.router, tags=["bnb-mainnet-scanner"])  # B
 app.include_router(eth_mainnet_routes.router, tags=["eth-mainnet-scanner"])  # ETH Mainnet Scanner endpoints
 app.include_router(btc_4h_mainnet_routes.router, tags=["btc-4h-mainnet-scanner"])  # BTC 4h Mainnet Scanner endpoints
 app.include_router(paxg_mainnet_routes.router, tags=["paxg-mainnet-scanner"])  # PAXG Mainnet Scanner endpoints
+app.include_router(bnb_4h_mainnet_routes.router, tags=["bnb-4h-mainnet-scanner"])  # BNB 4h Mainnet Scanner endpoints
+app.include_router(eth_4h_mainnet_routes.router, tags=["eth-4h-mainnet-scanner"])  # ETH 4h Mainnet Scanner endpoints
+app.include_router(paxg_4h_mainnet_routes.router, tags=["paxg-4h-mainnet-scanner"])  # PAXG 4h Mainnet Scanner endpoints
 app.include_router(mainnet_history_routes.router, tags=["mainnet-history"])  # Mainnet History endpoints
 app.include_router(health_routes.router, tags=["health"])        # Health Monitor endpoints
 app.include_router(debug_routes.router, tags=["debug"])                   # Debug endpoints

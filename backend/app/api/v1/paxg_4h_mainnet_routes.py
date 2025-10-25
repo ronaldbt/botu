@@ -1,4 +1,4 @@
-# backend/app/api/v1/btc_4h_mainnet_routes.py
+# backend/app/api/v1/paxg_4h_mainnet_routes.py
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
@@ -9,8 +9,8 @@ import logging
 from app.db.database import get_db
 from app.db.models import User
 from app.core.auth import get_current_user
-from app.services.bitcoin_scanner_service import bitcoin_scanner
-from app.services.auto_trading_bitcoin4h_executor import AutoTradingBitcoin4hExecutor
+from app.services.paxg_scanner_service import paxg_scanner
+from app.services.auto_trading_paxg4h_executor import AutoTradingPaxg4hExecutor
 from app.db.models import TradingOrder
 from datetime import datetime, timedelta
 
@@ -19,23 +19,23 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Crear router
-router = APIRouter(prefix="/trading/scanner/btc-4h-mainnet", tags=["btc-4h-mainnet-scanner"])
+router = APIRouter(prefix="/trading/scanner/paxg-4h-mainnet", tags=["paxg-4h-mainnet-scanner"])
 
 # Instanciar ejecutor específico
-btc_4h_executor = AutoTradingBitcoin4hExecutor()
+paxg_4h_executor = AutoTradingPaxg4hExecutor()
 
 # --------------------------
-# Control del Scanner BTC 4h Mainnet
+# Control del Scanner PAXG 4h Mainnet
 # --------------------------
 
 @router.post("/start")
-async def start_btc_4h_scanner(
+async def start_paxg_4h_scanner(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Inicia el scanner de BTC 4h para Mainnet"""
+    """Inicia el scanner de PAXG 4h para Mainnet"""
     try:
-        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) iniciando scanner BTC 4h Mainnet")
+        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) iniciando scanner PAXG 4h Mainnet")
         
         # Solo admins pueden controlar el scanner
         if not current_user.is_admin:
@@ -44,36 +44,36 @@ async def start_btc_4h_scanner(
                 detail="Solo administradores pueden controlar el scanner"
             )
         
-        if bitcoin_scanner.is_running:
+        if paxg_scanner.is_running:
             return {
                 "success": False,
-                "message": "El scanner BTC 4h Mainnet ya está ejecutándose",
-                "status": bitcoin_scanner.get_status()
+                "message": "El scanner PAXG 4h Mainnet ya está ejecutándose",
+                "status": paxg_scanner.get_status()
             }
         
         # Iniciar scanner
         import asyncio
-        asyncio.create_task(bitcoin_scanner.start_scanning())
+        asyncio.create_task(paxg_scanner.start_scanner())
         
-        logger.info("✅ Scanner BTC 4h Mainnet iniciado exitosamente")
+        logger.info("✅ Scanner PAXG 4h Mainnet iniciado exitosamente")
         return {
             "success": True,
-            "message": "Scanner BTC 4h Mainnet iniciado exitosamente",
-            "status": bitcoin_scanner.get_status()
+            "message": "Scanner PAXG 4h Mainnet iniciado exitosamente",
+            "status": paxg_scanner.get_status()
         }
             
     except Exception as e:
-        logger.error(f"❌ Error iniciando scanner BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error iniciando scanner PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error iniciando scanner: {str(e)}")
 
 @router.post("/stop")
-async def stop_btc_4h_scanner(
+async def stop_paxg_4h_scanner(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Detiene el scanner de BTC 4h Mainnet"""
+    """Detiene el scanner de PAXG 4h Mainnet"""
     try:
-        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) deteniendo scanner BTC 4h Mainnet")
+        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) deteniendo scanner PAXG 4h Mainnet")
         
         # Solo admins pueden controlar el scanner
         if not current_user.is_admin:
@@ -82,26 +82,26 @@ async def stop_btc_4h_scanner(
                 detail="Solo administradores pueden controlar el scanner"
             )
         
-        await bitcoin_scanner.stop_scanning()
+        await paxg_scanner.stop_scanner()
         
-        logger.info("⏹️ Scanner BTC 4h Mainnet detenido exitosamente")
+        logger.info("⏹️ Scanner PAXG 4h Mainnet detenido exitosamente")
         return {
             "success": True,
-            "message": "Scanner BTC 4h Mainnet detenido exitosamente",
-            "status": bitcoin_scanner.get_status()
+            "message": "Scanner PAXG 4h Mainnet detenido exitosamente",
+            "status": paxg_scanner.get_status()
         }
             
     except Exception as e:
-        logger.error(f"❌ Error deteniendo scanner BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error deteniendo scanner PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error deteniendo scanner: {str(e)}")
 
 @router.get("/status")
-async def get_btc_4h_scanner_status(
+async def get_paxg_4h_scanner_status(
     current_user: User = Depends(get_current_user)
 ):
-    """Obtiene el estado actual del scanner BTC 4h Mainnet"""
+    """Obtiene el estado actual del scanner PAXG 4h Mainnet"""
     try:
-        status_data = bitcoin_scanner.get_status()
+        status_data = paxg_scanner.get_status()
         
         return {
             "success": True,
@@ -109,29 +109,29 @@ async def get_btc_4h_scanner_status(
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo estado del scanner BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo estado del scanner PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo estado: {str(e)}")
 
 @router.get("/logs")
-async def get_btc_4h_scanner_logs(
+async def get_paxg_4h_scanner_logs(
     current_user: User = Depends(get_current_user),
     limit: int = 100
 ):
-    """Obtiene los logs del scanner BTC 4h Mainnet"""
+    """Obtiene los logs del scanner PAXG 4h Mainnet"""
     try:
-        logs = bitcoin_scanner.scanner_logs[-limit:] if bitcoin_scanner.scanner_logs else []
+        logs = paxg_scanner.scanner_logs[-limit:] if paxg_scanner.scanner_logs else []
         
         return {
             "success": True,
             "data": {
                 "logs": logs,
-                "total_logs": len(bitcoin_scanner.scanner_logs),
+                "total_logs": len(paxg_scanner.scanner_logs),
                 "latest_log": logs[-1]['message'] if logs else "No hay logs disponibles"
             }
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo logs del scanner BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo logs del scanner PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo logs: {str(e)}")
 
 # --------------------------
@@ -139,7 +139,7 @@ async def get_btc_4h_scanner_logs(
 # --------------------------
 
 @router.post("/force-buy")
-async def force_buy_btc_4h_mainnet(
+async def force_buy_paxg_4h_mainnet(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -148,39 +148,38 @@ async def force_buy_btc_4h_mainnet(
         if not current_user.is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo administradores")
 
-        # Asegurar que el usuario tenga al menos una API key mainnet habilitada para BTC 4h
+        # Asegurar que el usuario tenga al menos una API key mainnet habilitada para PAXG 4h
         from app.db.models import TradingApiKey
         enabled_keys = db.query(TradingApiKey).filter(
             TradingApiKey.user_id == current_user.id,
             TradingApiKey.is_testnet == False,
             TradingApiKey.is_active == True,
-            TradingApiKey.btc_4h_mainnet_enabled == True
+            TradingApiKey.paxg_4h_mainnet_enabled == True
         ).all()
 
         auto_enabled = False
         if not enabled_keys:
-            # Buscar alguna key mainnet activa del usuario y habilitarla para BTC 4h
+            # Buscar alguna key mainnet activa del usuario y habilitarla para PAXG 4h
             candidate = db.query(TradingApiKey).filter(
                 TradingApiKey.user_id == current_user.id,
                 TradingApiKey.is_testnet == False,
                 TradingApiKey.is_active == True
             ).first()
             if candidate:
-                candidate.btc_4h_mainnet_enabled = True
-                # Mantener la asignación tal cual; si es 0, el ejecutor podría abortar por falta de USDT
+                candidate.paxg_4h_mainnet_enabled = True
                 db.commit()
                 auto_enabled = True
-                logger.info(f"🟢 Habilitada BTC 4h Mainnet en API key {candidate.id} para usuario {current_user.id}")
+                logger.info(f"🟢 Habilitada PAXG 4h Mainnet en API key {candidate.id} para usuario {current_user.id}")
                 enabled_keys = [candidate]
             else:
                 raise HTTPException(status_code=400, detail="No hay API keys mainnet activas para habilitar")
 
         # Precio del último escaneo o endpoint directo
-        price = bitcoin_scanner.last_scan_price
+        price = paxg_scanner.last_scan_price
         if not price:
             # Fallback rápido al endpoint público de Binance
             import requests
-            resp = requests.get("https://api.binance.com/api/v3/ticker/price", params={"symbol": "BTCUSDT"}, timeout=8)
+            resp = requests.get("https://api.binance.com/api/v3/ticker/price", params={"symbol": "PAXGUSDT"}, timeout=8)
             resp.raise_for_status()
             price = float(resp.json()["price"])
 
@@ -198,8 +197,8 @@ async def force_buy_btc_4h_mainnet(
             'environment': 'mainnet'
         }
 
-        logger.info(f"🧪 Forzando compra BTC 4h Mainnet con precio ${price:.2f}")
-        await btc_4h_executor.execute_buy_order(fake_signal, user_id=current_user.id)
+        logger.info(f"🧪 Forzando compra PAXG 4h Mainnet con precio ${price:.2f}")
+        await paxg_4h_executor.execute_buy_order(fake_signal, user_id=current_user.id)
 
         # Verificar persistencia de orden reciente
         recent = db.query(TradingOrder).filter(TradingOrder.user_id == current_user.id).order_by(TradingOrder.created_at.desc()).first()
@@ -221,13 +220,13 @@ async def force_buy_btc_4h_mainnet(
         raise HTTPException(status_code=500, detail=f"Error forzando compra: {str(e)}")
 
 @router.post("/test-scan")
-async def test_btc_4h_mainnet_scan(
+async def test_paxg_4h_mainnet_scan(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Ejecuta un escaneo de prueba del scanner BTC 4h Mainnet"""
+    """Ejecuta un escaneo de prueba del scanner PAXG 4h Mainnet"""
     try:
-        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) ejecutando escaneo de prueba BTC 4h Mainnet")
+        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) ejecutando escaneo de prueba PAXG 4h Mainnet")
         
         # Solo admins pueden ejecutar escaneos de prueba
         if not current_user.is_admin:
@@ -237,47 +236,49 @@ async def test_btc_4h_mainnet_scan(
             )
         
         # Ejecutar un ciclo de escaneo
-        await bitcoin_scanner._perform_scan()
+        await paxg_scanner._scan_cycle()
         
-        logger.info("✅ Escaneo de prueba BTC 4h Mainnet completado")
+        logger.info("✅ Escaneo de prueba PAXG 4h Mainnet completado")
         return {
             "success": True,
             "message": "Escaneo de prueba completado exitosamente",
-            "status": bitcoin_scanner.get_status()
+            "status": paxg_scanner.get_status()
         }
             
     except Exception as e:
-        logger.error(f"❌ Error en escaneo de prueba BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error en escaneo de prueba PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error en escaneo de prueba: {str(e)}")
 
 @router.get("/config")
-async def get_btc_4h_scanner_config(
+async def get_paxg_4h_scanner_config(
     current_user: User = Depends(get_current_user)
 ):
-    """Obtiene la configuración del scanner BTC 4h Mainnet"""
+    """Obtiene la configuración del scanner PAXG 4h Mainnet"""
     try:
-        config = bitcoin_scanner.config.copy()
+        config = paxg_scanner.config.copy()
+        detection_params = paxg_scanner.detection_params.copy()
         
         return {
             "success": True,
             "data": {
                 "config": config,
+                "detection_params": detection_params,
                 "environment": "mainnet"
             }
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo configuración del scanner BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo configuración del scanner PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo configuración: {str(e)}")
 
 @router.put("/config")
-async def update_btc_4h_scanner_config(
+async def update_paxg_4h_scanner_config(
     config_updates: Dict[str, Any],
     current_user: User = Depends(get_current_user)
 ):
-    """Actualiza la configuración del scanner BTC 4h Mainnet"""
+    """Actualiza la configuración del scanner PAXG 4h Mainnet"""
     try:
-        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) actualizando configuración scanner BTC 4h Mainnet")
+        logger.info(f"👤 Usuario {current_user.id} ({current_user.username}) actualizando configuración scanner PAXG 4h Mainnet")
         
         # Solo admins pueden actualizar configuración
         if not current_user.is_admin:
@@ -288,29 +289,33 @@ async def update_btc_4h_scanner_config(
         
         # Actualizar configuración
         if 'config' in config_updates:
-            bitcoin_scanner.config.update(config_updates['config'])
+            paxg_scanner.config.update(config_updates['config'])
         
-        logger.info("✅ Configuración del scanner BTC 4h Mainnet actualizada")
+        if 'detection_params' in config_updates:
+            paxg_scanner.detection_params.update(config_updates['detection_params'])
+        
+        logger.info("✅ Configuración del scanner PAXG 4h Mainnet actualizada")
         return {
             "success": True,
             "message": "Configuración actualizada exitosamente",
-            "config": bitcoin_scanner.config
+            "config": paxg_scanner.config,
+            "detection_params": paxg_scanner.detection_params
         }
             
     except Exception as e:
-        logger.error(f"❌ Error actualizando configuración del scanner BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error actualizando configuración del scanner PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error actualizando configuración: {str(e)}")
 
 @router.get("/alerts")
-async def get_btc_4h_scanner_alerts(
+async def get_paxg_4h_scanner_alerts(
     current_user: User = Depends(get_current_user),
     limit: int = 50
 ):
-    """Obtiene las alertas generadas por el scanner BTC 4h Mainnet"""
+    """Obtiene las alertas generadas por el scanner PAXG 4h Mainnet"""
     try:
         # Filtrar logs que contienen alertas
         alert_logs = []
-        for log in bitcoin_scanner.scanner_logs:
+        for log in paxg_scanner.scanner_logs:
             if any(keyword in log['message'].lower() for keyword in ['señal', 'patrón', 'compra', 'alerta']):
                 alert_logs.append(log)
         
@@ -326,20 +331,20 @@ async def get_btc_4h_scanner_alerts(
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo alertas del scanner BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo alertas del scanner PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo alertas: {str(e)}")
 
 @router.get("/current-price")
-async def get_btc_4h_current_price_mainnet(
+async def get_paxg_4h_current_price_mainnet(
     current_user: User = Depends(get_current_user)
 ):
-    """Obtiene el precio actual de BTC para Mainnet"""
+    """Obtiene el precio actual de PAXG para Mainnet"""
     try:
         import requests
         
         # Obtener precio desde Binance
         url = "https://api.binance.com/api/v3/ticker/price"
-        params = {'symbol': 'BTCUSDT'}
+        params = {'symbol': 'PAXGUSDT'}
         
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
@@ -355,20 +360,20 @@ async def get_btc_4h_current_price_mainnet(
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo precio actual de BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo precio actual de PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo precio: {str(e)}")
 
 @router.get("/positions")
-async def get_btc_4h_mainnet_positions(
+async def get_paxg_4h_mainnet_positions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Obtiene las posiciones abiertas de BTC 4h Mainnet"""
+    """Obtiene las posiciones abiertas de PAXG 4h Mainnet"""
     try:
         from app.db.models import TradingOrder, TradingApiKey
         from sqlalchemy import and_
         
-        logger.info(f"📊 Obteniendo posiciones BTC 4h Mainnet para usuario {current_user.id}")
+        logger.info(f"📊 Obteniendo posiciones PAXG 4h Mainnet para usuario {current_user.id}")
         
         # Obtener API keys del usuario para mainnet
         api_keys = db.query(TradingApiKey).filter(
@@ -381,12 +386,12 @@ async def get_btc_4h_mainnet_positions(
         
         positions = []
         for api_key in api_keys:
-            # Buscar órdenes de compra ejecutadas para BTCUSDT
+            # Buscar órdenes de compra ejecutadas para PAXGUSDT (solo las que NO están completadas)
             buy_orders = db.query(TradingOrder).filter(
                 TradingOrder.api_key_id == api_key.id,
-                TradingOrder.symbol == 'BTCUSDT',
+                TradingOrder.symbol == 'PAXGUSDT',
                 TradingOrder.side == 'BUY',
-                TradingOrder.status == 'FILLED'
+                TradingOrder.status == 'FILLED'  # Solo órdenes ejecutadas que no están completadas
             ).order_by(TradingOrder.created_at.desc()).all()
             
             logger.info(f"📊 API Key {api_key.id}: {len(buy_orders)} órdenes BUY ejecutadas")
@@ -395,7 +400,7 @@ async def get_btc_4h_mainnet_positions(
                 # Verificar si ya tiene orden de venta posterior
                 sell_order = db.query(TradingOrder).filter(
                     TradingOrder.api_key_id == api_key.id,
-                    TradingOrder.symbol == 'BTCUSDT',
+                    TradingOrder.symbol == 'PAXGUSDT',
                     TradingOrder.side == 'SELL',
                     TradingOrder.status == 'FILLED',
                     TradingOrder.created_at > buy_order.created_at
@@ -421,7 +426,7 @@ async def get_btc_4h_mainnet_positions(
                     }
                     
                     positions.append(position)
-                    logger.info(f"📊 Posición abierta encontrada: {position['quantity']:.6f} BTC @ ${position['entry_price']:.2f}")
+                    logger.info(f"📊 Posición abierta encontrada: {position['quantity']:.6f} PAXG @ ${position['entry_price']:.2f}")
         
         logger.info(f"📊 Total posiciones abiertas: {len(positions)}")
         
@@ -435,38 +440,39 @@ async def get_btc_4h_mainnet_positions(
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo posiciones BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo posiciones PAXG 4h Mainnet: {e}")
         logger.error(f"❌ Error details: {str(e)}")
         import traceback
         logger.error(f"❌ Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo posiciones: {str(e)}")
 
 @router.get("/performance")
-async def get_btc_4h_scanner_performance(
+async def get_paxg_4h_scanner_performance(
     current_user: User = Depends(get_current_user)
 ):
-    """Obtiene métricas de rendimiento del scanner BTC 4h Mainnet"""
+    """Obtiene métricas de rendimiento del scanner PAXG 4h Mainnet"""
     try:
-        status_data = bitcoin_scanner.get_status()
+        status_data = paxg_scanner.get_status()
         
         # Calcular métricas básicas
         uptime = None
-        if bitcoin_scanner.is_running and bitcoin_scanner.last_scan_time:
-            uptime = (datetime.now() - bitcoin_scanner.last_scan_time).total_seconds()
+        if paxg_scanner.is_running and paxg_scanner.last_scan_time:
+            uptime = (datetime.now() - paxg_scanner.last_scan_time).total_seconds()
         
         return {
             "success": True,
             "data": {
-                "is_running": bitcoin_scanner.is_running,
-                "alerts_count": bitcoin_scanner.alerts_count,
-                "last_scan_time": bitcoin_scanner.last_scan_time.isoformat() if bitcoin_scanner.last_scan_time else None,
+                "is_running": paxg_scanner.is_running,
+                "alerts_count": paxg_scanner.alerts_count,
+                "last_scan_time": paxg_scanner.last_scan_time.isoformat() if paxg_scanner.last_scan_time else None,
                 "uptime_seconds": uptime,
-                "total_logs": len(bitcoin_scanner.scanner_logs),
+                "total_logs": len(paxg_scanner.scanner_logs),
                 "environment": "mainnet",
-                "config": bitcoin_scanner.config
+                "config": paxg_scanner.config
             }
         }
         
     except Exception as e:
-        logger.error(f"❌ Error obteniendo rendimiento del scanner BTC 4h Mainnet: {e}")
+        logger.error(f"❌ Error obteniendo rendimiento del scanner PAXG 4h Mainnet: {e}")
         raise HTTPException(status_code=500, detail=f"Error obteniendo rendimiento: {str(e)}")
+

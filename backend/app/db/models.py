@@ -247,10 +247,20 @@ class TradingApiKey(Base):
     # BNB Mainnet - Asignación
     bnb_mainnet_allocated_usdt = Column(Float, default=0.0)
     
+    # BNB 4h Mainnet (4h scanner específico - solo mainnet, no testnet)
+    bnb_4h_mainnet_enabled = Column(Boolean, default=False)
+    # BNB 4h Mainnet - Asignación
+    bnb_4h_mainnet_allocated_usdt = Column(Float, default=0.0)
+    
     # ETH Mainnet (4h scanner - solo mainnet, no testnet)
     eth_mainnet_enabled = Column(Boolean, default=False)
     # ETH Mainnet - Asignación
     eth_mainnet_allocated_usdt = Column(Float, default=0.0)
+    
+    # ETH 4h Mainnet (4h scanner específico - solo mainnet, no testnet)
+    eth_4h_mainnet_enabled = Column(Boolean, default=False)
+    # ETH 4h Mainnet - Asignación
+    eth_4h_mainnet_allocated_usdt = Column(Float, default=0.0)
     
     # BTC 4h Mainnet (4h scanner - solo mainnet, no testnet)
     btc_4h_mainnet_enabled = Column(Boolean, default=False)

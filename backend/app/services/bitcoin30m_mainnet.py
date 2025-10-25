@@ -82,57 +82,57 @@ class Bitcoin30mMainnetScanner:
                 
                 db = next(get_db())
             
-            # Verificar si hay posiciones abiertas
-            api_keys = db.query(TradingApiKey).filter(
-                TradingApiKey.btc_30m_mainnet_enabled == True,
-                TradingApiKey.is_active == True
-            ).all()
-            
-            has_open_positions = False
-            for api_key in api_keys:
-                # Buscar órdenes de compra ejecutadas (solo las que no están completadas)
-                buy_orders = db.query(TradingOrder).filter(
-                    TradingOrder.api_key_id == api_key.id,
-                    TradingOrder.symbol == 'BTCUSDT',
-                    TradingOrder.side == 'BUY',
-                    TradingOrder.status == 'FILLED'  # Solo órdenes ejecutadas que no están completadas
+                # Verificar si hay posiciones abiertas
+                api_keys = db.query(TradingApiKey).filter(
+                    TradingApiKey.btc_30m_mainnet_enabled == True,
+                    TradingApiKey.is_active == True
                 ).all()
                 
-                # Verificar si alguna de estas órdenes NO tiene venta asociada
-                for buy_order in buy_orders:
-                    # Verificar si ya tiene orden de venta posterior
-                    sell_order = db.query(TradingOrder).filter(
+                has_open_positions = False
+                for api_key in api_keys:
+                    # Buscar órdenes de compra ejecutadas (solo las que no están completadas)
+                    buy_orders = db.query(TradingOrder).filter(
                         TradingOrder.api_key_id == api_key.id,
                         TradingOrder.symbol == 'BTCUSDT',
-                        TradingOrder.side == 'SELL',
-                        TradingOrder.status == 'FILLED',
-                        TradingOrder.created_at > buy_order.created_at
-                    ).order_by(TradingOrder.created_at.asc()).first()
+                        TradingOrder.side == 'BUY',
+                        TradingOrder.status == 'FILLED'  # Solo órdenes ejecutadas que no están completadas
+                    ).all()
                     
-                    # Si no hay venta, es una posición abierta
-                    if not sell_order:
-                        has_open_positions = True
+                    # Verificar si alguna de estas órdenes NO tiene venta asociada
+                    for buy_order in buy_orders:
+                        # Verificar si ya tiene orden de venta posterior
+                        sell_order = db.query(TradingOrder).filter(
+                            TradingOrder.api_key_id == api_key.id,
+                            TradingOrder.symbol == 'BTCUSDT',
+                            TradingOrder.side == 'SELL',
+                            TradingOrder.status == 'FILLED',
+                            TradingOrder.created_at > buy_order.created_at
+                        ).order_by(TradingOrder.created_at.asc()).first()
+                        
+                        # Si no hay venta, es una posición abierta
+                        if not sell_order:
+                            has_open_positions = True
+                            break
+                    
+                    if has_open_positions:
                         break
                 
+                # Determinar estado
                 if has_open_positions:
-                    break
-            
-            # Determinar estado
-            if has_open_positions:
-                new_state = "MONITORING_SELL"
-            else:
-                new_state = "SEARCHING_BUY"
-            
-            # Log cambio de estado
-            if new_state != self.current_state:
-                old_state = self.current_state
-                self.current_state = new_state
-                self.state_changed_at = datetime.now()
+                    new_state = "MONITORING_SELL"
+                else:
+                    new_state = "SEARCHING_BUY"
                 
-                state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
-                state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
-                
-                self.add_log(
+                # Log cambio de estado
+                if new_state != self.current_state:
+                    old_state = self.current_state
+                    self.current_state = new_state
+                    self.state_changed_at = datetime.now()
+                    
+                    state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
+                    state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
+                    
+                    self.add_log(
                     f"{state_emoji} CAMBIO DE ESTADO: {state_desc}",
                     "INFO",
                     {

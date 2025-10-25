@@ -29,10 +29,20 @@ class TradingApiKeyBase(BaseModel):
     # BNB Mainnet - Asignación
     bnb_mainnet_allocated_usdt: float = 0.0
     
+    # BNB 4h Mainnet (4h scanner específico)
+    bnb_4h_mainnet_enabled: bool = False
+    # BNB 4h Mainnet - Asignación
+    bnb_4h_mainnet_allocated_usdt: float = 0.0
+    
     # ETH Mainnet (4h scanner)
     eth_mainnet_enabled: bool = False
     # ETH Mainnet - Asignación
     eth_mainnet_allocated_usdt: float = 0.0
+    
+    # ETH 4h Mainnet (4h scanner específico)
+    eth_4h_mainnet_enabled: bool = False
+    # ETH 4h Mainnet - Asignación
+    eth_4h_mainnet_allocated_usdt: float = 0.0
     
     # BTC 4h Mainnet (4h scanner)
     btc_4h_mainnet_enabled: bool = False

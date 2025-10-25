@@ -78,6 +78,12 @@ def create_trading_api_key(db: Session, api_key_data: TradingApiKeyCreate, user_
         # Bitcoin 30m - Separado por red
         btc_30m_testnet_enabled=api_key_data.btc_30m_testnet_enabled,
         btc_30m_mainnet_enabled=api_key_data.btc_30m_mainnet_enabled,
+        # BNB 4h Mainnet
+        bnb_4h_mainnet_enabled=api_key_data.bnb_4h_mainnet_enabled,
+        bnb_4h_mainnet_allocated_usdt=api_key_data.bnb_4h_mainnet_allocated_usdt,
+        # ETH 4h Mainnet
+        eth_4h_mainnet_enabled=api_key_data.eth_4h_mainnet_enabled,
+        eth_4h_mainnet_allocated_usdt=api_key_data.eth_4h_mainnet_allocated_usdt,
         # Asignaciones
         btc_allocated_usdt=api_key_data.btc_allocated_usdt,
         eth_allocated_usdt=api_key_data.eth_allocated_usdt,

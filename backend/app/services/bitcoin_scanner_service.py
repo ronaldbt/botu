@@ -18,7 +18,6 @@ from app.db.database import SessionLocal
 from app.db import crud_users, crud_alertas
 from app.schemas.alerta_schema import AlertaCreate
 from app.telegram.telegram_bot import telegram_bot
-from app.services.auto_trading_executor import auto_trading_executor
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -64,8 +63,9 @@ class BitcoinScannerService:
         self.state_changed_at = None
         self.last_position_check = None
         
-        # Inicializar executor genérico para 4h
-        self.executor = auto_trading_executor
+        # Inicializar executor específico para Bitcoin 4h
+        from app.services.auto_trading_bitcoin4h_executor import AutoTradingBitcoin4hExecutor
+        self.executor = AutoTradingBitcoin4hExecutor()
         
         # Control de ciclo y parada inmediata (como Bitcoin30m)
         import asyncio as _asyncio
@@ -83,51 +83,51 @@ class BitcoinScannerService:
                 from app.db.models import TradingOrder, TradingApiKey
                 
                 db = next(get_db())
-            
-            # Verificar si hay posiciones abiertas de Bitcoin
-            api_keys = db.query(TradingApiKey).filter(
-                TradingApiKey.btc_4h_mainnet_enabled == True,
-                TradingApiKey.is_active == True
-            ).all()
-            
-            has_open_positions = False
-            for api_key in api_keys:
-                open_orders = db.query(TradingOrder).filter(
-                    TradingOrder.api_key_id == api_key.id,
-                    TradingOrder.symbol == 'BTCUSDT',
-                    TradingOrder.side == 'BUY',
-                    TradingOrder.status == 'FILLED'
+                
+                # Verificar si hay posiciones abiertas de Bitcoin
+                api_keys = db.query(TradingApiKey).filter(
+                    TradingApiKey.btc_4h_mainnet_enabled == True,
+                    TradingApiKey.is_active == True
                 ).all()
                 
-                if open_orders:
-                    has_open_positions = True
-                    break
-            
-            # Determinar estado
-            if has_open_positions:
-                new_state = "MONITORING_SELL"
-            else:
-                new_state = "SEARCHING_BUY"
-            
-            # Log cambio de estado
-            if new_state != self.current_state:
-                old_state = self.current_state
-                self.current_state = new_state
-                self.state_changed_at = datetime.now()
+                has_open_positions = False
+                for api_key in api_keys:
+                    open_orders = db.query(TradingOrder).filter(
+                        TradingOrder.api_key_id == api_key.id,
+                        TradingOrder.symbol == 'BTCUSDT',
+                        TradingOrder.side == 'BUY',
+                        TradingOrder.status == 'FILLED'
+                    ).all()
+                    
+                    if open_orders:
+                        has_open_positions = True
+                        break
                 
-                state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
-                state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
+                # Determinar estado
+                if has_open_positions:
+                    new_state = "MONITORING_SELL"
+                else:
+                    new_state = "SEARCHING_BUY"
                 
-                self._add_log(
-                    "INFO",
-                    f"{state_emoji} CAMBIO DE ESTADO: {state_desc}",
-                    {
-                        'new_state': new_state,
-                        'previous_state': old_state,
-                        'timestamp': self.state_changed_at.isoformat()
-                    }
-                )
-            
+                # Log cambio de estado
+                if new_state != self.current_state:
+                    old_state = self.current_state
+                    self.current_state = new_state
+                    self.state_changed_at = datetime.now()
+                    
+                    state_emoji = "🔍" if new_state == "SEARCHING_BUY" else "📊"
+                    state_desc = "Buscando oportunidades de compra" if new_state == "SEARCHING_BUY" else "Monitoreando posiciones para venta"
+                    
+                    self._add_log(
+                        "INFO",
+                        f"{state_emoji} CAMBIO DE ESTADO: {state_desc}",
+                        {
+                            'new_state': new_state,
+                            'previous_state': old_state,
+                            'timestamp': self.state_changed_at.isoformat()
+                        }
+                    )
+                
                 return self.current_state
                 
             except Exception as e:
@@ -165,8 +165,50 @@ class BitcoinScannerService:
                 
         except asyncio.TimeoutError:
             self.add_log("⏱️ Timeout en recuperación de estado", "WARNING")
+    
+    async def _handle_searching_buy_state(self, df: pd.DataFrame, current_price: float):
+        """
+        Maneja el estado de búsqueda de compras
+        Solo se enfoca en detectar patrones U y ejecutar compras
+        """
+        try:
+            # Detectar patrones U usando lógica del backtest
+            signals = self._detect_u_patterns_2023(df)
+            
+            if signals:
+                self._add_log("INFO", f"🎯 Detectados {len(signals)} patrones U potenciales")
+                
+                for signal in signals:
+                    await self._process_signal(signal)
+            else:
+                self._add_log(
+                    "INFO",
+                    f"🔍 Búsqueda de compra - No se detectaron patrones U | Precio BTC: ${current_price:,.2f}",
+                    current_price=current_price
+                )
+                
         except Exception as e:
-            self.add_log(f"❌ Error en recuperación: {e}", "ERROR")
+            logger.error(f"Error en estado de búsqueda de compra: {e}")
+            self._add_log("ERROR", f"❌ Error buscando compras: {e}")
+    
+    async def _handle_monitoring_sell_state(self, current_price: float):
+        """
+        Maneja el estado de monitoreo de ventas
+        Solo se enfoca en verificar condiciones de venta (TP, SL, Max Hold)
+        """
+        try:
+            self._add_log(
+                "INFO",
+                f"📊 Monitoreo de ventas - Verificando condiciones de salida | Precio BTC: ${current_price:,.2f}",
+                current_price=current_price
+            )
+            
+            # Solo verificar condiciones de venta
+            await self.executor.check_and_execute_sell_orders()
+            
+        except Exception as e:
+            logger.error(f"Error en estado de monitoreo de ventas: {e}")
+            self._add_log("ERROR", f"❌ Error monitoreando ventas: {e}")
     
     def update_config(self, new_config: Dict[str, Any]):
         """Actualiza la configuración del scanner (solo admin)"""
@@ -276,7 +318,7 @@ class BitcoinScannerService:
         while self.is_running:
             try:
                 # Realizar escaneo
-                await self._perform_scan()
+                await self._scan_cycle()
                 
                 # Esperar hasta el próximo escaneo
                 await asyncio.sleep(self.config['scan_interval'])
@@ -288,6 +330,58 @@ class BitcoinScannerService:
                 logger.error(f"❌ Error en loop de escaneo: {e}")
                 # Esperar 5 minutos antes de reintentar en caso de error
                 await asyncio.sleep(300)
+    
+    async def _scan_cycle(self):
+        """Ciclo principal de escaneo con lógica de estados (igual que Bitcoin 30m)"""
+        try:
+            self.last_scan_time = datetime.now()
+            
+            # Evaluar readiness antes de escanear
+            self._evaluate_readiness()
+            if not self.readiness_cache.get('auto_ready'):
+                reasons = ", ".join(self.readiness_cache.get('reasons', []))
+                self._add_log(
+                    f"⚠️ Auto-trading NO LISTO: {reasons}. No se ejecutarán compras.",
+                    "WARNING",
+                    current_price=self.last_scan_price or 0.0
+                )
+
+            # Obtener datos históricos de 4 horas
+            df = await self._get_binance_data()
+            if df is None or df.empty:
+                self._add_log("⚠️ No se pudieron obtener datos históricos")
+                return
+            
+            # Precio de Binance tomado de la última vela escaneada
+            current_price = float(df.iloc[-1]['close'])
+            self.last_scan_price = current_price
+            
+            # Determinar estado actual del bot
+            current_state = await self._check_current_state()
+            
+            # Log de inicio de escaneo con estado y precio
+            state_emoji = "🔍" if current_state == "SEARCHING_BUY" else "📊"
+            self._add_log(
+                f"{state_emoji} Escaneo 4h - Estado: {current_state} | Velas: {len(df)} | Precio BTC: ${current_price:,.2f}",
+                "INFO",
+                {"candles": len(df), "state": current_state},
+                current_price=current_price
+            )
+            
+            # Ejecutar lógica según el estado
+            if current_state == "SEARCHING_BUY":
+                await self._handle_searching_buy_state(df, current_price)
+            elif current_state == "MONITORING_SELL":
+                await self._handle_monitoring_sell_state(current_price)
+            elif current_state == "IDLE":
+                # Intentar recuperar el estado correcto
+                await self._recover_state()
+            else:
+                self._add_log("⚠️ Estado desconocido, saltando ciclo", "WARNING")
+                
+        except Exception as e:
+            logger.error(f"Error en ciclo de escaneo BTC 4h: {e}")
+            self._add_log(f"❌ Error en escaneo: {e}")
     
     async def _perform_scan(self):
         """Realiza un escaneo completo de Bitcoin"""
@@ -318,14 +412,14 @@ class BitcoinScannerService:
                          {"candles": len(df)}, current_price=current_price)
             
             # 1.5. 🤖 MONITOREAR POSICIONES AUTOMÁTICAS (Nueva funcionalidad)
-            # Verificar condiciones de salida para trading automático usando las mismas estrategias
+            # Verificar condiciones de salida para trading automático usando ejecutor específico
             try:
                 self._add_log(
                     "INFO",
                     f"🔍 Monitoreando posiciones activas para venta | Precio BTC: ${current_price:,.2f}",
                     current_price=current_price
                 )
-                await auto_trading_executor.check_exit_conditions('btc', current_price)
+                await self.executor.check_and_execute_sell_orders()
             except Exception as auto_trade_error:
                 logger.error(f"❌ Error monitoreando posiciones automáticas BTC: {auto_trade_error}")
                 self._add_log("ERROR", f"Error monitoreando posiciones automáticas: {str(auto_trade_error)}", current_price=current_price)
@@ -648,7 +742,7 @@ class BitcoinScannerService:
                     }
                     
                     # Ejecutar trading automático REAL para usuarios que lo tengan habilitado
-                    trade_result = await auto_trading_executor.execute_buy_signal('btc', signal_data, alerta_db.id)
+                    trade_result = await self.executor.execute_buy_order(signal_data)
                     
                     # Log del resultado del trade
                     if trade_result:
@@ -967,6 +1061,94 @@ class BitcoinScannerService:
             "btc_price": self.last_scan_price,
             "auto_trading_readiness": self.readiness_cache
         }
+    
+    def get_config(self) -> Dict[str, Any]:
+        """Obtiene la configuración actual del scanner"""
+        return {
+            "timeframe": self.config.get("timeframe", "4h"),
+            "profit_target": self.config.get("profit_target", 0.08),
+            "stop_loss": self.config.get("stop_loss", 0.03),
+            "max_hold_periods": self.config.get("max_hold_periods", 80),
+            "scan_interval": self.config.get("scan_interval", 3600),
+            "symbol": self.config.get("symbol", "BTCUSDT"),
+            "environment": self.config.get("environment", "mainnet")
+        }
+    
+    def get_performance(self) -> Dict[str, Any]:
+        """Obtiene estadísticas de rendimiento del scanner"""
+        return {
+            "total_scans": len(self.scanner_logs),
+            "alerts_sent": self.alerts_count,
+            "last_scan_time": self.last_scan_time.isoformat() if self.last_scan_time else None,
+            "current_state": self.current_state,
+            "uptime": (datetime.now() - self.state_changed_at).total_seconds() if self.state_changed_at else 0
+        }
+    
+    def get_positions(self) -> Dict[str, Any]:
+        """Obtiene las posiciones activas del scanner"""
+        try:
+            from app.db.database import get_db
+            from app.db.models import TradingOrder, TradingApiKey
+            
+            db = next(get_db())
+            
+            # Obtener posiciones activas
+            api_keys = db.query(TradingApiKey).filter(
+                TradingApiKey.btc_4h_mainnet_enabled == True,
+                TradingApiKey.is_active == True
+            ).all()
+            
+            positions = []
+            for api_key in api_keys:
+                buy_orders = db.query(TradingOrder).filter(
+                    TradingOrder.api_key_id == api_key.id,
+                    TradingOrder.symbol == 'BTCUSDT',
+                    TradingOrder.side == 'BUY',
+                    TradingOrder.status == 'FILLED'
+                ).all()
+                
+                for order in buy_orders:
+                    positions.append({
+                        "order_id": order.id,
+                        "symbol": order.symbol,
+                        "side": order.side,
+                        "quantity": float(order.executed_quantity or 0),
+                        "price": float(order.price or 0),
+                        "created_at": order.created_at.isoformat(),
+                        "status": order.status
+                    })
+            
+            return {
+                "total_positions": len(positions),
+                "positions": positions
+            }
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo posiciones: {e}")
+            return {"total_positions": 0, "positions": []}
+    
+    def get_alerts(self) -> Dict[str, Any]:
+        """Obtiene las alertas y notificaciones del scanner"""
+        return {
+            "total_alerts": self.alerts_count,
+            "last_alert": self.last_alert_sent.isoformat() if self.last_alert_sent else None,
+            "cooldown_period": self.cooldown_period,
+            "recent_logs": self.scanner_logs[-5:] if self.scanner_logs else []
+        }
+    
+    def _get_current_btc_price(self) -> float:
+        """Obtiene el precio actual de BTC"""
+        try:
+            import requests
+            response = requests.get("https://api.binance.com/api/v3/ticker/price", params={"symbol": "BTCUSDT"}, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+            price = float(data['price'])
+            self.last_scan_price = price
+            return price
+        except Exception as e:
+            logger.error(f"Error obteniendo precio BTC: {e}")
+            return self.last_scan_price or 0.0
 
 # Instancia global del scanner
 bitcoin_scanner = BitcoinScannerService()
