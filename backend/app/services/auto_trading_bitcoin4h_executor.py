@@ -29,14 +29,16 @@ class AutoTradingBitcoin4hExecutor:
     def _get_open_position(self, db: Session, api_key_id: int) -> Optional[TradingOrder]:
         """
         Verifica si hay una posición abierta (orden de compra sin venta correspondiente)
+        SOLO para Bitcoin 4h (diferencia del sistema de 30m)
         """
         try:
-            # Buscar posición abierta para BTCUSDT (BUY ya FILLED y sin SELL posterior)
+            # Buscar posición abierta para BTCUSDT SOLO del sistema 4h (BUY ya FILLED y sin SELL posterior)
             buy_order = db.query(TradingOrder).filter(
                 TradingOrder.api_key_id == api_key_id,
                 TradingOrder.symbol == 'BTCUSDT',
                 TradingOrder.side == 'BUY',
-                TradingOrder.status == 'FILLED'
+                TradingOrder.status == 'FILLED',
+                TradingOrder.reason == 'U_PATTERN_4H'  # Solo órdenes del sistema 4h
             ).order_by(TradingOrder.created_at.desc()).first()
             
             if buy_order:
@@ -64,12 +66,13 @@ class AutoTradingBitcoin4hExecutor:
         Detecta órdenes separadas del mismo orderId y las agrupa para venta
         """
         try:
-            # Buscar todas las órdenes BUY FILLED sin venta
+            # Buscar todas las órdenes BUY FILLED sin venta SOLO del sistema 4h
             open_orders = db.query(TradingOrder).filter(
                 TradingOrder.api_key_id == api_key_id,
                 TradingOrder.symbol == 'BTCUSDT',
                 TradingOrder.side == 'BUY',
-                TradingOrder.status == 'FILLED'
+                TradingOrder.status == 'FILLED',
+                TradingOrder.reason == 'U_PATTERN_4H'  # Solo órdenes del sistema 4h
             ).all()
             
             # Agrupar por binance_order_id
@@ -188,7 +191,7 @@ class AutoTradingBitcoin4hExecutor:
                     price=None,
                     take_profit_price=None,
                     stop_loss_price=None,
-                    reason='U_PATTERN'
+                    reason='U_PATTERN_4H'  # Diferenciar del sistema de 30m
                 ),
                 user_id=api_key.user_id
             )
@@ -249,7 +252,7 @@ class AutoTradingBitcoin4hExecutor:
                     executed_quantity=executed_qty,
                     commission=commission,
                     commission_asset=commission_asset,
-                    reason='U_PATTERN'
+                    reason='U_PATTERN_4H'
                 )
                 await self._send_buy_notification(api_key, {
                     'quantity': executed_qty,
@@ -288,7 +291,7 @@ class AutoTradingBitcoin4hExecutor:
                 }
                 
             else:
-                update_trading_order_status(db, order_id=new_order.id, status=binance_result.get('status','REJECTED'), reason=binance_result.get('msg','BINANCE_ORDER_FAILED'))
+                update_trading_order_status(db, order_id=new_order.id, status=binance_result.get('status','REJECTED'), reason='U_PATTERN_4H_FAILED')
                 logger.error(f"❌ Error ejecutando orden en Binance para API key {api_key.id}: {binance_result}")
                 return {
                     'success': False,
@@ -423,7 +426,7 @@ class AutoTradingBitcoin4hExecutor:
             # Paso 0: reconciliar con Binance antes de decidir ventas, para no operar sobre estado desfasado
             await self._reconcile_with_binance(db)
             
-            # Obtener API keys activas
+            # Obtener API keys activas SOLO para Bitcoin 4h
             api_keys = db.query(TradingApiKey).filter(
                 TradingApiKey.btc_4h_mainnet_enabled == True,
                 TradingApiKey.is_active == True
@@ -1041,7 +1044,7 @@ class AutoTradingBitcoin4hExecutor:
     async def _reconcile_with_binance(self, db: Session):
         """Sincroniza órdenes ejecutadas en Binance que no existen en la DB local."""
         try:
-            # Cargar API keys mainnet activas del usuario
+            # Cargar API keys mainnet activas del usuario SOLO para Bitcoin 4h
             api_keys = db.query(TradingApiKey).filter(
                 TradingApiKey.is_testnet == False,
                 TradingApiKey.is_active == True,
@@ -1080,12 +1083,13 @@ class AutoTradingBitcoin4hExecutor:
                         continue
                     trades = resp.json() or []
                     
-                    # Buscar BUY locales abiertas
+                    # Buscar BUY locales abiertas SOLO del sistema 4h
                     open_buys = db.query(TradingOrder).filter(
                         TradingOrder.api_key_id == api_key.id,
                         TradingOrder.symbol == 'BTCUSDT',
                         TradingOrder.side == 'BUY',
-                        TradingOrder.status == 'FILLED'
+                        TradingOrder.status == 'FILLED',
+                        TradingOrder.reason == 'U_PATTERN_4H'  # Solo órdenes del sistema 4h
                     ).all()
                     
                     for buy in open_buys:
@@ -1095,7 +1099,8 @@ class AutoTradingBitcoin4hExecutor:
                             TradingOrder.symbol == 'BTCUSDT',
                             TradingOrder.side == 'SELL',
                             TradingOrder.status == 'FILLED',
-                            TradingOrder.created_at > buy.created_at
+                            TradingOrder.created_at > buy.created_at,
+                            TradingOrder.reason == 'U_PATTERN_4H'  # Solo órdenes del sistema 4h
                         ).first()
                         if has_sell:
                             continue
@@ -1133,7 +1138,7 @@ class AutoTradingBitcoin4hExecutor:
                             new_sell.binance_order_id = str(matching_sell_trade.get('orderId',''))
                             new_sell.executed_price = sell_price
                             new_sell.executed_quantity = sell_qty
-                            new_sell.reason = 'EXTERNAL_SELL'
+                            new_sell.reason = 'U_PATTERN_4H_EXTERNAL_SELL'
                             db.commit()
                             
                             # Cerrar BUY local - usar estado consistente con Binance

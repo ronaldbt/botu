@@ -86,7 +86,7 @@ class BnbScannerService:
                 
                 # Verificar si hay posiciones abiertas de BNB
                 api_keys = db.query(TradingApiKey).filter(
-                    TradingApiKey.bnb_mainnet_enabled == True,
+                    TradingApiKey.bnb_4h_mainnet_enabled == True,
                     TradingApiKey.is_active == True
                 ).all()
                 
@@ -1001,8 +1001,8 @@ class BnbScannerService:
                 TradingApiKey.is_testnet == False,
                 TradingApiKey.is_active == True
             ).all()
-            enabled = [k for k in keys if getattr(k, 'bnb_mainnet_enabled', False)]
-            allocated_ok = any((k.bnb_mainnet_allocated_usdt or 0) > 0 for k in enabled)
+            enabled = [k for k in keys if getattr(k, 'bnb_4h_mainnet_enabled', False)]
+            allocated_ok = any((k.bnb_4h_mainnet_allocated_usdt or 0) > 0 for k in enabled)
             reasons = []
             if len(enabled) == 0:
                 reasons.append('sin claves mainnet habilitadas para BNB')
