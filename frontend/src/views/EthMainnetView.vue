@@ -98,12 +98,12 @@
                       @click="toggleEthMainnet(apiKey)"
                       :class="[
                         'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                        apiKey.eth_mainnet_enabled 
+                        apiKey.eth_4h_mainnet_enabled 
                           ? 'bg-green-500 text-white hover:bg-green-600' 
                           : 'bg-slate-400 text-white hover:bg-slate-500'
                       ]"
                     >
-                      {{ apiKey.eth_mainnet_enabled ? '✓ Activado' : 'Activar Scanner' }}
+                      {{ apiKey.eth_4h_mainnet_enabled ? '✓ Activado' : 'Activar Scanner' }}
                     </button>
                   </div>
                   <div class="flex items-center gap-3 mb-3">
@@ -125,8 +125,8 @@
                       <label class="block text-sm font-medium text-slate-700 mb-2">Cantidad asignada (USDT)</label>
                       <input
                         type="number"
-                        :value="apiKey.eth_mainnet_allocated_usdt || 0"
-                        @change="updateEthMainnetAllocation(apiKey, $event.target.value)"
+                        :value="apiKey.eth_4h_mainnet_allocated_usdt || 0"
+                        @change="updateEth4hMainnetAllocation(apiKey, $event.target.value)"
                         min="0"
                         step="0.01"
                         class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -137,7 +137,7 @@
                       <div class="text-sm text-slate-600">
                         <div class="font-medium">Estado actual:</div>
                         <div class="text-purple-600">
-                          ${{ (apiKey.eth_mainnet_allocated_usdt || 0).toFixed(2) }} USDT asignados
+                          ${{ (apiKey.eth_4h_mainnet_allocated_usdt || 0).toFixed(2) }} USDT asignados
                         </div>
                       </div>
                     </div>
@@ -339,8 +339,8 @@ const loadData = async () => {
       mainnetKeysDetail: mainnetApiKeys.value.map(k => ({
         id: k.id,
         is_active: k.is_active,
-        eth_mainnet_enabled: k.eth_mainnet_enabled,
-        eth_mainnet_allocated_usdt: k.eth_mainnet_allocated_usdt
+        eth_4h_mainnet_enabled: k.eth_4h_mainnet_enabled,
+        eth_4h_mainnet_allocated_usdt: k.eth_4h_mainnet_allocated_usdt
       }))
     })
     
@@ -355,22 +355,22 @@ const loadData = async () => {
 }
 
 const toggleEthMainnet = async (apiKey) => {
-  const enabled = !apiKey.eth_mainnet_enabled
-  await updateEthMainnetAllocation(apiKey, apiKey.eth_mainnet_allocated_usdt || 0, enabled)
+  const enabled = !apiKey.eth_4h_mainnet_enabled
+  await updateEth4hMainnetAllocation(apiKey, apiKey.eth_4h_mainnet_allocated_usdt || 0, enabled)
 }
 
-const updateEthMainnetAllocation = async (apiKey, amount, enabled = null) => {
+const updateEth4hMainnetAllocation = async (apiKey, amount, enabled = null) => {
   try {
     const updateData = {
-      crypto: 'eth_mainnet',
-      enabled: enabled !== null ? enabled : apiKey.eth_mainnet_enabled,
+      crypto: 'eth_4h_mainnet',
+      enabled: enabled !== null ? enabled : apiKey.eth_4h_mainnet_enabled,
       allocated_usdt: parseFloat(amount) || 0
     }
     
-    console.log('[EthMainnet] 🔧 Actualizando ETH allocation:', {
+    console.log('[EthMainnet] 🔧 Actualizando ETH 4h allocation:', {
       apiKeyId: apiKey.id,
-      currentEnabled: apiKey.eth_mainnet_enabled,
-      currentAllocated: apiKey.eth_mainnet_allocated_usdt,
+      currentEnabled: apiKey.eth_4h_mainnet_enabled,
+      currentAllocated: apiKey.eth_4h_mainnet_allocated_usdt,
       newAmount: amount,
       newEnabled: enabled,
       updateData: updateData
@@ -381,9 +381,9 @@ const updateEthMainnetAllocation = async (apiKey, amount, enabled = null) => {
     
     await apiKeys.loadApiKeys()
     
-    console.log('[EthMainnet] ETH mainnet allocation actualizada exitosamente')
+    console.log('[EthMainnet] ETH 4h mainnet allocation actualizada exitosamente')
   } catch (error) {
-    console.error('[EthMainnet] ❌ Error actualizando ETH mainnet allocation:', {
+    console.error('[EthMainnet] ❌ Error actualizando ETH 4h mainnet allocation:', {
       error: error,
       message: error.message,
       response: error.response?.data,
@@ -471,8 +471,8 @@ watch(mainnetApiKeys, (newKeys, oldKeys) => {
     newKeys: newKeys.map(k => ({
       id: k.id,
       is_active: k.is_active,
-      eth_mainnet_enabled: k.eth_mainnet_enabled,
-      eth_mainnet_allocated_usdt: k.eth_mainnet_allocated_usdt
+      eth_4h_mainnet_enabled: k.eth_4h_mainnet_enabled,
+      eth_4h_mainnet_allocated_usdt: k.eth_4h_mainnet_allocated_usdt
     }))
   })
 }, { deep: true })

@@ -263,9 +263,9 @@ async def update_crypto_allocation(
         elif request.crypto == 'bnb_mainnet':
             enabled_field = 'bnb_mainnet_enabled'
             allocated_field = 'bnb_mainnet_allocated_usdt'
-        elif request.crypto == 'eth_mainnet':
-            enabled_field = 'eth_mainnet_enabled'
-            allocated_field = 'eth_mainnet_allocated_usdt'
+        elif request.crypto == 'eth_4h_mainnet':
+            enabled_field = 'eth_4h_mainnet_enabled'
+            allocated_field = 'eth_4h_mainnet_allocated_usdt'
         elif request.crypto == 'btc_4h_mainnet':
             enabled_field = 'btc_4h_mainnet_enabled'
             allocated_field = 'btc_4h_mainnet_allocated_usdt'
@@ -299,6 +299,7 @@ async def update_crypto_allocation(
                     (request.crypto != 'btc_4h_mainnet' and getattr(current_api_key, 'btc_4h_mainnet_enabled', False)) or
                     (request.crypto != 'bnb_mainnet' and getattr(current_api_key, 'bnb_mainnet_enabled', False)) or
                     (request.crypto != 'eth_mainnet' and getattr(current_api_key, 'eth_mainnet_enabled', False)) or
+                    (request.crypto != 'eth_4h_mainnet' and getattr(current_api_key, 'eth_4h_mainnet_enabled', False)) or
                     (request.crypto != 'eth' and getattr(current_api_key, 'eth_enabled', False)) or
                     (request.crypto != 'bnb' and getattr(current_api_key, 'bnb_enabled', False))
                 )

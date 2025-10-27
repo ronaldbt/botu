@@ -226,7 +226,7 @@ class UpdateCryptoAllocationRequest(BaseModel):
     
     @validator('crypto')
     def validate_crypto(cls, v):
-        valid_cryptos = ['btc', 'btc_30m', 'btc_30m_testnet', 'btc_30m_mainnet', 'btc_4h_mainnet', 'paxg_4h_mainnet', 'bnb_mainnet', 'eth_mainnet', 'eth', 'bnb']
+        valid_cryptos = ['btc', 'btc_30m', 'btc_30m_testnet', 'btc_30m_mainnet', 'btc_4h_mainnet', 'paxg_4h_mainnet', 'bnb_mainnet', 'eth_mainnet', 'eth_4h_mainnet', 'eth', 'bnb']
         if v.lower() not in valid_cryptos:
             raise ValueError(f'Crypto debe ser uno de: {", ".join(valid_cryptos)}')
         return v.lower()
