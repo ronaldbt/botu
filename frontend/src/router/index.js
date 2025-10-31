@@ -27,7 +27,7 @@ import IntegracionesView from '../views/IntegracionesView.vue';
 const routes = [
   {
     path: '/',
-    redirect: '/trading-automatico',
+    redirect: '/btc-4h-mainnet',
   },
   {
     path: '/login',
@@ -167,7 +167,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login');
   } else if (to.meta.requiresAdmin && !authStore.user?.is_admin) {
-    next('/trading-automatico'); // Redirigir a trading automático si no es admin
+    next('/btc-4h-mainnet'); // Redirigir al BTC 4h Mainnet si no es admin
   } else {
     next();
   }

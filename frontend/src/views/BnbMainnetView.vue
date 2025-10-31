@@ -197,6 +197,7 @@
         <!-- Open Positions -->
         <OpenPositionsCard
           environment="mainnet"
+          endpoint="/trading/scanner/bnb-4h-mainnet/positions"
           @refresh="loadData"
         />
         

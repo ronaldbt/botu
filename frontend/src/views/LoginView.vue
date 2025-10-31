@@ -100,7 +100,7 @@ const login = async () => {
 
     console.log('✅ Usuario guardado en authStore:', authStore.user);
 
-    router.push('/trading-automatico');
+    router.push('/btc-4h-mainnet');
   } catch (err) {
     console.error('❌ Error completo:', err);
 

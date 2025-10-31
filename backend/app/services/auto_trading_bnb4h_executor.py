@@ -302,6 +302,49 @@ class AutoTradingBnb4hExecutor:
                 'error': str(e)
             }
     
+    async def _get_exchange_filters(self, symbol: str = 'BNBUSDT') -> Optional[Dict]:
+        """
+        Obtiene filtros de exchangeInfo de Binance para el símbolo (minQty, stepSize, minNotional)
+        """
+        try:
+            url = "https://api.binance.com/api/v3/exchangeInfo"
+            params = {'symbol': symbol}
+            resp = requests.get(url, params=params, timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
+            
+            if not data.get('symbols') or len(data['symbols']) == 0:
+                logger.warning(f"⚠️ No se encontró información para {symbol}, usando valores por defecto")
+                return None
+            
+            symbol_info = data['symbols'][0]
+            filters = {}
+            
+            # Extraer filtros LOT_SIZE, PRICE_FILTER, MIN_NOTIONAL
+            for filter_item in symbol_info.get('filters', []):
+                filter_type = filter_item.get('filterType')
+                if filter_type == 'LOT_SIZE':
+                    filters['minQty'] = float(filter_item.get('minQty', 0.01))
+                    filters['stepSize'] = float(filter_item.get('stepSize', 0.001))
+                elif filter_type == 'MIN_NOTIONAL':
+                    filters['minNotional'] = float(filter_item.get('minNotional', 5.0))
+                elif filter_type == 'NOTIONAL':
+                    # NOTIONAL también puede tener minNotional
+                    if 'minNotional' in filter_item:
+                        filters['minNotional'] = float(filter_item.get('minNotional', 5.0))
+            
+            logger.info(f"📊 [Bnb4h] Filtros Binance para {symbol}: minQty={filters.get('minQty', 0.01)}, stepSize={filters.get('stepSize', 0.001)}, minNotional={filters.get('minNotional', 5.0)}")
+            return filters
+            
+        except Exception as e:
+            logger.error(f"Error obteniendo filtros de Binance para {symbol}: {e}")
+            # Retornar valores por defecto seguros si falla la consulta
+            return {
+                'minQty': 0.01,
+                'stepSize': 0.001,
+                'minNotional': 5.0
+            }
+    
     async def _get_balance(self, api_key: TradingApiKey) -> Optional[Dict]:
         """
         Obtiene balance de la API key desde Binance (incluyendo BNB)
@@ -524,9 +567,15 @@ class AutoTradingBnb4hExecutor:
             # Usar el balance real de BNB disponible (ya incluye comisiones descontadas)
             cantidad_vendible = balance.get('BNB', 0.0)
             
-            # Verificar que tenemos suficiente BNB para vender
-            if cantidad_vendible < 0.01:  # Mínimo para BNBUSDT
-                logger.warning(f"⚠️ Balance BNB insuficiente para vender: {cantidad_vendible:.8f} BNB")
+            # Obtener filtros dinámicos de Binance
+            filters = await self._get_exchange_filters('BNBUSDT')
+            min_qty = filters.get('minQty', 0.01) if filters else 0.01
+            min_notional = filters.get('minNotional', 5.0) if filters else 5.0
+            
+            # Verificar cantidad mínima (minQty) o valor mínimo notional
+            order_value = cantidad_vendible * current_price
+            if cantidad_vendible < min_qty and order_value < min_notional:
+                logger.warning(f"⚠️ Balance BNB insuficiente para vender: {cantidad_vendible:.8f} BNB (minQty: {min_qty:.8f}) y valor ${order_value:.2f} < ${min_notional:.2f}")
                 return
             
             # Valor actual de la posición: usar estrictamente la cantidad de la orden de compra
@@ -722,39 +771,35 @@ class AutoTradingBnb4hExecutor:
                     current_price=sell_price
                 )
             
-            # Verificar que tenemos BNB suficiente para vender
-            if sell_quantity < 0.01:
-                error_log = f"❌ Balance BNB insuficiente para vender: {sell_quantity:.8f} BNB"
-                logger.error(f"[Bnb4h] {error_log}")
-                from app.services.bnb_scanner_service import bnb_scanner
-                bnb_scanner._add_log(error_log, "ERROR", current_price=sell_price)
-                return
+            # Obtener filtros dinámicos de Binance
+            filters = await self._get_exchange_filters('BNBUSDT')
+            step_size = filters.get('stepSize', 0.001) if filters else 0.001
+            min_qty = filters.get('minQty', 0.01) if filters else 0.01
+            min_notional = filters.get('minNotional', 5.0) if filters else 5.0
             
-            # Ajustar cantidad según LOT_SIZE de Binance (stepSize = 0.001 para BNBUSDT)
+            # Ajustar cantidad según LOT_SIZE de Binance (stepSize dinámico)
             import math
-            step_size = 0.001  # 0.001 BNB es el stepSize para BNBUSDT
-            min_qty = 0.01     # Cantidad mínima
-            
             # Redondear hacia abajo al múltiplo más cercano de step_size
             sell_quantity = math.floor(sell_quantity / step_size) * step_size
             
-            # Verificar cantidad mínima y valor mínimo notional ($5 USD)
-            min_notional = 5.0  # $5 USD mínimo
+            # Calcular valor de la orden
             order_value = sell_quantity * sell_price
             
-            if sell_quantity < min_qty:
-                error_log = f"❌ Cantidad muy pequeña para vender: {sell_quantity:.8f} BNB (mínimo: {min_qty:.8f} BNB)"
+            # Verificar que cumple con cantidad mínima O valor mínimo notional
+            # (se puede vender si cumple cualquiera de los dos criterios)
+            if sell_quantity < min_qty and order_value < min_notional:
+                error_log = f"❌ Balance insuficiente: {sell_quantity:.8f} BNB < {min_qty:.8f} (minQty) y ${order_value:.2f} < ${min_notional:.2f} (minNotional)"
                 logger.error(f"[Bnb4h] {error_log}")
                 from app.services.bnb_scanner_service import bnb_scanner
                 bnb_scanner._add_log(error_log, "ERROR", current_price=sell_price)
                 return
             
-            if order_value < min_notional:
-                error_log = f"❌ Valor de orden muy bajo: ${order_value:.2f} (mínimo: ${min_notional:.2f})"
-                logger.error(f"[Bnb4h] {error_log}")
-                from app.services.bnb_scanner_service import bnb_scanner
-                bnb_scanner._add_log(error_log, "ERROR", current_price=sell_price)
-                return
+            # Si la cantidad es menor que minQty pero el valor cumple minNotional,
+            # usar quoteOrderQty en lugar de quantity (Binance acepta por valor cuando cumple minNotional)
+            use_quote_order_qty = False
+            if sell_quantity < min_qty and order_value >= min_notional:
+                logger.info(f"📊 [Bnb4h] Cantidad {sell_quantity:.8f} BNB < minQty ({min_qty:.8f}) pero valor ${order_value:.2f} >= ${min_notional:.2f} - usando quoteOrderQty")
+                use_quote_order_qty = True
             
             logger.info(f"💰 [Bnb4h] Preparando venta: {sell_quantity:.8f} BNB @ ${sell_price:,.2f} (${order_value:.2f}) - {reason}{commission_info}{bnb_info}")
             
@@ -765,9 +810,8 @@ class AutoTradingBnb4hExecutor:
                 'symbol': 'BNBUSDT',  # Para Binance API
                 'side': 'SELL',       # Mayúscula para Binance
                 'type': 'MARKET',     # Para Binance API
-                'quantity': sell_quantity,
                 'price': sell_price,
-                'total_usdt': sell_quantity * sell_price,
+                'total_usdt': order_value,
                 'environment': self.environment,
                 'parent_order_id': buy_order.id,
                 # Campos adicionales para la base de datos
@@ -775,6 +819,12 @@ class AutoTradingBnb4hExecutor:
                 'order_type': 'market',
                 'side_db': 'sell'
             }
+            
+            # Usar quantity o quoteOrderQty según el caso
+            if use_quote_order_qty:
+                sell_order_data['quoteOrderQty'] = order_value  # Vender por valor en USDT
+            else:
+                sell_order_data['quantity'] = sell_quantity  # Vender por cantidad en BNB
             
             # Ejecutar venta en Binance
             binance_result = await self._execute_binance_order(api_key, sell_order_data)
@@ -790,6 +840,12 @@ class AutoTradingBnb4hExecutor:
                 return
             
             if binance_result and binance_result.get('success'):
+                # Obtener cantidad ejecutada de Binance (importante cuando se usa quoteOrderQty)
+                executed_qty = float(binance_result.get('executedQty', 0.0))
+                if executed_qty == 0:
+                    # Fallback a cantidad calculada si no viene en respuesta
+                    executed_qty = sell_quantity
+                
                 # Preparar datos para la base de datos
                 from app.schemas.trading_schema import TradingOrderCreate
                 
@@ -798,7 +854,7 @@ class AutoTradingBnb4hExecutor:
                     symbol=sell_order_data['symbol'],
                     side='sell',  # Para la base de datos usamos minúscula
                     order_type='market',  # Para la base de datos usamos minúscula
-                    quantity=sell_order_data['quantity'],
+                    quantity=executed_qty,  # Usar cantidad ejecutada real de Binance
                     price=sell_order_data['price']
                 )
                 
@@ -816,7 +872,7 @@ class AutoTradingBnb4hExecutor:
                 
                 # Actualizar con datos de ejecución
                 sell_order.executed_price = binance_result.get('fills', [{}])[0].get('price') if binance_result.get('fills') else sell_order_data['price']
-                sell_order.executed_quantity = sell_order_data['quantity']
+                sell_order.executed_quantity = executed_qty  # Usar cantidad ejecutada real
                 sell_order.commission = sell_commission if sell_commission > 0 else None
                 sell_order.commission_asset = sell_commission_asset if sell_commission_asset else None
                 sell_order.status = 'FILLED'

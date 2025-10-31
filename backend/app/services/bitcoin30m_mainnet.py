@@ -54,7 +54,7 @@ class Bitcoin30mMainnetScanner:
             'scan_interval': 1800,  # 30 minutos
             'profit_target': 0.04,  # 4% objetivo
             'stop_loss': 0.015,     # 1.5% stop loss
-            'max_hold_periods': 80, # Máximo 40 horas (80 períodos de 30m)
+            'max_hold_periods': 50, # Máximo 25 horas (50 períodos de 30m)
             'environment': 'mainnet'
         }
         

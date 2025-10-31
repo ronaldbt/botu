@@ -569,13 +569,13 @@ class AutoTradingMainnet30mExecutor:
             if should_sell:
                 await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct, pnl_usdt)
             else:
-                # Verificar tiempo máximo de hold (40 horas)
+                # Verificar tiempo máximo de hold (25 horas)
                 from datetime import datetime, timedelta
-                max_hold_time = timedelta(hours=40)
+                max_hold_time = timedelta(hours=25)
                 if datetime.now() - buy_order.created_at > max_hold_time:
                     should_sell = True
                     sell_reason = "MAX_HOLD_TIME"
-                    max_hold_log = f"⏰ MAX HOLD TIME activado para posición {buy_order.id} (40h)"
+                    max_hold_log = f"⏰ MAX HOLD TIME activado para posición {buy_order.id} (25h)"
                     logger.info(f"[Mainnet30m] {max_hold_log}")
                     bitcoin_30m_mainnet_scanner.add_log(max_hold_log, "WARNING", current_price=current_price)
                     await self._execute_sell_order(db, buy_order, current_price, sell_reason, profit_pct, pnl_usdt)
@@ -670,13 +670,13 @@ class AutoTradingMainnet30mExecutor:
             if should_sell:
                 await self._execute_sell_order_for_group(db, grouped_orders, current_price, sell_reason, profit_pct, pnl_usdt)
             else:
-                # Verificar tiempo máximo de hold (40 horas)
+                # Verificar tiempo máximo de hold (25 horas)
                 from datetime import datetime, timedelta
-                max_hold_time = timedelta(hours=40)
+                max_hold_time = timedelta(hours=25)
                 if datetime.now() - reference_order.created_at > max_hold_time:
                     should_sell = True
                     sell_reason = "MAX_HOLD_TIME"
-                    max_hold_log = f"⏰ MAX HOLD TIME activado para grupo {reference_order.binance_order_id} (40h)"
+                    max_hold_log = f"⏰ MAX HOLD TIME activado para grupo {reference_order.binance_order_id} (25h)"
                     logger.info(f"[Mainnet30m] {max_hold_log}")
                     bitcoin_30m_mainnet_scanner.add_log(max_hold_log, "WARNING", current_price=current_price)
                     await self._execute_sell_order_for_group(db, grouped_orders, current_price, sell_reason, profit_pct, pnl_usdt)

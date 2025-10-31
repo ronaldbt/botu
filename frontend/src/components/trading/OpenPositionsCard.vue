@@ -99,6 +99,10 @@ const props = defineProps({
   environment: {
     type: String,
     default: 'mainnet'
+  },
+  endpoint: {
+    type: String,
+    default: ''
   }
 })
 
@@ -121,9 +125,11 @@ const totalBTC = computed(() => {
 const loadPositions = async () => {
   try {
     loading.value = true
-    const endpoint = props.environment === 'mainnet' 
-      ? '/trading/scanner/bitcoin-30m-mainnet/positions'
-      : '/trading/scanner/bitcoin-30m/positions'
+    const endpoint = props.endpoint || (
+      props.environment === 'mainnet' 
+        ? '/trading/scanner/bitcoin-30m-mainnet/positions'
+        : '/trading/scanner/bitcoin-30m/positions'
+    )
       
     const response = await apiClient.get(endpoint)
     
