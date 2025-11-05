@@ -278,7 +278,7 @@ class BitcoinScanner30mService:
                 # Condiciones EXACTAS del backtest 30m
                 conditions = [
                     pre_slope < -0.08,  # Pendiente bajista
-                    current_price > nivel_ruptura * 0.98,  # Cerca del nivel de ruptura
+                    current_price > nivel_ruptura * 0.98,  # Cerca del nivel de ruptura - igual al backtest
                     recent_slope > -0.02,  # Momentum positivo
                     low['depth'] >= self.config['min_pattern_depth'],  # Al menos 1.5% de profundidad
                     self._check_momentum_filter_30m(analysis_df, min_idx)
@@ -393,10 +393,10 @@ class BitcoinScanner30mService:
         """Procesa una señal detectada y envía alertas"""
         try:
             # Crear mensaje de alerta
-            current_price = signal['entry_price']
-            rupture_level = signal['rupture_level']
-            profit_target = current_price * (1 + self.config['profit_target'])
-            stop_loss = current_price * (1 - self.config['stop_loss'])
+            current_price = df.iloc[-1]['close']  # Precio actual del mercado
+            rupture_level = signal['entry_price']  # nivel_ruptura (igual al backtest)
+            profit_target = rupture_level * (1 + self.config['profit_target'])
+            stop_loss = rupture_level * (1 - self.config['stop_loss'])
             
             alert_message = (
                 f"🚀 PATRÓN U 30m DETECTADO EN BITCOIN\n\n"
@@ -430,7 +430,7 @@ class BitcoinScanner30mService:
                     tipo_alerta='BUY',
                     mensaje=alert_message,
                     nivel_ruptura=rupture_level,
-                    precio_entrada=current_price,
+                    precio_entrada=rupture_level,  # Usar nivel_ruptura como precio de entrada (igual al backtest)
                     bot_mode='automatic_30m'
                 )
                 
@@ -452,9 +452,10 @@ class BitcoinScanner30mService:
                 
                 # 4. 🤖 EJECUTAR TRADING AUTOMÁTICO (Nueva funcionalidad)
                 # Usar las mismas estrategias probadas (4% TP, 1.5% SL)
+                # IMPORTANTE: Usar nivel_ruptura como entry_price (igual al backtest)
                 try:
                     signal_data = {
-                        'entry_price': current_price,
+                        'entry_price': rupture_level,  # Usar nivel_ruptura como precio de entrada (igual al backtest)
                         'rupture_level': rupture_level,
                         'profit_target': profit_target,
                         'stop_loss': stop_loss,
@@ -468,7 +469,7 @@ class BitcoinScanner30mService:
                     
                     self._add_log("SUCCESS", "🤖 Trading automático 30m ejecutado para usuarios habilitados", {
                         "crypto": "BTC_30m",
-                        "entry_price": f"${current_price:.2f}",
+                        "entry_price": f"${rupture_level:.2f}",
                         "alerta_id": alerta_db.id
                     })
                     

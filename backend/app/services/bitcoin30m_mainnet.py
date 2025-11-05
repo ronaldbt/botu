@@ -329,9 +329,8 @@ class Bitcoin30mMainnetScanner:
     async def _get_historical_data_30min(self) -> Optional[pd.DataFrame]:
         """Obtiene datos históricos de 30 minutos para análisis"""
         try:
-            # Obtener más historia para análisis en vivo (p. ej., ~6 días = 300 velas)
-            # Binance permite hasta 1000; usamos 300 para un buen equilibrio
-            limit = 300
+            # Obtener 48 velas (24 horas de datos) - igual al window_size del backtest
+            limit = 48
             
             url = "https://api.binance.com/api/v3/klines"
             params = {
@@ -415,7 +414,7 @@ class Bitcoin30mMainnetScanner:
                 # Condiciones ajustadas para timeframe corto
                 conditions = [
                     pre_slope < -0.08,  # Pendiente bajista
-                    current_price > nivel_ruptura * 0.98,  # Cerca del nivel de ruptura
+                    current_price > nivel_ruptura * 0.98,  # Cerca del nivel de ruptura - igual al backtest
                     recent_slope > -0.02,  # Momentum positivo
                     low['depth'] >= 0.015,  # Al menos 1.5% de profundidad
                     self._check_momentum_filter_30min(df, min_idx)
@@ -604,6 +603,8 @@ class Bitcoin30mMainnetScanner:
             )
             
             # Ejecutar trading automático
+            # IMPORTANTE: La señal ya tiene entry_price = nivel_ruptura (línea 458), igual al backtest
+            # El ejecutor usará signal['entry_price'] como precio de entrada
             trade_result = await self.executor.execute_buy_order(signal)
             
             # Log del resultado del trade

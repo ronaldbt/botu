@@ -40,7 +40,7 @@ class PaxgScannerService:
             "window_size": 120,        # 120 velas ventana análisis (igual que backtest 2023)
             "scan_interval": 60 * 60,   # 1 hora (3600 segundos)
             "symbol": "PAXGUSDT",
-            "data_limit": 1000,        # 1000 velas como backtest 2023
+            "data_limit": 120,        # 120 velas (igual al window_size)
             "environment": "mainnet"   # Solo mainnet
         }
         self.last_scan_time = None
@@ -464,12 +464,12 @@ class PaxgScannerService:
         max_retries = 3
         for retry in range(max_retries):
             try:
-                # Obtener últimas 1000 velas de 4h (igual que backtest 2023)
+                # Obtener 120 velas de 4h (igual al window_size)
                 url = "https://api.binance.com/api/v3/klines"
                 params = {
                     'symbol': self.config['symbol'],
                     'interval': self.config['timeframe'], 
-                    'limit': self.config['data_limit']  # 1000 velas
+                    'limit': self.config['data_limit']  # 120 velas
                 }
                 
                 response = requests.get(url, params=params, timeout=30)

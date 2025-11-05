@@ -40,7 +40,7 @@ class BnbScannerService:
             "window_size": 120,        # 120 velas ventana análisis (igual que backtest)
             "scan_interval": 60 * 60,   # 1 hora (3600 segundos)
             "symbol": "BNBUSDT",
-            "data_limit": 1000,        # 1000 velas para análisis completo
+            "data_limit": 120,        # 120 velas (igual al window_size)
             "environment": "mainnet"   # Solo mainnet
         }
         self.last_scan_time = None
@@ -429,12 +429,12 @@ class BnbScannerService:
         max_retries = 3
         for retry in range(max_retries):
             try:
-                # Obtener últimas 1000 velas de 4h (igual que backtest BNB 2022)
+                # Obtener 120 velas de 4h (igual al window_size)
                 url = "https://api.binance.com/api/v3/klines"
                 params = {
                     'symbol': self.config['symbol'],
                     'interval': self.config['timeframe'], 
-                    'limit': self.config['data_limit']  # 1000 velas
+                    'limit': self.config['data_limit']  # 120 velas
                 }
                 
                 response = requests.get(url, params=params, timeout=30)
@@ -530,7 +530,7 @@ class BnbScannerService:
                 # Condiciones más estrictas para BNB conservador - EXACTAS del backtest 2022
                 conditions = [
                     pre_slope < -0.12,  # Más restrictivo para BNB
-                    current_price > nivel_ruptura * 0.97,  # Más conservador (97% vs 95%)
+                    current_price > nivel_ruptura * 0.97,  # Más conservador (97% vs 95%) - igual al backtest
                     recent_slope > -0.03,  # Momentum más positivo requerido
                     low['depth'] >= 0.025,  # Al menos 2.5% de profundidad
                     # Filtro adicional: evitar trades en tendencias bajistas prolongadas
@@ -648,10 +648,10 @@ class BnbScannerService:
         """Procesa una señal detectada y envía alertas"""
         try:
             # Crear mensaje de alerta
-            current_price = signal['entry_price']
-            rupture_level = signal['rupture_level']
-            profit_target = current_price * (1 + self.config['profit_target'])
-            stop_loss = current_price * (1 - self.config['stop_loss'])
+            current_price = df.iloc[-1]['close']  # Precio actual del mercado
+            rupture_level = signal['entry_price']  # nivel_ruptura (igual al backtest)
+            profit_target = rupture_level * (1 + self.config['profit_target'])
+            stop_loss = rupture_level * (1 - self.config['stop_loss'])
             
             alert_message = (
                 f"🚀 PATRÓN U DETECTADO EN BNB\n\n"
@@ -685,7 +685,7 @@ class BnbScannerService:
                     tipo_alerta='BUY',
                     mensaje=alert_message,
                     nivel_ruptura=rupture_level,
-                    precio_entrada=current_price,
+                    precio_entrada=rupture_level,  # Usar nivel_ruptura como precio de entrada (igual al backtest)
                     bot_mode='automatic'
                 )
                 
@@ -707,9 +707,10 @@ class BnbScannerService:
                 
                 # 4. 🤖 EJECUTAR TRADING AUTOMÁTICO BNB (Nueva funcionalidad)
                 # Usar las mismas estrategias probadas (8% TP, 3% SL)
+                # IMPORTANTE: Usar nivel_ruptura como entry_price (igual al backtest)
                 try:
                     signal_data = {
-                        'entry_price': current_price,
+                        'entry_price': rupture_level,  # Usar nivel_ruptura como precio de entrada (igual al backtest)
                         'rupture_level': rupture_level,
                         'profit_target': profit_target,
                         'stop_loss': stop_loss,
@@ -723,7 +724,7 @@ class BnbScannerService:
                     
                     self._add_log("SUCCESS", "🤖 Trading automático BNB ejecutado para usuarios habilitados", {
                         "crypto": "BNB",
-                        "entry_price": f"${current_price:.2f}",
+                        "entry_price": f"${rupture_level:.2f}",
                         "alerta_id": alerta_db.id
                     })
                     

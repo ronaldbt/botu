@@ -40,7 +40,7 @@ class BitcoinScannerService:
             "window_size": 120,        # 120 velas ventana análisis (igual que backtest 2023)
             "scan_interval": 60 * 60,   # 1 hora (3600 segundos)
             "symbol": "BTCUSDT",
-            "data_limit": 1000,        # 1000 velas como backtest 2023
+            "data_limit": 120,        # 120 velas (igual al window_size)
             "environment": "mainnet"   # Solo mainnet
         }
         self.last_scan_time = None
@@ -460,12 +460,12 @@ class BitcoinScannerService:
     async def _get_binance_data(self) -> Optional[pd.DataFrame]:
         """Obtiene datos históricos de Binance"""
         try:
-            # Obtener últimas 1000 velas de 4h (igual que backtest 2023)
+            # Obtener 120 velas de 4h (igual al window_size)
             url = "https://api.binance.com/api/v3/klines"
             params = {
                 'symbol': self.config['symbol'],
                 'interval': self.config['timeframe'], 
-                'limit': self.config['data_limit']  # 1000 velas
+                'limit': self.config['data_limit']  # 120 velas
             }
             
             response = requests.get(url, params=params, timeout=10)
@@ -536,7 +536,7 @@ class BitcoinScannerService:
                 # Condiciones EXACTAS del backtest 2023
                 conditions = [
                     pre_slope < -0.12,  # Más restrictivo para BTC
-                    current_price > nivel_ruptura * 0.97,  # Más conservador (97% vs 95%)
+                    current_price > nivel_ruptura * 0.97,  # Más conservador (97% vs 95%) - igual al backtest
                     recent_slope > -0.03,  # Momentum más positivo requerido
                     low['depth'] >= self.config['min_pattern_depth'],  # Al menos 2.5% de profundidad
                     # Filtro adicional: evitar trades en tendencias bajistas prolongadas
@@ -654,8 +654,8 @@ class BitcoinScannerService:
         """Procesa una señal detectada y ejecuta trading automático REAL en mainnet"""
         try:
             # Precio actual y datos de la señal
-            current_price = signal['entry_price']
-            rupture_level = signal['rupture_level']
+            current_price = df.iloc[-1]['close']  # Precio actual del mercado
+            rupture_level = signal['entry_price']  # nivel_ruptura (igual al backtest)
             
             # Log detallado de la señal detectada
             self._add_log(
@@ -700,7 +700,7 @@ class BitcoinScannerService:
                     tipo_alerta='BUY',
                     mensaje=alert_message,
                     nivel_ruptura=rupture_level,
-                    precio_entrada=current_price,
+                    precio_entrada=rupture_level,  # Usar nivel_ruptura como precio de entrada (igual al backtest)
                     bot_mode='automatic'
                 )
                 
@@ -727,17 +727,18 @@ class BitcoinScannerService:
                 
                 # 4. 🤖 EJECUTAR TRADING AUTOMÁTICO REAL EN MAINNET
                 # Usar las mismas estrategias probadas (8% TP, 3% SL para 4h)
+                # IMPORTANTE: Usar nivel_ruptura como entry_price (igual al backtest)
                 try:
                     signal_data = {
                         'timestamp': signal.get('timestamp', datetime.now()),
-                        'entry_price': current_price,
+                        'entry_price': rupture_level,  # Usar nivel_ruptura como precio de entrada (igual al backtest)
                         'signal_strength': signal.get('signal_strength', 0),
-                        'min_price': signal.get('min_price', current_price * 0.985),
+                        'min_price': signal.get('min_price', rupture_level * 0.985),
                         'pattern_width': signal.get('pattern_width', 10),
-                        'atr': signal.get('atr', current_price * 0.01),
+                        'atr': signal.get('atr', rupture_level * 0.01),
                         'dynamic_factor': signal.get('dynamic_factor', 1.008),
                         'depth': signal.get('depth', 0.018),
-                        'current_price': current_price,
+                        'current_price': current_price,  # Precio actual para referencia
                         'environment': 'mainnet'
                     }
                     
@@ -751,7 +752,7 @@ class BitcoinScannerService:
                             "🤖 Trading automático ejecutado para usuarios habilitados con BTC 4h",
                             {
                                 "crypto": "BTC_4h",
-                                "entry_price": f"${current_price:.2f}",
+                                "entry_price": f"${rupture_level:.2f}",
                                 "alerta_id": alerta_db.id
                             },
                             current_price=current_price
